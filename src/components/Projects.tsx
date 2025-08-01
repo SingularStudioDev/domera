@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowRightIcon } from 'lucide-react';
 import ProjectCard from './ProjectCard';
 
 const Projects = () => {
@@ -90,9 +91,10 @@ const Projects = () => {
         </div>
 
         {/* Load More Button */}
-        <div className="text-center">
-          <button className="bg-domera-blue hover:bg-domera-navy rounded-full px-8 py-3 font-medium text-white transition-colors duration-200">
+        <div className="text-center mx-auto flex items-center justify-center w-full">
+          <button className=" border flex items-center gap-5 cursor-pointer border-[#0040FF] rounded-full px-8 py-3 font-medium text-[#0040FF] transition-colors duration-200">
             Proyectos
+            <ArrowRightIcon className="h-5 w-5" />
           </button>
         </div>
       </div>
