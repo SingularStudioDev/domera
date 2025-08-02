@@ -14,8 +14,6 @@ import { useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Link from 'next/link';
 import Image from 'next/image';
-import HeroProject from '/public/pro-hero.png';
-import Specs from '/public/unit-spects.png';
 
 const ProjectDetailPage = () => {
   const params = useParams();
@@ -227,7 +225,7 @@ Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica l
           <div>
             <div className="relative h-full overflow-hidden">
               <img
-                src={HeroProject.src}
+                src="/pro-hero.png"
                 alt={project.title}
                 className="h-[95vh] w-full rounded-b-3xl object-cover"
               />
@@ -256,7 +254,7 @@ Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica l
                     </div>
 
                     <img
-                      src={Specs.src}
+                      src="/unit-spects.png"
                       alt={project.title}
                       className="h-1/2 w-fit object-cover"
                     />

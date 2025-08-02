@@ -1,6 +1,13 @@
 'use client';
 
-import { ChevronDown, ArrowLeft, BedIcon, BathIcon, DownloadIcon, ArrowRight } from 'lucide-react';
+import {
+  ChevronDown,
+  ArrowLeft,
+  BedIcon,
+  BathIcon,
+  DownloadIcon,
+  ArrowRight,
+} from 'lucide-react';
 import { SquareIcon } from 'lucide-react';
 import { TagIcon } from 'lucide-react';
 import { RulerIcon } from 'lucide-react';
@@ -249,7 +256,7 @@ const CartPage = () => {
                     href="#"
                     className="mb-8 inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
                   >
-                    <DownloadIcon className="h-4 w-4 " />
+                    <DownloadIcon className="h-4 w-4" />
                     Descargar boleto de reserva
                   </Link>
 
@@ -317,7 +324,7 @@ const CartPage = () => {
 
                   {/* Submit Button */}
                   <button
-                    className={`w-fit flex items-center justify-center rounded-full px-8 py-3 text-white transition-colors ${
+                    className={`flex w-fit items-center justify-center rounded-full px-8 py-3 text-white transition-colors ${
                       selectedFile
                         ? 'bg-blue-600 hover:bg-blue-700'
                         : 'cursor-not-allowed bg-gray-300'
