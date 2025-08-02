@@ -3,6 +3,7 @@
 import { Heart, StarIcon } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface ProjectCardProps {
   id: string;
@@ -15,6 +16,7 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = ({
+  id,
   title,
   price,
   image,
@@ -25,7 +27,10 @@ const ProjectCard = ({
   const [favorite, setFavorite] = useState(isFavorite);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-white shadow-md transition-shadow duration-300 hover:shadow-xl">
+    <Link
+      href={`/projects/${id}`}
+      className="relative block overflow-hidden rounded-3xl bg-white shadow-md transition-shadow duration-300 hover:shadow-xl"
+    >
       {/* Image */}
       <div className="relative h-[547px] overflow-hidden">
         <img src={image} alt={title} className="h-full w-full object-cover" />
@@ -58,7 +63,7 @@ const ProjectCard = ({
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 

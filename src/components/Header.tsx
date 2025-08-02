@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { ChevronDown, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { syne } from '@/utils/Fonts';
+import Link from 'next/link';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const menuItems = [
-    { name: 'Propiedades', href: '#propiedades' },
+    { name: 'Proyectos', href: '/projects' },
     { name: 'Servicios', href: '#servicios' },
     { name: 'Nosotros', href: '#nosotros' },
     { name: 'Preguntas', href: '#preguntas' },
@@ -39,13 +40,13 @@ const Header = () => {
             <div className="hidden flex-1 justify-end lg:flex">
               <div className="flex items-center space-x-8">
                 {menuItems.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
                     href={item.href}
                     className="inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-4 py-0 text-base font-normal text-black transition-colors duration-200 hover:bg-gray-100 hover:text-blue-600"
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
