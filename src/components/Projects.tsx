@@ -9,62 +9,56 @@ const Projects = () => {
     {
       id: '1',
       title: 'Alo 26',
-      price: '$167.000',
-      image: '/pro/pro-1.png',
+      price: 'Desde: $167.000',
+      image: '/project-alo-26-7e5196.png',
       status: 'Pocitos',
       date: 'Jul 2028',
     },
     {
       id: '2',
       title: 'Winks America',
-
-      price: '$228.000',
-      image: '/pro/pro-2.png',
-      status: 'Recoleta',
+      price: 'Desde: $228.000',
+      image: '/project-winks-america.png',
+      status: 'Carrasco',
       date: 'Ene 2027',
     },
     {
       id: '3',
       title: 'Le Mont',
-
-      price: '$325.000',
-      image: '/pro/pro-3.png',
-      status: 'Palermo',
+      price: 'Desde: $325.000',
+      image: '/project-le-mont.png',
+      status: 'Pocitos',
       date: 'Dic 2027',
     },
     {
       id: '4',
       title: 'Alto 26',
-
-      price: '$167.000',
-      image: '/pro/pro-4.png',
-      status: 'Puerto Madero',
+      price: 'Desde: $167.000',
+      image: '/project-alto-26.png',
+      status: 'Pocitos',
       date: 'Jul 2028',
     },
     {
       id: '5',
       title: 'Alzira',
-
-      price: '$312.000',
-      image: '/pro/pro-5.png',
-      status: 'Villa Crespo',
+      price: 'Desde: $312.000',
+      image: '/project-alzira.png',
+      status: 'Pocitos',
       date: 'Jul 2028',
     },
     {
       id: '6',
-      title: 'Amaras',
-
-      price: '$167.000',
-      image: '/pro/pro-6.png',
-      status: 'Caballito',
+      title: 'Amarras',
+      price: 'Desde: $167.000',
+      image: '/project-amarras.png',
+      status: 'Carrasco',
       date: 'Jul 2028',
     },
     {
       id: '7',
       title: 'Smart Point 2',
-
-      price: '$145.000',
-      image: '/pro/pro-7.png',
+      price: 'Desde: $145.000',
+      image: '/project-smart-point-2-7dfd3e.png',
       status: 'La Blanqueada',
       date: 'Mar 2027',
     },
@@ -84,9 +78,16 @@ const Projects = () => {
           {projects.map((project, index) => (
             <div
               key={project.id}
-              className={index === projects.length - 1 ? 'col-span-full' : ''}
+              className={index === 6 ? 'col-span-full' : ''}
             >
-              <ProjectCard {...project} />
+              <ProjectCard
+                id={project.id}
+                title={project.title}
+                price={project.price}
+                image={project.image}
+                status={project.status}
+                date={project.date}
+              />
             </div>
           ))}
         </div>
