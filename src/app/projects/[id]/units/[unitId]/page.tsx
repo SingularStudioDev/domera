@@ -14,6 +14,7 @@ import {
   ListCheck,
   MousePointer,
   ArrowRight,
+  StarIcon,
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import Header from '@/components/Header';
@@ -244,11 +245,11 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
             {/* Right Column - Unit Info */}
             <div className="space-y-6">
               {/* Unit Title and Star */}
-              <div className="flex items-start justify-between">
-                <h1 className="text-4xl font-bold text-black">{unit.title}</h1>
-                <div className="flex h-10 w-12 items-center justify-center rounded-2xl bg-gray-200">
-                  <span className="text-2xl text-blue-600">⭐</span>
+              <div className="flex items-center justify-start gap-2">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
+                  <StarIcon className="h-7 w-7 text-blue-600" />
                 </div>
+                <h1 className="text-4xl font-bold text-black">{unit.title}</h1>
               </div>
 
               {/* Unit Details Grid */}

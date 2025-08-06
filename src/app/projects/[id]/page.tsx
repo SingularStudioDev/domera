@@ -413,10 +413,10 @@ Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica l
                     {project.planFiles.map((file, index) => (
                       <div
                         key={index}
-                        className={`${index === 0 ? 'border-t' : ''} flex items-center justify-between border-b border-gray-300 p-4`}
+                        className={`${index === 0 ? 'border-t' : ''} flex cursor-pointer items-center justify-between border-b border-gray-300 p-4 text-black transition duration-300 hover:text-blue-600`}
                       >
                         <span className="font-medium">{file}</span>
-                        <button className="cursor-pointer text-xl text-gray-600 hover:text-gray-800">
+                        <button className="cursor-pointer text-xl">
                           <SquareArrowOutUpRightIcon className="h-5 w-5" />
                         </button>
                       </div>
@@ -447,7 +447,7 @@ Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica l
           </div>
 
           {/* Unidades disponibles */}
-          <div className="mt-16">
+          <div>
             <h2 className="mb-2 text-3xl font-bold text-black">
               Unidades disponibles
             </h2>
@@ -529,7 +529,7 @@ Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica l
               {project.availableUnits.map((unit) => (
                 <div
                   key={unit.id}
-                  className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+                  className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:border-blue-600"
                 >
                   {/* Image Section */}
                   <div className="relative">
@@ -581,7 +581,7 @@ Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica l
                   <div className="p-4">
                     {/* Title and Description */}
                     <div className="mb-4">
-                      <h4 className="mb-1 text-2xl font-semibold text-black">
+                      <h4 className="mb-1 text-2xl font-semibold text-black transition duration-300 group-hover:text-blue-600">
                         {unit.title}
                       </h4>
                       <p className="text-black">{unit.description}</p>
@@ -615,7 +615,7 @@ Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica l
                     <div className="flex items-end justify-between">
                       <div>
                         <p className="mb-1 font-semibold text-black">Precio</p>
-                        <p className="text-3xl font-bold text-black">
+                        <p className="text-3xl font-bold text-black transition duration-300 group-hover:text-blue-600">
                           {unit.price}
                         </p>
                       </div>

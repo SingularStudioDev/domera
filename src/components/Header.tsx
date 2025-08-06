@@ -28,13 +28,15 @@ const Header = () => {
         <div className="w-full rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5]">
           <div className="flex h-[70px] w-full items-center justify-between px-6">
             {/* Logo */}
-            <div className="flex items-center">
-              <h1
-                className={`${syne.className} text-5xl font-bold text-blue-600`}
-              >
-                Domera
-              </h1>
-            </div>
+            <Link href="/">
+              <div className="flex items-center">
+                <h1
+                  className={`${syne.className} text-5xl font-bold text-blue-600`}
+                >
+                  Domera
+                </h1>
+              </div>{' '}
+            </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden flex-1 justify-end lg:flex">

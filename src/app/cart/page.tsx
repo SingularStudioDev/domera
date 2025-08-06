@@ -228,12 +228,10 @@ const CartPage = () => {
                     {accordionItems.map((item, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between border-b border-gray-300 py-4"
+                        className="flex cursor-pointer items-center justify-between border-b border-gray-300 py-4 text-black transition duration-300 hover:text-blue-600"
                       >
-                        <span className="text-lg font-bold text-black">
-                          {item}
-                        </span>
-                        <ChevronDown className="h-5 w-5 text-black" />
+                        <span className="text-lg font-bold">{item}</span>
+                        <ChevronDown className="h-5 w-5" />
                       </div>
                     ))}
                   </div>
@@ -324,7 +322,7 @@ const CartPage = () => {
 
                   {/* Submit Button */}
                   <button
-                    className={`flex w-fit items-center justify-center rounded-full px-8 py-3 text-white transition-colors ${
+                    className={`flex w-fit cursor-pointer items-center justify-center rounded-full px-8 py-3 text-white transition-colors duration-300 ${
                       selectedFile
                         ? 'bg-blue-600 hover:bg-blue-700'
                         : 'cursor-not-allowed bg-gray-300'
@@ -332,7 +330,7 @@ const CartPage = () => {
                     disabled={!selectedFile}
                   >
                     Proceder a la reserva
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-4 h-4 w-4" />
                   </button>
                 </div>
               </div>
