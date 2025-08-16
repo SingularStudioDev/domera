@@ -3,12 +3,17 @@
 import { useState } from 'react';
 import { ChevronDown, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { syne } from '@/utils/Fonts';
 import Link from 'next/link';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const menuItems = [
     { name: 'Proyectos', href: '/projects' },
@@ -59,32 +64,22 @@ const Header = () => {
         <div className="flex h-[70px] w-fit items-center rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5]">
           {/* Login Button - Desktop */}
           <div className="hidden items-center lg:flex">
-            <div className="relative">
-              <button
-                onClick={() => setIsLoginOpen(!isLoginOpen)}
-                className="flex cursor-pointer items-center space-x-1 rounded-md bg-transparent px-7 text-base font-normal text-black transition-colors duration-200 hover:bg-gray-100 hover:text-blue-600"
-              >
-                <span>Login</span>
-                <ChevronDown className="h-4 w-4" />
-              </button>
-
-              {isLoginOpen && (
-                <div className="absolute right-0 z-10 mt-2 w-48 rounded-md bg-white py-2 shadow-lg">
-                  <a
-                    href="#login"
-                    className="block px-4 py-2 text-sm text-black hover:bg-gray-100"
-                  >
-                    Iniciar Sesión
-                  </a>
-                  <a
-                    href="#register"
-                    className="block px-4 py-2 text-sm text-black hover:bg-gray-100"
-                  >
-                    Registrarse
-                  </a>
-                </div>
-              )}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex cursor-pointer items-center space-x-1 rounded-md bg-transparent px-7 text-base font-normal text-black transition-colors duration-200 hover:bg-gray-100 hover:text-blue-600">
+                  <span>Login</span>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="flex  w-fit p-4 rounded-2xl border border-[#DCDCDC] mt-5 bg-[#F5F5F5] flex-col justify-start items-start">
+                <DropdownMenuItem asChild>
+                  <a href="#login">Iniciar Sesión</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/register">Registrarse</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Mobile Menu Toggle */}

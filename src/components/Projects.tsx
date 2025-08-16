@@ -9,7 +9,7 @@ const Projects = () => {
     {
       id: '1',
       title: 'Alo 26',
-      price: 'Desde: $167.000',
+      price: '$167.000',
       image: '/project-alo-26-7e5196.png',
       status: 'Pocitos',
       date: 'Jul 2028',
@@ -17,7 +17,7 @@ const Projects = () => {
     {
       id: '2',
       title: 'Winks America',
-      price: 'Desde: $228.000',
+      price: '$228.000',
       image: '/project-winks-america.png',
       status: 'Carrasco',
       date: 'Ene 2027',
@@ -25,7 +25,7 @@ const Projects = () => {
     {
       id: '3',
       title: 'Le Mont',
-      price: 'Desde: $325.000',
+      price: '$325.000',
       image: '/project-le-mont.png',
       status: 'Pocitos',
       date: 'Dic 2027',
@@ -33,7 +33,7 @@ const Projects = () => {
     {
       id: '4',
       title: 'Alto 26',
-      price: 'Desde: $167.000',
+      price: '$167.000',
       image: '/project-alto-26.png',
       status: 'Pocitos',
       date: 'Jul 2028',
@@ -41,7 +41,7 @@ const Projects = () => {
     {
       id: '5',
       title: 'Alzira',
-      price: 'Desde: $312.000',
+      price: '$312.000',
       image: '/project-alzira.png',
       status: 'Pocitos',
       date: 'Jul 2028',
@@ -49,7 +49,7 @@ const Projects = () => {
     {
       id: '6',
       title: 'Amarras',
-      price: 'Desde: $167.000',
+      price: '$167.000',
       image: '/project-amarras.png',
       status: 'Carrasco',
       date: 'Jul 2028',
@@ -57,7 +57,7 @@ const Projects = () => {
     {
       id: '7',
       title: 'Smart Point 2',
-      price: 'Desde: $145.000',
+      price: '$145.000',
       image: '/project-smart-point-2-7dfd3e.png',
       status: 'La Blanqueada',
       date: 'Mar 2027',
@@ -65,7 +65,7 @@ const Projects = () => {
   ];
 
   return (
-    <section className="bg-white py-16">
+    <section className="bg-white pb-16">
       <div className="container mx-auto">
         {/* Section Header */}
 

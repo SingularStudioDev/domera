@@ -2,7 +2,7 @@
 
 const Partners = () => {
   return (
-    <section className="py-32">
+    <section className="py-22">
       <div className="container flex flex-col gap-20 mx-auto">
         {/* Main Message */}
 

@@ -46,8 +46,16 @@ const ProjectCard = ({
 
         {/* Top Right Icons */}
         <div className="absolute top-3 right-3 flex flex-col space-y-2">
-          <img src="/Frame-1.png" alt="heart" className="h-full w-38 group-hover:hidden transition duration-300" />
-          <img src="/Frame-2.png" alt="heart" className="h-full w-38 hidden group-hover:block transition duration-300" />
+          <img
+            src="/Frame-1.png"
+            alt="heart"
+            className="h-full w-38 transition duration-300 group-hover:hidden"
+          />
+          <img
+            src="/Frame-2.png"
+            alt="heart"
+            className="hidden h-full w-38 transition duration-300 group-hover:block"
+          />
         </div>
 
         <div className="absolute right-6 bottom-3 left-3 flex w-full items-end gap-5">
