@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn, getSession } from 'next-auth/react';
+import { useAuth } from '@/hooks/useAuth';
 
 import Footer from '@/components/Footer';
 import { Separator } from '@/components/ui/separator';
@@ -10,12 +12,26 @@ import Logo from '@/assets/Domera.svg';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isAuthenticated, isLoading } = useAuth();
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const callbackUrl = searchParams.get('callbackUrl') || '/userDashboard';
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push(callbackUrl);
+    }
+  }, [isAuthenticated, router, callbackUrl]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -23,26 +39,69 @@ export default function LoginPage() {
       ...prev,
       [name]: value,
     }));
+    if (error) setError(''); // Clear error when user types
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (formData.email === 'prueba@test.com' && formData.password === 'Password.123') {
-      if (rememberMe) {
-        router.push('/dashboard');
-      } else {
-        router.push('/userDashboard');
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('Credenciales incorrectas');
+      } else if (result?.ok) {
+        // Get updated session to determine redirect
+        const session = await getSession();
+        if (session?.user) {
+          // Determine redirect based on user role and rememberMe preference
+          const userRoles = session.user.roles || [];
+          const hasAdminRole = userRoles.some(role => 
+            ['admin', 'organization_owner', 'sales_manager', 'finance_manager', 'site_manager'].includes(role.role)
+          );
+          
+          if (rememberMe && hasAdminRole) {
+            router.push('/dashboard');
+          } else if (userRoles.some(role => role.role === 'professional')) {
+            router.push('/professionals/dashboard');
+          } else {
+            router.push('/userDashboard');
+          }
+        }
       }
-    } else {
-      alert('Credenciales incorrectas');
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Error al iniciar sesión. Intenta nuevamente.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Handle Google login
-    console.log('Google login');
+  const handleGoogleLogin = async () => {
+    try {
+      await signIn('google', { callbackUrl });
+    } catch (error) {
+      console.error('Google login error:', error);
+      setError('Error al iniciar sesión con Google');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Logo width={213} height={56} className="mx-auto mb-4" />
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -92,6 +151,13 @@ export default function LoginPage() {
 
             <Separator className="my-4" />
 
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 rounded-md bg-red-50 border border-red-200 p-3">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-2 w-full">
               <div>
@@ -106,6 +172,7 @@ export default function LoginPage() {
                   className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
                   placeholder="tu@email.com"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -122,11 +189,13 @@ export default function LoginPage() {
                     className="w-full rounded-md border border-gray-300 px-4 py-3 pr-12 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
                     placeholder="Tu contraseña"
                     required
+                    disabled={isSubmitting}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    disabled={isSubmitting}
                   >
                     {showPassword ? (
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,7 +213,6 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-between">
                 <div className="flex mt-1 items-center">
-
                   <input
                     id="remember-me"
                     name="remember-me"
@@ -152,12 +220,13 @@ export default function LoginPage() {
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    disabled={isSubmitting}
                   />
                   <label
                     htmlFor="remember-me"
                     className="ml-2 block cursor-pointer select-none text-sm text-gray-700"
                   >
-                    Recordarme
+                    Recordarme (Dashboard)
                   </label>
                 </div>
 
@@ -170,9 +239,10 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="mt-2 w-full cursor-pointer rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+                disabled={isSubmitting}
+                className="mt-2 w-full cursor-pointer rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                Iniciar sesión
+                {isSubmitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
               </button>
             </form>
 
