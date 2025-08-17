@@ -1,14 +1,18 @@
 // =============================================================================
-// AUTHENTICATION HOOKS FOR DOMERA PLATFORM
+// AUTHENTICATION HOOKS
 // Custom hooks for session management and role checking
-// Created: August 2025
 // =============================================================================
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import type { UserRoleData } from '@/types/next-auth';
-import { hasRole, isAdmin, belongsToOrganization, getUserOrganizationIds } from '@/lib/auth/config';
+import {
+  hasRole,
+  isAdmin,
+  belongsToOrganization,
+  getUserOrganizationIds,
+} from '@/lib/auth/config';
 
 // =============================================================================
 // MAIN AUTH HOOK
@@ -16,7 +20,7 @@ import { hasRole, isAdmin, belongsToOrganization, getUserOrganizationIds } from 
 
 export function useAuth() {
   const { data: session, status } = useSession();
-  
+
   return {
     user: session?.user || null,
     isLoading: status === 'loading',
@@ -35,9 +39,9 @@ export function useAuth() {
  */
 export function useHasRole(role: string, organizationId?: string) {
   const { user } = useAuth();
-  
+
   if (!user?.roles) return false;
-  
+
   return hasRole(user.roles, role, organizationId);
 }
 
@@ -46,9 +50,9 @@ export function useHasRole(role: string, organizationId?: string) {
  */
 export function useIsAdmin() {
   const { user } = useAuth();
-  
+
   if (!user?.roles) return false;
-  
+
   return isAdmin(user.roles);
 }
 
@@ -57,9 +61,9 @@ export function useIsAdmin() {
  */
 export function useBelongsToOrganization(organizationId: string) {
   const { user } = useAuth();
-  
+
   if (!user?.roles) return false;
-  
+
   return belongsToOrganization(user.roles, organizationId);
 }
 
@@ -68,9 +72,9 @@ export function useBelongsToOrganization(organizationId: string) {
  */
 export function useUserOrganizations() {
   const { user } = useAuth();
-  
+
   if (!user?.roles) return [];
-  
+
   return getUserOrganizationIds(user.roles);
 }
 
@@ -79,10 +83,10 @@ export function useUserOrganizations() {
  */
 export function usePrimaryOrganization() {
   const { user } = useAuth();
-  
+
   if (!user?.roles) return null;
-  
-  const orgRole = user.roles.find(role => role.organization_id);
+
+  const orgRole = user.roles.find((role) => role.organization_id);
   return orgRole?.organizations || null;
 }
 
@@ -95,17 +99,17 @@ export function usePrimaryOrganization() {
  */
 export function useCanAccess(requiredRole: string, organizationId?: string) {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) return { canAccess: false, isLoading: true };
-  
+
   if (!user?.roles) return { canAccess: false, isLoading: false };
-  
+
   // Admin can access everything
   if (isAdmin(user.roles)) return { canAccess: true, isLoading: false };
-  
+
   // Check specific role
   const canAccess = hasRole(user.roles, requiredRole, organizationId);
-  
+
   return { canAccess, isLoading: false };
 }
 
@@ -115,13 +119,13 @@ export function useCanAccess(requiredRole: string, organizationId?: string) {
 export function useRequireAuth(redirectTo: string = '/login') {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push(redirectTo);
     }
   }, [isAuthenticated, isLoading, router, redirectTo]);
-  
+
   return { isAuthenticated, isLoading };
 }
 
@@ -135,11 +139,11 @@ export function useRequireRole(
 ) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  
+
   useEffect(() => {
     if (!isLoading && user) {
       const hasRequiredRole = hasRole(user.roles, requiredRole, organizationId);
-      
+
       if (!hasRequiredRole) {
         // Determine redirect URL based on user's role
         const redirectUrl = redirectTo || getDefaultRedirectForUser(user.roles);
@@ -147,9 +151,11 @@ export function useRequireRole(
       }
     }
   }, [user, isLoading, requiredRole, organizationId, redirectTo, router]);
-  
-  const hasRequiredRole = user ? hasRole(user.roles, requiredRole, organizationId) : false;
-  
+
+  const hasRequiredRole = user
+    ? hasRole(user.roles, requiredRole, organizationId)
+    : false;
+
   return { hasRole: hasRequiredRole, isLoading };
 }
 
@@ -167,23 +173,28 @@ export function useRequireAdmin(redirectTo?: string) {
 /**
  * Hook to require organization membership
  */
-export function useRequireOrganization(organizationId: string, redirectTo?: string) {
+export function useRequireOrganization(
+  organizationId: string,
+  redirectTo?: string
+) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  
+
   useEffect(() => {
     if (!isLoading && user) {
       const belongsToOrg = belongsToOrganization(user.roles, organizationId);
-      
+
       if (!belongsToOrg) {
         const redirectUrl = redirectTo || getDefaultRedirectForUser(user.roles);
         router.push(redirectUrl);
       }
     }
   }, [user, isLoading, organizationId, redirectTo, router]);
-  
-  const belongsToOrg = user ? belongsToOrganization(user.roles, organizationId) : false;
-  
+
+  const belongsToOrg = user
+    ? belongsToOrganization(user.roles, organizationId)
+    : false;
+
   return { belongsToOrganization: belongsToOrg, isLoading };
 }
 
@@ -192,10 +203,12 @@ export function useRequireOrganization(organizationId: string, redirectTo?: stri
  */
 export function useOrganizationRole(organizationId: string) {
   const { user } = useAuth();
-  
+
   if (!user?.roles) return null;
-  
-  const orgRole = user.roles.find(role => role.organization_id === organizationId);
+
+  const orgRole = user.roles.find(
+    (role) => role.organization_id === organizationId
+  );
   return orgRole?.role || null;
 }
 
@@ -208,26 +221,26 @@ export function useOrganizationRole(organizationId: string) {
  */
 export function useUserRole() {
   const { user } = useAuth();
-  
+
   if (!user?.roles || user.roles.length === 0) return 'user';
-  
+
   const rolePriority = {
-    'admin': 1,
-    'organization_owner': 2,
-    'sales_manager': 3,
-    'finance_manager': 4,
-    'site_manager': 5,
-    'professional': 6,
-    'user': 7,
+    admin: 1,
+    organization_owner: 2,
+    sales_manager: 3,
+    finance_manager: 4,
+    site_manager: 5,
+    professional: 6,
+    user: 7,
   };
-  
+
   const highestRole = user.roles.reduce((highest, current) => {
     const currentPriority = rolePriority[current.role] || 999;
     const highestPriority = rolePriority[highest] || 999;
-    
+
     return currentPriority < highestPriority ? current.role : highest;
   }, 'user' as string);
-  
+
   return highestRole;
 }
 
@@ -246,16 +259,21 @@ export function useHasActiveOperation() {
 
 function getDefaultRedirectForUser(roles: UserRoleData[]): string {
   if (isAdmin(roles)) return '/dashboard';
-  
-  const hasOrgRole = roles.some(role => 
-    ['organization_owner', 'sales_manager', 'finance_manager', 'site_manager'].includes(role.role)
+
+  const hasOrgRole = roles.some((role) =>
+    [
+      'organization_owner',
+      'sales_manager',
+      'finance_manager',
+      'site_manager',
+    ].includes(role.role)
   );
-  
+
   if (hasOrgRole) return '/dashboard';
-  
-  if (roles.some(role => role.role === 'professional')) {
+
+  if (roles.some((role) => role.role === 'professional')) {
     return '/professionals/dashboard';
   }
-  
+
   return '/userDashboard';
 }

@@ -1,7 +1,6 @@
 // =============================================================================
 // NEXTAUTH API ROUTE HANDLER
 // Handles all NextAuth.js authentication routes
-// Created: August 2025
 // =============================================================================
 
 import NextAuth from 'next-auth';

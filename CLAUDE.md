@@ -43,11 +43,13 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 ### Component Structure
 
 **Layout Components:**
+
 - `Header.tsx` - Navigation with responsive menu
 - `Footer.tsx` - Contact information and links
 - `Hero.tsx` - Main hero section with statistics
 
 **Feature Components:**
+
 - `ProjectCard.tsx` - Reusable project card with hover effects and custom SVG styling
 - `Projects.tsx` - Project grid container
 - `Partners.tsx` - Partner logos section
@@ -56,6 +58,7 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 ### Business Model y Restricciones Importantes
 
 #### Restricciones de Negocio:
+
 - **NO pagos internos**: Solo gestión de comprobantes como documentos
 - **NO registro público**: Solo admins crean usuarios, owners agregan roles
 - **Una operación activa por usuario**: Sistema de bloqueo estricto
@@ -64,6 +67,7 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 - **NO chat en vivo ni SMS**: Solo notificaciones email
 
 #### Usuarios y Roles (RBAC):
+
 - **Admin Domera**: Gestión completa, onboarding, compliance
 - **Organization Owner**: Gestión de desarrolladora
 - **Sales Manager**: Gestión de ventas
@@ -73,6 +77,7 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 - **User**: Comprador/Inversor
 
 #### Flujo de Operaciones:
+
 1. Usuario selecciona unidad(es) + propiedades adicionales (cocheras, bodegas)
 2. Se genera una operación única (bloquea al usuario para otras)
 3. Se asigna profesional y se generan documentos desde templates
@@ -83,13 +88,15 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 ### Data Access Layer y Validaciones
 
 #### Sistema de Validaciones en 3 Capas:
+
 ```typescript
 // 1. Middleware de rutas protegidas
-// 2. Validaciones en Server Actions/API Routes  
+// 2. Validaciones en Server Actions/API Routes
 // 3. Validaciones finales en Data Access Layer
 ```
 
 #### Principios de Datos:
+
 - **Auditoría completa**: Cada acción queda registrada en audit_logs
 - **Sin eliminaciones**: Sistema de correcciones con historial
 - **Una operación por usuario**: Control estricto de estado
@@ -107,11 +114,12 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 ### Esquema de Base de Datos
 
 #### Tablas Principales:
+
 ```sql
 -- Usuarios y organizaciones
 users, organizations, user_roles
 
--- Proyectos y propiedades  
+-- Proyectos y propiedades
 projects, units, unit_types, amenities
 
 -- Operaciones y documentos
@@ -125,6 +133,7 @@ notifications, audit_logs, data_corrections
 ```
 
 #### Tipos de Propiedades:
+
 - Apartamentos, locales comerciales, cocheras, bodegas
 - Sistema de agrupación para operaciones (unidad + cochera = 1 operación)
 - Estados: disponible, reservado, vendido, en_proceso
@@ -159,14 +168,16 @@ notifications, audit_logs, data_corrections
 ### 🔥 COMPLETADO - FASE 1: Infraestructura Base
 
 #### ✅ 1. Configuración de Supabase
+
 - **Archivos creados:**
   - `src/lib/supabase/client.ts` - Cliente browser
-  - `src/lib/supabase/server.ts` - Cliente servidor  
+  - `src/lib/supabase/server.ts` - Cliente servidor
   - `src/lib/supabase/middleware.ts` - Manejo de sesiones
   - `.env.local.example` - Variables de entorno
 - **Estado**: ✅ **COMPLETADO**
 
 #### ✅ 2. Esquema de Base de Datos
+
 - **Archivos creados:**
   - `supabase/schema.sql` - Esquema completo (35 tablas + triggers + indexes)
   - `supabase/rls-policies.sql` - Políticas de seguridad RLS por rol
@@ -179,12 +190,14 @@ notifications, audit_logs, data_corrections
 - **Estado**: ✅ **COMPLETADO**
 
 #### ✅ 3. Tipos TypeScript
+
 - **Archivos creados:**
   - `src/types/database.ts` - Tipos completos para todas las entidades
   - `src/types/next-auth.d.ts` - Extensiones para NextAuth
 - **Estado**: ✅ **COMPLETADO**
 
 #### ✅ 4. Validaciones Zod
+
 - **Archivos creados:**
   - `src/lib/validations/schemas.ts` - Esquemas Zod para todas las entidades
 - **Características:**
@@ -194,6 +207,7 @@ notifications, audit_logs, data_corrections
 - **Estado**: ✅ **COMPLETADO**
 
 #### ✅ 5. Data Access Layer (DAL)
+
 - **Archivos creados:**
   - `src/lib/dal/base.ts` - Funciones base y utilities
   - `src/lib/dal/operations.ts` - CRUD de operaciones con validaciones
@@ -209,6 +223,7 @@ notifications, audit_logs, data_corrections
 ### 🔥 COMPLETADO - FASE 2: Autenticación y Autorización
 
 #### ✅ 6. NextAuth.js + Supabase
+
 - **Archivos creados:**
   - `src/lib/auth/config.ts` - Configuración NextAuth completa
   - `src/app/api/auth/[...nextauth]/route.ts` - API routes
@@ -221,6 +236,7 @@ notifications, audit_logs, data_corrections
 - **Estado**: ✅ **COMPLETADO**
 
 #### ✅ 7. Hooks de Autenticación
+
 - **Archivos creados:**
   - `src/hooks/useAuth.ts` - Hooks personalizados completos
   - `src/components/providers/SessionProvider.tsx` - Provider de sesión
@@ -234,6 +250,7 @@ notifications, audit_logs, data_corrections
 - **Estado**: ✅ **COMPLETADO**
 
 #### ✅ 8. Página de Login Actualizada
+
 - **Archivos modificados:**
   - `src/app/login/page.tsx` - Integrada con NextAuth
   - `src/app/layout.tsx` - SessionProvider incluido
@@ -245,21 +262,19 @@ notifications, audit_logs, data_corrections
 - **Estado**: ✅ **COMPLETADO**
 
 #### ✅ 9. Corrección de Variables de Entorno
+
 - **Archivos corregidos:**
   - `.env` → `.env.local` - Renombrado para Next.js
   - `NEXTAUTH_SECRET` - Configurado con valor válido
-  - `NEXTAUTH_URL` - Actualizado a puerto 3002
-- **Problemas resueltos:**
-  - ❌ `supabaseKey is required` → ✅ Variables configuradas
-  - ❌ Service role key en cliente → ✅ Uso correcto de claves
-  - ❌ NextAuth secret vacío → ✅ Secret configurado
+  - `NEXTAUTH_URL` - Actualizado a puerto 3000
 - **Estado**: ✅ **COMPLETADO**
 
 ### ✅ COMPLETADO - FASE 3: Setup Base de Datos
 
 #### ✅ 10. Integración Prisma y Migración
+
 - **Archivos creados:**
-  - `prisma/schema.prisma` - Esquema Prisma completo con 35+ modelos
+  - `prisma/schema.prisma` - Esquema Prisma completo con modelos
   - `prisma/migrations/20250817195254_init/` - Migración inicial aplicada
   - `scripts/seed-database.js` - Script de siembra con datos completos
   - `scripts/test-db-connection.js` - Validación de conexión
@@ -267,16 +282,17 @@ notifications, audit_logs, data_corrections
   - 🗃️ **Prisma ORM**: Configurado y conectado a Supabase
   - 📦 **Migración exitosa**: Esquema aplicado con directUrl
   - 🌱 **Datos de prueba**: Base de datos poblada con:
-    - Organización: Domera Development  
+    - Organización: Domera Development
     - Usuario admin: prueba@test.com (Password: Password.123)
     - 2 proyectos: Torres del Río + Urban Living Cordón
     - 5 unidades con diferentes tipos y estados
     - 1 profesional verificado (escribania)
-  - ✅ **Prisma Client**: Generado y validado
-  - 🔒 **RoleType enum**: Corregido para evitar conflictos
+  - ✅ **Prisma Client**: Listo
+  - 🔒 **RoleType enum**: Listo
 - **Estado**: ✅ **COMPLETADO**
 
 #### ✅ 11. Sistema de Autenticación con Contraseñas Seguras
+
 - **Archivos creados/modificados:**
   - `src/lib/auth/password.ts` - Utilidades de hashing con bcryptjs
   - `src/lib/validations/schemas.ts` - Validaciones de contraseñas y login
@@ -291,7 +307,7 @@ notifications, audit_logs, data_corrections
   - 🧪 **Testing**: Script de pruebas automáticas del sistema
 - **Usuarios de prueba (Password: Password.123):**
   - `admin@domera.uy` - Super Admin
-  - `owner@domera.uy` - Organization Owner  
+  - `owner@domera.uy` - Organization Owner
   - `prueba@test.com` - Admin (usuario original)
   - `user@domera.uy` - Cliente Regular
 - **Estado**: ✅ **COMPLETADO - SIN SHORTCUTS DE DESARROLLO**
@@ -299,6 +315,7 @@ notifications, audit_logs, data_corrections
 ### ⏳ PENDIENTE - FASE 4: Sistema de Operaciones
 
 #### 🔄 Próximo: Server Actions y API Routes
+
 - **Pendiente**: Migrar datos hardcodeados a Server Actions
 - **Pendiente**: Crear API routes para operaciones
 - **Pendiente**: Implementar hooks para operaciones activas
@@ -306,9 +323,13 @@ notifications, audit_logs, data_corrections
 ### ⏳ PENDIENTE - FASES 4-9
 
 #### Pendiente: Sistema de Documentos
+
 #### Pendiente: Real-time con Supabase
+
 #### Pendiente: Migración completa de datos
+
 #### Pendiente: Dashboard funcional
+
 #### Pendiente: Gestión de profesionales
 
 ---
@@ -327,7 +348,7 @@ Roles: user (usuario regular)
 src/
 ├── lib/
 │   ├── supabase/          ✅ Cliente y configuración
-│   ├── auth/              ✅ NextAuth configuración  
+│   ├── auth/              ✅ NextAuth configuración
 │   ├── dal/               ✅ Data Access Layer
 │   └── validations/       ✅ Esquemas Zod
 ├── types/
@@ -343,7 +364,7 @@ src/
 
 supabase/
 ├── schema.sql             ✅ Esquema completo
-├── rls-policies.sql       ✅ Políticas de seguridad  
+├── rls-policies.sql       ✅ Políticas de seguridad
 └── seed-data.sql          ✅ Datos de prueba
 
 middleware.ts              ✅ Protección de rutas
@@ -353,9 +374,9 @@ middleware.ts              ✅ Protección de rutas
 ## ⚡ COMANDOS PARA CONTINUAR
 
 1. **Setup de Supabase**: Crear proyecto y aplicar esquemas
-2. **Variables de entorno**: Configurar `.env.local`
+2. **Variables de entorno**: Configurar `.env`
 3. **Testing**: Verificar login con credenciales de prueba
 4. **Desarrollo**: Continuar con Server Actions
-- ok for now on, we need to ensure we use prisma and not bypass it with direct supabase connections in order to have accurate process.
+
+- Ensure we use prisma and not bypass it with direct supabase connections in order to have accurate process.
 - remember our dev server runs on port 3000
-- important, we do not create new ui or touch any styles from the app, there are designers and front end devs for that. if needed we just put a plain html with minimal needed content with a clear TODO comment in order to leave them to the assigned people to do it then.
