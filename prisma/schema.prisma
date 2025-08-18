@@ -58,6 +58,7 @@ enum UnitStatus {
   in_process
 }
 
+// TODO: see other operations according to the type of operations
 enum OperationStatus {
   initiated
   documents_pending
