@@ -192,9 +192,24 @@ model User {
   operationCancellations      Operation[]              @relation("OperationCanceller")
   correctedBy                 User?                    @relation("UserCorrections", fields: [correctionOf], references: [id])
   corrections                 User[]                   @relation("UserCorrections")
+  favorites                   UserFavorite[]
 
   @@map("users")
 }
+
+model UserFavorite {
+    id        String   @id @default(uuid()) @db.Uuid
+    userId    String   @map("user_id") @db.Uuid
+    unitId    String   @map("unit_id") @db.Uuid
+    addedAt   DateTime @default(now()) @map("added_at") @db.Timestamptz
+
+    // Relations
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, unitId]) // Prevent duplicate favorites
+    @@map("user_favorites")
+  }
 
 model UserRole {
   id             String        @id @default(uuid()) @db.Uuid
@@ -254,6 +269,16 @@ model Project {
   isCorrected         Boolean       @default(false) @map("is_corrected")
   correctionOf        String?       @map("correction_of") @db.Uuid
 
+  // Feature fields 
+  hasParking        Boolean @default(false) @map("has_parking")
+  hasStudio         Boolean @default(false) @map("has_studio")
+  has1Bedroom       Boolean @default(false) @map("has_1_bedroom")
+  has2Bedroom       Boolean @default(false) @map("has_2_bedroom")
+  has3Bedroom       Boolean @default(false) @map("has_3_bedroom")
+  has4Bedroom       Boolean @default(false) @map("has_4_bedroom")
+  has5Bedroom       Boolean @default(false) @map("has_5_bedroom")
+  hasCommercial     Boolean @default(false) @map("has_commercial")
+
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   creator      User?        @relation(fields: [createdBy], references: [id])
@@ -297,6 +322,7 @@ model Unit {
   operationUnits OperationUnit[]
   correctedBy    Unit?           @relation("UnitCorrections", fields: [correctionOf], references: [id])
   corrections    Unit[]          @relation("UnitCorrections")
+  favoritedBy    UserFavorite[]
 
   @@unique([projectId, unitNumber])
   @@map("units")
