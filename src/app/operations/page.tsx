@@ -62,7 +62,7 @@ export default function OperationsPage() {
       } else {
         setActionError(result.error || 'Error al crear operación');
       }
-    } catch (error) {
+    } catch {
       setActionError('Error interno del servidor');
     } finally {
       setIsCreating(false);
@@ -86,7 +86,7 @@ export default function OperationsPage() {
       } else {
         setActionError(result.error || 'Error al cancelar operación');
       }
-    } catch (error) {
+    } catch {
       setActionError('Error interno del servidor');
     } finally {
       setIsCancelling(false);
@@ -193,7 +193,21 @@ export default function OperationsPage() {
               ))}
             </ol>
 
-            <div style={{ marginTop: '20px' }}>
+            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+              <a
+                href="/operations/documents"
+                style={{
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  textDecoration: 'none',
+                  display: 'inline-block',
+                }}
+              >
+                📄 Gestionar Documentos
+              </a>
               <button
                 onClick={handleCancelOperation}
                 disabled={isCancelling}
