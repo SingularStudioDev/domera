@@ -4,6 +4,7 @@ import {
   CircleDollarSignIcon,
   BellIcon,
   UserIcon,
+  MessagesSquareIcon,
 } from 'lucide-react';
 
 export const menuItems = [
@@ -14,13 +15,18 @@ export const menuItems = [
   },
   {
     title: 'Ventas',
-    url: '/dashboard/investments',
+    url: '/dashboard/sales',
     icon: ShoppingCartIcon,
   },
   {
     title: 'Clientes',
-    url: '/dashboard/projects',
+    url: '/dashboard/clients',
     icon: CircleDollarSignIcon,
+  },
+  {
+    title: 'Chat',
+    url: '/dashboard/chat',
+    icon: MessagesSquareIcon,
   },
   {
     title: 'Notificaciones',

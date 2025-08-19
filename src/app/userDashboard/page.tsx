@@ -1,94 +1,370 @@
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
+import { BuildingIcon, MapPinIcon, BedIcon, FileTextIcon, ChevronDownIcon, ChevronRightIcon, CalendarIcon, CreditCardIcon, CheckCircleIcon, ClockIcon, AlertCircleIcon, XCircleIcon } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Pagination } from '@/components/ui/pagination';
 import Footer from '@/components/Footer';
-import Logo from '@/assets/Domera.svg';
+import Header from '@/components/Header';
+import Link from 'next/link';
+
+// Mock data for user properties
+const mockUserProperties = [
+  {
+    id: 1,
+    projectName: "Torres del Río",
+    unit: "2B - Piso 8",
+    unitType: "2 dormitorios",
+    location: "Pocitos, Montevideo",
+    purchaseDate: "2024-03-15",
+    price: 145000,
+    status: "En proceso",
+    additionalProperties: [
+      { type: "Cochera", identifier: "G-12", price: 15000 },
+    ],
+    documents: [
+      { name: "Contrato de Reserva", status: "Completado", dueDate: "2024-03-15", uploadDate: "2024-03-15" },
+      { name: "Boleto de Compraventa", status: "Pendiente", dueDate: "2024-04-15", uploadDate: null },
+      { name: "Escritura", status: "No iniciado", dueDate: "2024-06-15", uploadDate: null },
+      { name: "Comprobante de Pago Seña", status: "Completado", dueDate: "2024-03-15", uploadDate: "2024-03-15" },
+    ]
+  },
+  {
+    id: 2,
+    projectName: "Urban Living Cordón",
+    unit: "1A - Piso 3",
+    unitType: "1 dormitorio",
+    location: "Cordón, Montevideo",
+    purchaseDate: "2024-02-20",
+    price: 95000,
+    status: "Confirmado",
+    additionalProperties: [],
+    documents: [
+      { name: "Contrato de Reserva", status: "Completado", dueDate: "2024-02-20", uploadDate: "2024-02-20" },
+      { name: "Boleto de Compraventa", status: "Completado", dueDate: "2024-03-20", uploadDate: "2024-03-18" },
+      { name: "Escritura", status: "Completado", dueDate: "2024-05-20", uploadDate: "2024-05-15" },
+      { name: "Comprobante de Pago Final", status: "Completado", dueDate: "2024-05-20", uploadDate: "2024-05-15" },
+    ]
+  },
+  {
+    id: 3,
+    projectName: "Residencial Pocitos",
+    unit: "3C - Piso 12",
+    unitType: "3 dormitorios",
+    location: "Pocitos, Montevideo",
+    purchaseDate: "2024-01-10",
+    price: 185000,
+    status: "Confirmado",
+    additionalProperties: [
+      { type: "Cochera", identifier: "G-8", price: 15000 },
+      { type: "Bodega", identifier: "B-15", price: 8000 },
+    ],
+    documents: [
+      { name: "Contrato de Reserva", status: "Completado", dueDate: "2024-01-10", uploadDate: "2024-01-10" },
+      { name: "Boleto de Compraventa", status: "Completado", dueDate: "2024-02-10", uploadDate: "2024-02-08" },
+      { name: "Escritura", status: "Completado", dueDate: "2024-04-10", uploadDate: "2024-04-05" },
+      { name: "Comprobante de Pago Final", status: "Completado", dueDate: "2024-04-10", uploadDate: "2024-04-05" },
+    ]
+  }
+];
 
 export default function UserDashboard() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const pageSize = 10;
+  
+  // For mockup, we'll use static data
+  const properties = mockUserProperties;
+  const totalPages = Math.ceil(properties.length / pageSize);
+  const total = properties.length;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const toggleRowExpansion = (propertyId: number) => {
+    const newExpandedRows = new Set(expandedRows);
+    if (expandedRows.has(propertyId)) {
+      newExpandedRows.delete(propertyId);
+    } else {
+      newExpandedRows.add(propertyId);
+    }
+    setExpandedRows(newExpandedRows);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Confirmado':
+        return 'text-green-600 bg-green-50';
+      case 'En proceso':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'Pendiente':
+        return 'text-orange-600 bg-orange-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
+    }
+  };
+
+  const getDocumentStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Completado':
+        return <CheckCircleIcon className="h-4 w-4 text-green-600" />;
+      case 'Pendiente':
+        return <ClockIcon className="h-4 w-4 text-yellow-600" />;
+      case 'Vencido':
+        return <AlertCircleIcon className="h-4 w-4 text-red-600" />;
+      case 'No iniciado':
+        return <XCircleIcon className="h-4 w-4 text-gray-400" />;
+      default:
+        return <FileTextIcon className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
+  const getDocumentStatusColor = (status: string) => {
+    switch (status) {
+      case 'Completado':
+        return 'text-green-700 bg-green-50 border-green-200';
+      case 'Pendiente':
+        return 'text-yellow-700 bg-yellow-50 border-yellow-200';
+      case 'Vencido':
+        return 'text-red-700 bg-red-50 border-red-200';
+      case 'No iniciado':
+        return 'text-gray-700 bg-gray-50 border-gray-200';
+      default:
+        return 'text-gray-700 bg-gray-50 border-gray-200';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="absolute top-10 left-10">
-        <Link href="/">
-          <Logo width={213} height={56} />
-        </Link>
-      </div>
-
-      <div className="container mx-auto px-6 pt-32">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">
-              Dashboard de Usuario
-            </h1>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-blue-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                  Mis Propiedades
-                </h3>
-                <p className="text-blue-700">
-                  Ver y gestionar mis inversiones inmobiliarias
-                </p>
-              </div>
-
-              <div className="bg-green-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-green-900 mb-2">
-                  Documentos
-                </h3>
-                <p className="text-green-700">
-                  Acceder a contratos y documentación legal
-                </p>
-              </div>
-
-              <div className="bg-purple-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-purple-900 mb-2">
-                  Pagos
-                </h3>
-                <p className="text-purple-700">
-                  Historial de pagos y próximos vencimientos
-                </p>
-              </div>
-
-              <div className="bg-orange-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-orange-900 mb-2">
-                  Perfil
-                </h3>
-                <p className="text-orange-700">
-                  Actualizar información personal
-                </p>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Soporte
-                </h3>
-                <p className="text-gray-700">
-                  Contactar al equipo de atención al cliente
-                </p>
-              </div>
-
-              <div className="bg-red-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-red-900 mb-2">
-                  Configuración
-                </h3>
-                <p className="text-red-700">
-                  Ajustar preferencias de la cuenta
-                </p>
-              </div>
+    <>
+      <style jsx>{`
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+      <Header />
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto py-32">
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold text-gray-900">Compras</h1>
             </div>
 
-            <div className="mt-8 flex justify-end">
-              <Link
-                href="/"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Volver al inicio
-              </Link>
-            </div>
+            {/* Properties Table */}
+            <Card className="w-full">
+              <CardContent className="p-6">
+                <div className="overflow-x-auto rounded-xl">
+                  <div className="w-full overflow-hidden rounded-xl">
+                    <div className="bg-[#E8EEFF] grid grid-cols-6 rounded-xl">
+                      <div className="px-4 py-3 w-full text-left font-medium first:rounded-tl-xl">
+                        Propiedad
+                      </div>
+                      <div className="px-4 py-3 text-center font-medium">
+                        Tipo
+                      </div>
+                      <div className="px-4 py-3 text-center font-medium">
+                        Ubicación
+                      </div>
+                      <div className="px-4 py-3 text-center font-medium">
+                        Fecha Compra
+                      </div>
+                      <div className="px-4 py-3 text-center font-medium">
+                        Precio
+                      </div>
+                      <div className="px-4 py-3 text-center font-medium last:rounded-tr-xl">
+                        Estado
+                      </div>
+                    </div>
+                    <div className='space-y-2'>
+                      {properties.map((property) => (
+                        <div key={property.id} className="space-y-0">
+                          {/* Main Property Row */}
+                          <div 
+                            className={`border border-t border-transparent rounded-lg hover:border-[#0004FF] hover:bg-blue-50 transition-colors grid grid-cols-6 cursor-pointer`}
+                            onClick={() => toggleRowExpansion(property.id)}
+                          >
+                            {/* Property Info */}
+                            <div className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                {expandedRows.has(property.id) ? (
+                                  <ChevronDownIcon className="h-5 w-5 text-[#C6C6C6]" />
+                                ) : (
+                                  <ChevronRightIcon className="h-5 w-5 text-[#C6C6C6]" />
+                                )}
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <BuildingIcon className="h-4 w-4 text-gray-400" />
+                                    <span className="font-medium text-gray-900">
+                                      {property.projectName}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-500">{property.unit}</p>
+                                  {property.additionalProperties.length > 0 && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      {property.additionalProperties.map((addon, index) => (
+                                        <span key={index} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                          {addon.type} {addon.identifier}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Unit Type */}
+                            <div className="px-4 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <BedIcon className="h-4 w-4 text-gray-400" />
+                                <span className="text-gray-700">{property.unitType}</span>
+                              </div>
+                            </div>
+
+                            {/* Location */}
+                            <div className="px-4 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <MapPinIcon className="h-4 w-4 text-gray-400" />
+                                <span className="text-gray-700">{property.location}</span>
+                              </div>
+                            </div>
+
+                            {/* Purchase Date */}
+                            <div className="px-4 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <CalendarIcon className="h-4 w-4 text-gray-400" />
+                                <span className="text-gray-700">{property.purchaseDate}</span>
+                              </div>
+                            </div>
+
+                            {/* Price */}
+                            <div className="px-4 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <CreditCardIcon className="h-4 w-4 text-gray-400" />
+                                <span className="font-semibold text-gray-900">
+                                  USD ${property.price.toLocaleString()}
+                                </span>
+                              </div>
+                              {property.additionalProperties.length > 0 && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  + USD ${property.additionalProperties.reduce((sum, addon) => sum + addon.price, 0).toLocaleString()}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Status */}
+                            <div className="px-4 py-3 text-center">
+                              <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${getStatusColor(property.status)}`}>
+                                {property.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Expanded Document Status Table */}
+                          <div 
+                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                              expandedRows.has(property.id) 
+                                ? 'max-h-96 opacity-100' 
+                                : 'max-h-0 opacity-0'
+                            }`}
+                          >
+                            <div className="bg-gray-50 border-l border-r border-b border-gray-200 rounded-b-lg">
+                              <div className="p-4">
+                                <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+                                  <FileTextIcon className="h-4 w-4" />
+                                  Estado de Documentos
+                                </h4>
+                                
+                                {/* Document Table */}
+                                <div className="bg-white rounded-lg border overflow-hidden">
+                                  <table className="w-full">
+                                    <thead>
+                                      <tr className="bg-[#E8EEFF] border-b">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                          Documento
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                          Estado
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                          Vencimiento
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                          Fecha Subida
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                      {property.documents.map((doc, index) => (
+                                        <tr 
+                                          key={index} 
+                                          className="hover:bg-gray-50 transition-colors duration-150"
+                                          style={{
+                                            animation: expandedRows.has(property.id) 
+                                              ? `slideInUp 0.3s ease-out ${index * 0.1}s both` 
+                                              : 'none'
+                                          }}
+                                        >
+                                          <td className="px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                              {getDocumentStatusIcon(doc.status)}
+                                              <span className="font-medium text-gray-900">
+                                                {doc.name}
+                                              </span>
+                                            </div>
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium border ${getDocumentStatusColor(doc.status)}`}>
+                                              {doc.status}
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-gray-600">
+                                            {doc.dueDate}
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-gray-600">
+                                            {doc.uploadDate || '-'}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-6 flex items-center justify-between">
+                    <div className="text-sm text-gray-500">
+                      Mostrando {(currentPage - 1) * pageSize + 1} a{' '}
+                      {Math.min(currentPage * pageSize, total)} de {total} propiedades
+                    </div>
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-
       <Footer />
-    </div>
+    </>
   );
 }

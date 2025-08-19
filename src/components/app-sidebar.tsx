@@ -15,13 +15,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Logo from '@/assets/Domera.svg';
 import { menuItems } from '@/utils/MenuItems';
-import { LogOutIcon } from 'lucide-react';
+import { DoorOpenIcon } from 'lucide-react';
 
 export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar className="border-none bg-red-500">
+    <Sidebar className="border-none">
       <SidebarHeader className="rounded-tr-2xl border-r border-r-[#DCDCDC] bg-white">
         <Link href="/" className="flex items-center justify-center gap-2 pt-5">
           <Logo width={213} height={56} />
@@ -36,13 +36,13 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.url}
-                    className="py-5 text-base data-[active=true]:bg-[#0040FF] data-[active=true]:font-semibold data-[active=true]:text-white"
+                    className="py-5 text-base data-[active=true]:bg-[#0040FF] hover:text-[#0004FF] hover:bg-blue-50 data-[active=true]:font-semibold data-[active=true]:text-white"
                   >
                     <Link
                       href={item.url}
                       className="flex items-center gap-3 px-4 py-4"
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4"/>
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -52,16 +52,16 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="rounded-br-2xl border-r border-r-[#DCDCDC] bg-white">
+      <SidebarFooter className="rounded-br-2xl px-5 pb-5 border-r border-r-[#DCDCDC] bg-white">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+              className="text-black text-base hover:bg-blue-50 hover:text-[#0004FF]"
             >
               <Link href="/" className="flex items-center gap-3 px-4 py-2">
-                <LogOutIcon className="h-4 w-4" />
-                <span>Cerrar Sesión</span>
+                <DoorOpenIcon className="h-4 w-4" />
+                <span>Salir</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
