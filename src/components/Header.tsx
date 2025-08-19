@@ -10,6 +10,7 @@ import {
   MessagesSquareIcon,
   DoorOpenIcon,
   BellIcon,
+  LayoutDashboardIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,13 +21,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { syne } from '@/utils/Fonts';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, useIsAdmin } from '@/hooks/useAuth';
 import { signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated, isLoading } = useAuth();
+  const isAdmin = useIsAdmin()
   const pathname = usePathname();
 
   const userMenuItems = [
@@ -36,6 +38,12 @@ const Header = () => {
     { title: 'Chat', href: '/userDashboard/chat', icon: MessagesSquareIcon },
     { title: 'Notificaciones', href: '/dashboard', icon: BellIcon },
   ];
+
+  const adminMenuItems = [
+    { title: 'Perfil', href: '/dashboard/profile', icon: User },
+    { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboardIcon },
+    { title: 'Chat', href: '/dashboard/chat', icon: MessagesSquareIcon },
+  ]
 
   const menuItems = [
     { name: 'Proyectos', href: '/projects' },
@@ -111,7 +119,7 @@ const Header = () => {
                   align="end"
                   className="mt-7 w-fit rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5] p-2"
                 >
-                  {userMenuItems.map((item) => {
+                  {(isAdmin ? adminMenuItems : userMenuItems).map((item) => {
                     const isActive = item.href === pathname;
 
                     return (

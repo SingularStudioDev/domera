@@ -20,6 +20,18 @@ import { DoorOpenIcon } from 'lucide-react';
 export function AppSidebar() {
   const pathname = usePathname();
 
+  const isMenuItemActive = (itemUrl: string) => {
+    const pathSegments = pathname.split('/').filter(Boolean);
+    // const itemSegments = itemUrl.split('/').filter(Boolean);
+
+    if (pathSegments.length === 3) {
+      const pathWithoutId = `/${pathSegments.slice(0, 2).join('/')}`;
+      return pathWithoutId === itemUrl;
+    }
+
+    return pathname === itemUrl;
+  };
+
   return (
     <Sidebar className="border-none">
       <SidebarHeader className="rounded-tr-2xl border-r border-r-[#DCDCDC] bg-white">
@@ -31,33 +43,36 @@ export function AppSidebar() {
         <SidebarGroup className="px-5">
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.url}
-                    className="py-5 text-base data-[active=true]:bg-[#0040FF] hover:text-[#0004FF] hover:bg-blue-50 data-[active=true]:font-semibold data-[active=true]:text-white"
-                  >
-                    <Link
-                      href={item.url}
-                      className="flex items-center gap-3 px-4 py-4"
+              {menuItems.map((item) => {
+                const isActive = isMenuItemActive(item.url);
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={`py-5 text-base transition-colors duration-300 ${isActive ? 'bg-primaryColor hover:bg-primaryColor-hover font-semibold text-white hover:text-white' : 'bg-transparent hover:bg-blue-50 hover:text-[#0004FF]'}`}
                     >
-                      <item.icon className="h-4 w-4"/>
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 px-4 py-4"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="rounded-br-2xl px-5 pb-5 border-r border-r-[#DCDCDC] bg-white">
+      <SidebarFooter className="rounded-br-2xl border-r border-r-[#DCDCDC] bg-white px-5 pb-5">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="text-black text-base hover:bg-blue-50 hover:text-[#0004FF]"
+              className="text-base text-black hover:bg-blue-50 hover:text-[#0004FF]"
             >
               <Link href="/" className="flex items-center gap-3 px-4 py-2">
                 <DoorOpenIcon className="h-4 w-4" />

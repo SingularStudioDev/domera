@@ -1,8 +1,63 @@
+'use client';
+
 import { ChartLineMultiple } from '@/components/ChartLineMultiple';
 import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
-import { ArrowRightIcon, BuildingIcon } from 'lucide-react';
+import { ArrowRightIcon, BuildingIcon, AlertTriangle } from 'lucide-react';
+import { useAuth, useIsAdmin } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Dashboard() {
+  const { isLoading, isAuthenticated } = useAuth();
+  const isAdmin = useIsAdmin();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+        return;
+      }
+      
+      if (!isAdmin) {
+        // Show access denied message and redirect to home after 3 seconds
+        setTimeout(() => {
+          router.push('/');
+        }, 3000);
+      }
+    }
+  }, [isLoading, isAuthenticated, isAdmin, router]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied message for non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center max-w-md mx-auto p-8">
+          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para acceder a esta sección. Solo los administradores pueden ver el dashboard.
+          </p>
+          <p className="text-sm text-gray-500">
+            Serás redirigido al inicio en unos segundos...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

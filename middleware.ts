@@ -19,7 +19,7 @@ export default withAuth(
 
     // Define protected routes and their required roles
     const protectedRoutes = {
-      '/dashboard': ['admin', 'organization_owner', 'sales_manager', 'finance_manager', 'site_manager'],
+      '/dashboard': ['admin'],
       '/admin': ['admin'],
       '/organizations': ['admin', 'organization_owner'],
       '/projects/new': ['admin', 'organization_owner', 'sales_manager'],
