@@ -32,11 +32,11 @@ const ProjectCard = ({
       className="relative block overflow-hidden rounded-3xl bg-white shadow-md transition-shadow duration-300 hover:shadow-xl"
     >
       {/* Image */}
-      <div className="group relative h-[547px] overflow-hidden">
+      <div className="group relative h-[567px] overflow-hidden md:h-[547px]">
         <img src={image} alt={title} className="h-full w-full object-cover" />
 
         {/* Status Badge */}
-        <div className="absolute top-3 left-3 flex gap-2 text-black transition duration-300 group-hover:text-blue-600">
+        <div className="group-hover:text-primaryColor absolute top-3 left-3 flex gap-2 text-black transition duration-300">
           <span className="rounded-2xl bg-white px-6 py-2 text-lg">
             {status}
           </span>
@@ -61,7 +61,7 @@ const ProjectCard = ({
         <div className="absolute right-6 bottom-3 left-3 flex w-full items-end gap-5">
           <div className="relative flex w-[calc(100%-100px)] max-w-[400px] flex-col">
             {/* Bloque superior con curva hacia la derecha */}
-            <span className="relative w-fit rounded-t-2xl bg-white px-3 py-2 text-3xl font-medium text-black transition duration-300 group-hover:text-blue-600">
+            <span className="group-hover:text-primaryColor relative w-fit rounded-t-2xl bg-white px-3 py-2 text-3xl font-medium text-black transition duration-300">
               {title}
 
               <svg
@@ -85,13 +85,13 @@ const ProjectCard = ({
             </span>
 
             {/* Bloque inferior */}
-            <span className="w-fit min-w-[280px] rounded-tr-2xl rounded-b-2xl bg-white px-3 py-2 text-xl text-black transition duration-300 group-hover:text-blue-600">
+            <span className="group-hover:text-primaryColor w-fit min-w-[280px] rounded-tr-2xl rounded-b-2xl bg-white px-3 py-2 text-xl text-black transition duration-300">
               Desde: {price}
             </span>
           </div>
 
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white">
-            <StarIcon className="h-7 w-7 text-black transition duration-300 group-hover:text-blue-600" />
+            <StarIcon className="group-hover:text-primaryColor h-7 w-7 text-black transition duration-300" />
           </div>
         </div>
       </div>

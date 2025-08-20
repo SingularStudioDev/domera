@@ -1,7 +1,7 @@
 'use client';
 
-import ProjectCard from './ProjectCard';
-import MainButton from './MainButton';
+import ProjectCard from '../custom-ui/ProjectCard';
+import MainButton from '../custom-ui/MainButton';
 
 const Projects = () => {
   const projects = [
@@ -64,7 +64,7 @@ const Projects = () => {
   ];
 
   return (
-    <section className="bg-white pb-16">
+    <section className="px-4 pb-10 md:px-0 md:pb-16">
       <div className="container mx-auto">
         {/* Section Header */}
 

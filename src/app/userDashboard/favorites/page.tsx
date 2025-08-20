@@ -3,9 +3,9 @@
 import { Heart, Grid3X3, Filter } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Header from '@/components/Header';
+import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
-import ProjectCard from '@/components/ProjectCard';
+import ProjectCard from '@/components/custom-ui/ProjectCard';
 import { Separator } from '@/components/ui/separator';
 import {
   Select,
@@ -157,7 +157,7 @@ const FavoritesPage = () => {
       </p>
       <Link
         href="/projects"
-        className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+        className="inline-flex items-center gap-2 rounded-full bg-primaryColor px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
       >
         <Grid3X3 className="h-5 w-5" />
         Ver Proyectos
@@ -283,7 +283,7 @@ const FavoritesPage = () => {
                     </p>
                     <Link
                       href="/projects"
-                      className="inline-flex items-center gap-2 rounded-full border border-blue-600 px-8 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-600 hover:text-white"
+                      className="inline-flex items-center gap-2 rounded-full border border-primaryColor px-8 py-3 font-medium text-primaryColor transition-colors hover:bg-primaryColor hover:text-white"
                     >
                       <Grid3X3 className="h-5 w-5" />
                       Ver Todos los Proyectos
@@ -322,7 +322,7 @@ const FavoritesPage = () => {
                     </p>
                     <Link
                       href="/projects"
-                      className="inline-flex items-center gap-2 rounded-full border border-blue-600 px-8 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-600 hover:text-white"
+                      className="inline-flex items-center gap-2 rounded-full border border-primaryColor px-8 py-3 font-medium text-primaryColor transition-colors hover:bg-primaryColor hover:text-white"
                     >
                       <Grid3X3 className="h-5 w-5" />
                       Ver Todos los Proyectos

@@ -94,7 +94,7 @@ export default function ClientesPage() {
       case 'completado':
         return 'text-green-600 bg-green-50';
       case 'activo':
-        return 'text-blue-600 bg-blue-50';
+        return 'text-primaryColor bg-blue-50';
       case 'en proceso':
         return 'text-yellow-600 bg-yellow-50';
       default:

@@ -1,58 +1,54 @@
 'use client';
 
 import {
-  Home,
-  Search,
-  CreditCard,
-  FileText,
-  Key,
-  MousePointer,
-  ListCheck,
-  CircleDollarSign,
-  Wallet,
+  CircleDollarSignIcon,
+  ListChecksIcon,
+  MousePointerIcon,
+  HomeIcon,
+  CalendarIcon,
 } from 'lucide-react';
 
 const Process = () => {
   const steps = [
     {
-      icon: Home,
+      icon: HomeIcon,
       title: 'Selecciona tu propiedad',
     },
     {
-      icon: MousePointer,
+      icon: MousePointerIcon,
       title: 'Hacé click en comprar',
     },
     {
-      icon: ListCheck,
+      icon: ListChecksIcon,
       title: 'Completa tu boleto de reserva',
     },
     {
-      icon: CircleDollarSign,
-      title: 'Hace el deposito y espera la escritura',
+      icon: CircleDollarSignIcon,
+      title: 'Hacé el deposito a tu escribana',
     },
     {
-      icon: Wallet,
+      icon: CalendarIcon,
       title: 'En 30 días recibirás el boleto de compra ',
     },
   ];
 
   return (
-    <section className="rounded-t-3xl bg-[#F5F5F5] py-16">
+    <section className="rounded-t-3xl bg-[#F5F5F5] px-4 py-14 md:py-16">
       <div className="container mx-auto">
         {/* Section Header */}
-        <div className="flex flex-col gap-10 text-start">
+        <div className="flex flex-col gap-5 text-start md:gap-10">
           <h2 className="mb-4 text-3xl leading-tight text-black lg:text-7xl">
             Transformá la manera de invertir en
             <br />
             propiedades en pozo
           </h2>
-          <p className="text-3xl leading-tight text-black lg:text-4xl">
+          <p className="text-xl leading-tight text-black lg:text-4xl">
             En muy pocos pasos ya podes ser propietario
           </p>
         </div>
 
         {/* Process Steps */}
-        <div className="grid w-full grid-cols-1 gap-8 pt-44 pb-10 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid w-full grid-cols-2 gap-4 py-12 md:grid-cols-3 md:gap-8 md:pt-44 md:pb-10 lg:grid-cols-5">
           {steps.map((step) => {
             const IconComponent = step.icon;
             return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeft, ChevronDownIcon } from 'lucide-react';
-import Header from '@/components/Header';
+import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { CheckoutSteps } from './_components/CheckoutSteps';
@@ -55,7 +55,7 @@ export default function CheckoutLayout({ children }: CheckoutLayoutProps) {
             {/* Back Button */}
             <Link
               href="/projects"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+              className="inline-flex items-center gap-2 text-primaryColor hover:text-blue-800"
             >
               <ArrowLeft className="h-4 w-4" />
               Volver
@@ -96,7 +96,7 @@ export default function CheckoutLayout({ children }: CheckoutLayoutProps) {
               {accordionItems.map((item, index) => (
                 <div
                   key={index}
-                  className="flex cursor-pointer items-center justify-between border-b border-gray-300 py-4 text-black transition duration-300 hover:text-blue-600"
+                  className="flex cursor-pointer items-center justify-between border-b border-gray-300 py-4 text-black transition duration-300 hover:text-primaryColor"
                 >
                   <span className="text-lg font-bold">{item}</span>
                   <ChevronDownIcon className="h-5 w-5" />

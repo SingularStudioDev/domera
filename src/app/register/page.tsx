@@ -98,7 +98,7 @@ export default function RegisterPage() {
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-primaryColor"
                     placeholder="Tu nombre"
                     required
                   />
@@ -112,7 +112,7 @@ export default function RegisterPage() {
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-primaryColor"
                     placeholder="Tu apellido"
                     required
                   />
@@ -128,7 +128,7 @@ export default function RegisterPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
+                  className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-primaryColor"
                   placeholder="tu@email.com"
                   required
                 />
@@ -143,7 +143,7 @@ export default function RegisterPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
+                  className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-primaryColor"
                   placeholder="Crea una contraseña segura"
                   required
                 />
@@ -158,7 +158,7 @@ export default function RegisterPage() {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
+                  className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-primaryColor"
                   placeholder="Confirma tu contraseña"
                   required
                 />
@@ -166,7 +166,7 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="mt-2 w-full cursor-pointer rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+                className="mt-2 w-full cursor-pointer rounded-md bg-primaryColor px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
               >
                 Crear cuenta
               </button>
@@ -178,7 +178,7 @@ export default function RegisterPage() {
                 ¿Ya tienes cuenta?{' '}
                 <Link
                   href="/login"
-                  className="font-medium text-blue-600 hover:text-blue-700"
+                  className="font-medium text-primaryColor hover:text-blue-700"
                 >
                   Iniciar sesión
                 </Link>

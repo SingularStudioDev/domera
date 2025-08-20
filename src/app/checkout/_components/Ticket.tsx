@@ -36,7 +36,7 @@ export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: Tic
 
         <Link
           href="#"
-          className="mb-8 inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+          className="mb-8 inline-flex items-center gap-2 text-primaryColor hover:text-blue-800"
         >
           <DownloadIcon className="h-4 w-4" />
           Descargar boleto de reserva
@@ -97,7 +97,7 @@ export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: Tic
             />
             <label
               htmlFor="file-upload"
-              className="cursor-pointer rounded-full border border-blue-600 bg-white px-6 py-2 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white"
+              className="cursor-pointer rounded-full border border-primaryColor bg-white px-6 py-2 text-primaryColor transition-colors hover:bg-primaryColor hover:text-white"
             >
               Cargar archivo
             </label>
@@ -108,7 +108,7 @@ export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: Tic
         <button
           className={`flex w-fit cursor-pointer items-center justify-center rounded-full px-8 py-3 text-white transition-colors duration-300 ${
             selectedFile
-              ? 'bg-blue-600 hover:bg-blue-700'
+              ? 'bg-primaryColor hover:bg-blue-700'
               : 'cursor-not-allowed bg-gray-300'
           }`}
           disabled={!selectedFile}

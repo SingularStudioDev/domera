@@ -17,7 +17,7 @@ import {
   StarIcon,
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import Header from '@/components/Header';
+import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -222,7 +222,7 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
           <div className="container mx-auto w-full py-6">
             <Link
               href={`/projects/${projectId}`}
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+              className="inline-flex items-center gap-2 text-primaryColor hover:text-blue-800"
             >
               <ArrowLeft className="h-4 w-4" />
               Volver a lista de proyectos
@@ -247,7 +247,7 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
               {/* Unit Title and Star */}
               <div className="flex items-center justify-start gap-2">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
-                  <StarIcon className="h-7 w-7 text-blue-600" />
+                  <StarIcon className="h-7 w-7 text-primaryColor" />
                 </div>
                 <h1 className="text-4xl font-bold text-black">{unit.title}</h1>
               </div>
@@ -332,17 +332,17 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
               </div>
 
               {/* Price and Buy Button */}
-              <div className="rounded-2xl border border-blue-600 p-6">
+              <div className="rounded-2xl border border-primaryColor p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-lg font-bold text-blue-600">Precio</p>
-                    <p className="text-3xl font-bold text-blue-600">
+                    <p className="text-lg font-bold text-primaryColor">Precio</p>
+                    <p className="text-3xl font-bold text-primaryColor">
                       {unit.price}
                     </p>
                   </div>
                   <Link
                     href="/checkout"
-                    className="flex items-center justify-center rounded-full bg-blue-600 px-8 py-3 text-white transition-colors hover:bg-blue-700"
+                    className="flex items-center justify-center rounded-full bg-primaryColor px-8 py-3 text-white transition-colors hover:bg-blue-700"
                   >
                     Comprar
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -453,7 +453,7 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
           <div className="mb-16 flex w-full items-center justify-center text-center">
             <Link
               href="/checkout"
-              className="flex w-fit items-center justify-center rounded-full bg-blue-600 px-12 py-4 text-xl font-medium text-white transition-colors hover:bg-blue-700"
+              className="flex w-fit items-center justify-center rounded-full bg-primaryColor px-12 py-4 text-xl font-medium text-white transition-colors hover:bg-blue-700"
             >
               Comprar unidad
               <ArrowRight className="ml-2 h-5 w-5" />

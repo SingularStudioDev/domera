@@ -107,7 +107,7 @@ export default function AdditionalPage() {
             {project.availableUnits.map((unit) => (
               <div
                 key={unit.id}
-                className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:border-blue-600"
+                className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:border-primaryColor"
               >
                 {/* Image Section */}
                 <div className="relative">
@@ -157,7 +157,7 @@ export default function AdditionalPage() {
                 <div className="p-4">
                   {/* Title and Description */}
                   <div className="mb-4">
-                    <h4 className="mb-1 text-2xl font-semibold text-black transition duration-300 group-hover:text-blue-600">
+                    <h4 className="mb-1 text-2xl font-semibold text-black transition duration-300 group-hover:text-primaryColor">
                       {unit.title}
                     </h4>
                     <p className="text-black">{unit.description}</p>
@@ -191,14 +191,14 @@ export default function AdditionalPage() {
                   <div className="flex items-end justify-between">
                     <div>
                       <p className="mb-1 font-semibold text-black">Precio</p>
-                      <p className="text-3xl font-bold text-black transition duration-300 group-hover:text-blue-600">
+                      <p className="text-3xl font-bold text-black transition duration-300 group-hover:text-primaryColor">
                         {unit.price}
                       </p>
                     </div>
 
                     <Link
                       href={`/projects/1/units/608`}
-                      className="flex items-center gap-2 rounded-full border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-600 hover:text-white"
+                      className="flex items-center gap-2 rounded-full border border-primaryColor bg-white px-4 py-2 text-sm font-medium text-primaryColor transition-colors hover:bg-primaryColor hover:text-white"
                     >
                       Comprar
                       <ArrowLeft className="h-4 w-4 rotate-180" />

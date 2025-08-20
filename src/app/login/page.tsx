@@ -169,7 +169,7 @@ export default function LoginPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
+                  className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-primaryColor"
                   placeholder="tu@email.com"
                   required
                   disabled={isSubmitting}
@@ -186,7 +186,7 @@ export default function LoginPage() {
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full rounded-md border border-gray-300 px-4 py-3 pr-12 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-blue-600"
+                    className="w-full rounded-md border border-gray-300 px-4 py-3 pr-12 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-primaryColor"
                     placeholder="Tu contraseña"
                     required
                     disabled={isSubmitting}
@@ -219,7 +219,7 @@ export default function LoginPage() {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 cursor-pointer rounded border-gray-300 text-primaryColor focus:ring-blue-500"
                     disabled={isSubmitting}
                   />
                   <label
@@ -231,7 +231,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-sm">
-                  <a href="#" className="text-blue-600 hover:text-blue-700">
+                  <a href="#" className="text-primaryColor hover:text-blue-700">
                     ¿Olvidaste tu contraseña?
                   </a>
                 </div>
@@ -240,7 +240,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="mt-2 w-full cursor-pointer rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="mt-2 w-full cursor-pointer rounded-md bg-primaryColor px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
               </button>
@@ -252,7 +252,7 @@ export default function LoginPage() {
                 ¿No tienes cuenta?{' '}
                 <Link
                   href="/register"
-                  className="font-medium text-blue-600 hover:text-blue-700"
+                  className="font-medium text-primaryColor hover:text-blue-700"
                 >
                   Crear cuenta
                 </Link>

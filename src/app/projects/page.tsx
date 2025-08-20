@@ -2,9 +2,9 @@
 
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import Header from '@/components/Header';
+import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
-import ProjectCard from '@/components/ProjectCard';
+import ProjectCard from '@/components/custom-ui/ProjectCard';
 
 const ProjectsPage = () => {
   const [filters, setFilters] = useState({

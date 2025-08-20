@@ -3,7 +3,7 @@
 import { BedIcon, BathIcon, RulerIcon } from 'lucide-react';
 
 import { formatCurrencyUYU } from '@/utils/utils';
-import MainButton from '@/components/MainButton';
+import MainButton from '@/components/custom-ui/MainButton';
 
 export const accordionItems = [
   'Vigencia de la reserva',
@@ -213,10 +213,10 @@ export default function CheckoutPage() {
                         </p>
 
                         <div>
-                          <p className="text-lg font-bold text-blue-600">
+                          <p className="text-lg font-bold text-primaryColor">
                             Precio
                           </p>
-                          <p className="text-3xl font-bold text-blue-600">
+                          <p className="text-3xl font-bold text-primaryColor">
                             ${item.price.toLocaleString()}
                           </p>
                         </div>
@@ -242,8 +242,8 @@ export default function CheckoutPage() {
 
                   <div className="flex justify-start pr-7">
                     <div>
-                      <p className="text-lg font-bold text-blue-600">Total</p>
-                      <p className="text-3xl font-bold text-blue-600">
+                      <p className="text-lg font-bold text-primaryColor">Total</p>
+                      <p className="text-3xl font-bold text-primaryColor">
                         ${total.toLocaleString()}
                       </p>
                     </div>
