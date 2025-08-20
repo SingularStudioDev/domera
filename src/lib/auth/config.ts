@@ -5,6 +5,7 @@
 
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/auth/password';
 import { LoginSchema } from '@/lib/validations/schemas';
@@ -107,11 +108,10 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // TODO: Add more providers (Google, etc.) when needed
-    // GoogleProvider({
-    //   clientId: process.env.GOOGLE_CLIENT_ID!,
-    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    // })
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
 
   session: {
