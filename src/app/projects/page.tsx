@@ -1,10 +1,16 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
 import ProjectCard from '@/components/custom-ui/ProjectCard';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const ProjectsPage = () => {
   const [filters, setFilters] = useState({
@@ -100,99 +106,98 @@ const ProjectsPage = () => {
     <>
       <Header />
       <main className="bg-white pt-32">
-        <div className="container mx-auto px-4">
-          {/* Hero Section */}
-          <div className="mb-8">
-            <h1 className="mb-4 text-6xl font-light text-black lg:text-7xl">
-              Comprá en pozo
-            </h1>
-            <p className="text-2xl font-light text-black lg:text-3xl">
-              Sin comisiones inmobiliarias
-            </p>
-          </div>
-
+        <div className="container mx-auto px-4 md:px-0">
           {/* Filters Section */}
-          <div className="mb-12 flex flex-col gap-4 lg:flex-row lg:gap-6">
-            {/* Habitaciones Filter */}
-            <div className="flex-1">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Habitaciones
-              </label>
-              <div className="relative">
-                <select
+          <div className="mb-6 flex items-center justify-between">
+            {/* Projects Title */}
+            <h2 className="dashboard-title">Proyectos</h2>
+
+            <div className="flex w-2/3 flex-col gap-4 lg:flex-row lg:gap-6">
+              {/* Habitaciones Filter */}
+              <div className="flex-1">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Habitaciones
+                </label>
+                <Select
                   value={filters.habitaciones}
-                  onChange={(e) =>
-                    setFilters({ ...filters, habitaciones: e.target.value })
+                  onValueChange={(value) =>
+                    setFilters({ ...filters, habitaciones: value })
                   }
-                  className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-3 pr-10 text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
-                  <option value="Mostrar todo">Mostrar todo</option>
-                  <option value="1 habitación">1 habitación</option>
-                  <option value="2 habitaciones">2 habitaciones</option>
-                  <option value="3 habitaciones">3 habitaciones</option>
-                  <option value="4+ habitaciones">4+ habitaciones</option>
-                </select>
-                <ChevronDown className="absolute top-1/2 right-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mostrar todo">Mostrar todo</SelectItem>
+                    <SelectItem value="1 habitación">1 habitación</SelectItem>
+                    <SelectItem value="2 habitaciones">
+                      2 habitaciones
+                    </SelectItem>
+                    <SelectItem value="3 habitaciones">
+                      3 habitaciones
+                    </SelectItem>
+                    <SelectItem value="4+ habitaciones">
+                      4+ habitaciones
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
 
-            {/* Estreno Filter */}
-            <div className="flex-1">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Estreno
-              </label>
-              <div className="relative">
-                <select
+              {/* Estreno Filter */}
+              <div className="flex-1">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Estreno
+                </label>
+                <Select
                   value={filters.estreno}
-                  onChange={(e) =>
-                    setFilters({ ...filters, estreno: e.target.value })
+                  onValueChange={(value) =>
+                    setFilters({ ...filters, estreno: value })
                   }
-                  className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-3 pr-10 text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
-                  <option value="Mostrar todo">Mostrar todo</option>
-                  <option value="2024">2024</option>
-                  <option value="2025">2025</option>
-                  <option value="2026">2026</option>
-                  <option value="2027">2027</option>
-                  <option value="2028">2028</option>
-                </select>
-                <ChevronDown className="absolute top-1/2 right-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mostrar todo">Mostrar todo</SelectItem>
+                    <SelectItem value="2024">2024</SelectItem>
+                    <SelectItem value="2025">2025</SelectItem>
+                    <SelectItem value="2026">2026</SelectItem>
+                    <SelectItem value="2027">2027</SelectItem>
+                    <SelectItem value="2028">2028</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
 
-            {/* Barrios Filter */}
-            <div className="flex-1">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Barrios
-              </label>
-              <div className="relative">
-                <select
+              {/* Barrios Filter */}
+              <div className="flex-1">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Barrios
+                </label>
+                <Select
                   value={filters.barrios}
-                  onChange={(e) =>
-                    setFilters({ ...filters, barrios: e.target.value })
+                  onValueChange={(value) =>
+                    setFilters({ ...filters, barrios: value })
                   }
-                  className="w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-3 pr-10 text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
-                  <option value="Mostrar todo">Mostrar todo</option>
-                  <option value="Pocitos">Pocitos</option>
-                  <option value="Recoleta">Recoleta</option>
-                  <option value="Palermo">Palermo</option>
-                  <option value="Puerto Madero">Puerto Madero</option>
-                  <option value="Villa Crespo">Villa Crespo</option>
-                  <option value="Caballito">Caballito</option>
-                  <option value="La Blanqueada">La Blanqueada</option>
-                  <option value="Cordón">Cordón</option>
-                  <option value="Parque Batlle">Parque Batlle</option>
-                </select>
-                <ChevronDown className="absolute top-1/2 right-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mostrar todo">Mostrar todo</SelectItem>
+                    <SelectItem value="Pocitos">Pocitos</SelectItem>
+                    <SelectItem value="Recoleta">Recoleta</SelectItem>
+                    <SelectItem value="Palermo">Palermo</SelectItem>
+                    <SelectItem value="Puerto Madero">Puerto Madero</SelectItem>
+                    <SelectItem value="Villa Crespo">Villa Crespo</SelectItem>
+                    <SelectItem value="Caballito">Caballito</SelectItem>
+                    <SelectItem value="La Blanqueada">La Blanqueada</SelectItem>
+                    <SelectItem value="Cordón">Cordón</SelectItem>
+                    <SelectItem value="Parque Batlle">Parque Batlle</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
-
-          {/* Projects Title */}
-          <h2 className="mb-8 text-3xl font-bold text-black lg:text-4xl">
-            Proyectos
-          </h2>
 
           {/* Projects Grid */}
           <div className="mb-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
