@@ -1,7 +1,6 @@
 // =============================================================================
-// DOCUMENTS SERVER ACTIONS FOR DOMERA PLATFORM
+// DOCUMENTS SERVER ACTIONS
 // Business logic for managing document types, templates, and uploads
-// Created: August 2025
 // =============================================================================
 
 'use server';
@@ -48,10 +47,12 @@ interface DocumentTemplateInput {
 /**
  * Get all document templates for an organization
  */
-export async function getDocumentTemplates(organizationId?: string): Promise<DocumentResult> {
+export async function getDocumentTemplates(
+  organizationId?: string
+): Promise<DocumentResult> {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return { success: false, error: 'Usuario no autenticado' };
     }
@@ -60,30 +61,26 @@ export async function getDocumentTemplates(organizationId?: string): Promise<Doc
       where: {
         OR: [
           { organizationId: organizationId },
-          { organizationId: null } // Global templates
-        ]
+          { organizationId: null }, // Global templates
+        ],
       },
       include: {
         organization: {
-          select: { name: true, slug: true }
-        }
+          select: { name: true, slug: true },
+        },
       },
-      orderBy: [
-        { documentType: 'asc' },
-        { version: 'desc' }
-      ]
+      orderBy: [{ documentType: 'asc' }, { version: 'desc' }],
     });
 
     return {
       success: true,
-      data: templates
+      data: templates,
     };
-
   } catch (error) {
     console.error('Error fetching document templates:', error);
     return {
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
     };
   }
 }
@@ -91,28 +88,30 @@ export async function getDocumentTemplates(organizationId?: string): Promise<Doc
 /**
  * Create a new document template
  */
-export async function createDocumentTemplate(input: DocumentTemplateInput): Promise<DocumentResult> {
+export async function createDocumentTemplate(
+  input: DocumentTemplateInput
+): Promise<DocumentResult> {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return { success: false, error: 'Usuario no autenticado' };
     }
 
     // Check if user has permission to create templates
-    const hasPermission = session.user.roles.some(role => 
+    const hasPermission = session.user.roles.some((role) =>
       ['admin', 'organization_owner'].includes(role.role)
     );
 
     if (!hasPermission) {
       return {
         success: false,
-        error: 'No tienes permisos para crear templates de documentos'
+        error: 'No tienes permisos para crear templates de documentos',
       };
     }
 
     // Get user's organization
-    const userRole = session.user.roles.find(role => role.organizationId);
+    const userRole = session.user.roles.find((role) => role.organizationId);
     const organizationId = userRole?.organizationId || null;
 
     const template = await prisma.documentTemplate.create({
@@ -123,22 +122,21 @@ export async function createDocumentTemplate(input: DocumentTemplateInput): Prom
         templateContent: input.templateContent,
         fileUrl: input.fileUrl,
         organizationId,
-        createdBy: session.user.id
-      }
+        createdBy: session.user.id,
+      },
     });
 
     revalidatePath('/admin/templates');
 
     return {
       success: true,
-      data: template
+      data: template,
     };
-
   } catch (error) {
     console.error('Error creating document template:', error);
     return {
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
     };
   }
 }
@@ -150,10 +148,12 @@ export async function createDocumentTemplate(input: DocumentTemplateInput): Prom
 /**
  * Get required documents for an operation based on its current step
  */
-export async function getRequiredDocumentsForOperation(operationId: string): Promise<DocumentResult> {
+export async function getRequiredDocumentsForOperation(
+  operationId: string
+): Promise<DocumentResult> {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return { success: false, error: 'Usuario no autenticado' };
     }
@@ -162,29 +162,31 @@ export async function getRequiredDocumentsForOperation(operationId: string): Pro
     const operation = await prisma.operation.findFirst({
       where: {
         id: operationId,
-        userId: session.user.id
+        userId: session.user.id,
       },
       include: {
         steps: {
-          orderBy: { stepOrder: 'asc' }
-        }
-      }
+          orderBy: { stepOrder: 'asc' },
+        },
+      },
     });
 
     if (!operation) {
       return {
         success: false,
-        error: 'Operación no encontrada'
+        error: 'Operación no encontrada',
       };
     }
 
     // Define required documents based on operation status and steps
-    const documentRequirements = getDocumentRequirementsByStatus(operation.status);
+    const documentRequirements = getDocumentRequirementsByStatus(
+      operation.status
+    );
 
     // Get existing documents for this operation
     const existingDocs = await prisma.document.findMany({
       where: { operationId },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     return {
@@ -192,15 +194,14 @@ export async function getRequiredDocumentsForOperation(operationId: string): Pro
       data: {
         operation,
         requiredDocuments: documentRequirements,
-        existingDocuments: existingDocs
-      }
+        existingDocuments: existingDocs,
+      },
     };
-
   } catch (error) {
     console.error('Error fetching required documents:', error);
     return {
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
     };
   }
 }
@@ -217,13 +218,13 @@ function getDocumentRequirementsByStatus(status: string): Array<{
     {
       type: 'cedula_identidad' as DocumentType,
       required: true,
-      description: 'Cédula de Identidad del comprador'
+      description: 'Cédula de Identidad del comprador',
     },
     {
       type: 'certificado_ingresos' as DocumentType,
       required: true,
-      description: 'Certificado de ingresos o comprobantes de sueldo'
-    }
+      description: 'Certificado de ingresos o comprobantes de sueldo',
+    },
   ];
 
   switch (status) {
@@ -238,8 +239,8 @@ function getDocumentRequirementsByStatus(status: string): Array<{
         {
           type: 'boleto_reserva' as DocumentType,
           required: true,
-          description: 'Boleto de reserva firmado'
-        }
+          description: 'Boleto de reserva firmado',
+        },
       ];
 
     case 'professional_assigned':
@@ -249,13 +250,13 @@ function getDocumentRequirementsByStatus(status: string): Array<{
         {
           type: 'boleto_reserva' as DocumentType,
           required: true,
-          description: 'Boleto de reserva firmado'
+          description: 'Boleto de reserva firmado',
         },
         {
           type: 'compromiso_compraventa' as DocumentType,
           required: true,
-          description: 'Compromiso de compraventa'
-        }
+          description: 'Compromiso de compraventa',
+        },
       ];
 
     case 'payment_pending':
@@ -265,18 +266,18 @@ function getDocumentRequirementsByStatus(status: string): Array<{
         {
           type: 'boleto_reserva' as DocumentType,
           required: true,
-          description: 'Boleto de reserva firmado'
+          description: 'Boleto de reserva firmado',
         },
         {
           type: 'compromiso_compraventa' as DocumentType,
           required: true,
-          description: 'Compromiso de compraventa firmado'
+          description: 'Compromiso de compraventa firmado',
         },
         {
           type: 'comprobante_pago' as DocumentType,
           required: true,
-          description: 'Comprobantes de pago'
-        }
+          description: 'Comprobantes de pago',
+        },
       ];
 
     default:
@@ -287,10 +288,12 @@ function getDocumentRequirementsByStatus(status: string): Array<{
 /**
  * Upload a document for an operation
  */
-export async function uploadDocument(input: CreateDocumentInput): Promise<DocumentResult> {
+export async function uploadDocument(
+  input: CreateDocumentInput
+): Promise<DocumentResult> {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return { success: false, error: 'Usuario no autenticado' };
     }
@@ -300,20 +303,20 @@ export async function uploadDocument(input: CreateDocumentInput): Promise<Docume
       const operation = await prisma.operation.findFirst({
         where: {
           id: input.operationId,
-          userId: session.user.id
-        }
+          userId: session.user.id,
+        },
       });
 
       if (!operation) {
         return {
           success: false,
-          error: 'Operación no encontrada o no autorizada'
+          error: 'Operación no encontrada o no autorizada',
         };
       }
     }
 
     // Get user's organization
-    const userRole = session.user.roles.find(role => role.organizationId);
+    const userRole = session.user.roles.find((role) => role.organizationId);
     const organizationId = userRole?.organizationId || null;
 
     const document = await prisma.document.create({
@@ -329,20 +332,20 @@ export async function uploadDocument(input: CreateDocumentInput): Promise<Docume
         fileSize: input.fileSize,
         mimeType: input.mimeType,
         status: 'uploaded',
-        uploadedBy: session.user.id
-      }
+        uploadedBy: session.user.id,
+      },
     });
 
     // Update operation status if this was the first document upload
     if (input.operationId) {
       const operation = await prisma.operation.findUnique({
-        where: { id: input.operationId }
+        where: { id: input.operationId },
       });
 
       if (operation?.status === 'initiated') {
         await prisma.operation.update({
           where: { id: input.operationId },
-          data: { status: 'documents_pending' }
+          data: { status: 'documents_pending' },
         });
       }
     }
@@ -352,14 +355,13 @@ export async function uploadDocument(input: CreateDocumentInput): Promise<Docume
 
     return {
       success: true,
-      data: document
+      data: document,
     };
-
   } catch (error) {
     console.error('Error uploading document:', error);
     return {
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
     };
   }
 }
@@ -368,26 +370,26 @@ export async function uploadDocument(input: CreateDocumentInput): Promise<Docume
  * Validate a document (for professionals and admins)
  */
 export async function validateDocument(
-  documentId: string, 
-  status: DocumentStatus, 
+  documentId: string,
+  status: DocumentStatus,
   notes?: string
 ): Promise<DocumentResult> {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return { success: false, error: 'Usuario no autenticado' };
     }
 
     // Check if user has permission to validate documents
-    const hasPermission = session.user.roles.some(role => 
+    const hasPermission = session.user.roles.some((role) =>
       ['admin', 'organization_owner', 'professional'].includes(role.role)
     );
 
     if (!hasPermission) {
       return {
         success: false,
-        error: 'No tienes permisos para validar documentos'
+        error: 'No tienes permisos para validar documentos',
       };
     }
 
@@ -397,8 +399,8 @@ export async function validateDocument(
         status,
         validatedBy: session.user.id,
         validatedAt: new Date(),
-        validationNotes: notes
-      }
+        validationNotes: notes,
+      },
     });
 
     // Check if all required documents for the operation are validated
@@ -411,14 +413,13 @@ export async function validateDocument(
 
     return {
       success: true,
-      data: updatedDocument
+      data: updatedDocument,
     };
-
   } catch (error) {
     console.error('Error validating document:', error);
     return {
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
     };
   }
 }
@@ -431,21 +432,23 @@ async function checkAndUpdateOperationDocumentStatus(operationId: string) {
     const operation = await prisma.operation.findUnique({
       where: { id: operationId },
       include: {
-        documents: true
-      }
+        documents: true,
+      },
     });
 
     if (!operation) return;
 
     const requiredDocs = getDocumentRequirementsByStatus(operation.status);
-    const requiredTypes = requiredDocs.filter(doc => doc.required).map(doc => doc.type);
+    const requiredTypes = requiredDocs
+      .filter((doc) => doc.required)
+      .map((doc) => doc.type);
 
     // Check if all required document types are uploaded and validated
     const validatedTypes = operation.documents
-      .filter(doc => doc.status === 'validated')
-      .map(doc => doc.documentType);
+      .filter((doc) => doc.status === 'validated')
+      .map((doc) => doc.documentType);
 
-    const allRequiredValidated = requiredTypes.every(type => 
+    const allRequiredValidated = requiredTypes.every((type) =>
       validatedTypes.includes(type)
     );
 
@@ -453,10 +456,9 @@ async function checkAndUpdateOperationDocumentStatus(operationId: string) {
     if (allRequiredValidated && operation.status === 'documents_pending') {
       await prisma.operation.update({
         where: { id: operationId },
-        data: { status: 'under_validation' }
+        data: { status: 'under_validation' },
       });
     }
-
   } catch (error) {
     console.error('Error checking document validation status:', error);
   }
@@ -468,7 +470,7 @@ async function checkAndUpdateOperationDocumentStatus(operationId: string) {
 export async function getUserDocuments(): Promise<DocumentResult> {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user) {
       return { success: false, error: 'Usuario no autenticado' };
     }
@@ -480,23 +482,22 @@ export async function getUserDocuments(): Promise<DocumentResult> {
           select: {
             id: true,
             status: true,
-            createdAt: true
-          }
-        }
+            createdAt: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     return {
       success: true,
-      data: documents
+      data: documents,
     };
-
   } catch (error) {
     console.error('Error fetching user documents:', error);
     return {
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
     };
   }
 }

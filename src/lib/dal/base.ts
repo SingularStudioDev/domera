@@ -4,21 +4,21 @@
 // Created: August 2025
 // =============================================================================
 
-import { createClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/database';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { prisma } from '@/lib/prisma';
+import type { PrismaClient } from '@prisma/client';
 
 // =============================================================================
 // BASE DATABASE CLIENT
 // =============================================================================
 
-export type DatabaseClient = SupabaseClient<Database>;
+export type DatabaseClient = PrismaClient;
 
 /**
- * Get authenticated Supabase client
+ * Get Prisma database client
+ * Single point of database access following Next.js best practices
  */
-export async function getDbClient(): Promise<DatabaseClient> {
-  return createClient();
+export function getDbClient(): DatabaseClient {
+  return prisma;
 }
 
 // =============================================================================
@@ -117,19 +117,19 @@ export async function logAudit(
   }
 ): Promise<void> {
   try {
-    await client
-      .from('audit_logs')
-      .insert({
-        user_id: userId,
-        organization_id: organizationId,
-        table_name: tableName,
-        record_id: recordId,
+    await client.auditLog.create({
+      data: {
+        userId,
+        organizationId,
+        tableName,
+        recordId,
         action,
-        old_values: oldValues,
-        new_values: newValues,
-        ip_address: ipAddress,
-        user_agent: userAgent
-      });
+        oldValues,
+        newValues,
+        ipAddress,
+        userAgent
+      }
+    });
   } catch (error) {
     // Log audit errors but don't fail the main operation
     console.error('Failed to log audit:', error);
@@ -178,35 +178,39 @@ export function formatPaginatedResult<T>(
 // PERMISSION CHECKING
 // =============================================================================
 
-export async function getCurrentUser(client: DatabaseClient) {
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) {
-    throw new AuthorizationError('Usuario no autenticado');
-  }
-  return user;
-}
+// Note: getCurrentUser is now handled by centralized auth validation
+// Use validateSession() from @/lib/auth/validation instead
 
 export async function getUserWithRoles(client: DatabaseClient, email: string) {
-  const { data: user, error } = await client
-    .from('users')
-    .select(`
-      *,
-      user_roles!inner(
-        role,
-        organization_id,
-        is_active,
-        organizations(name, slug)
-      )
-    `)
-    .eq('email', email)
-    .eq('user_roles.is_active', true)
-    .single();
+  try {
+    const user = await client.user.findFirst({
+      where: {
+        email,
+        isActive: true
+      },
+      include: {
+        userRoles: {
+          where: { isActive: true },
+          include: {
+            organization: {
+              select: {
+                name: true,
+                slug: true
+              }
+            }
+          }
+        }
+      }
+    });
 
-  if (error) {
-    throw new DatabaseError('Error al obtener usuario', error.code, error);
+    if (!user) {
+      throw new DatabaseError('Usuario no encontrado', 'USER_NOT_FOUND');
+    }
+
+    return user;
+  } catch (error) {
+    throw new DatabaseError('Error al obtener usuario', 'DB_ERROR', error);
   }
-
-  return user;
 }
 
 export async function checkUserPermission(
@@ -215,49 +219,62 @@ export async function checkUserPermission(
   requiredRole: string,
   organizationId?: string
 ): Promise<boolean> {
-  const { data, error } = await client
-    .from('user_roles')
-    .select('role, organization_id')
-    .eq('user_id', userId)
-    .eq('is_active', true);
+  try {
+    const userRoles = await client.userRole.findMany({
+      where: {
+        userId,
+        isActive: true
+      },
+      select: {
+        role: true,
+        organizationId: true
+      }
+    });
 
-  if (error) {
-    throw new DatabaseError('Error al verificar permisos', error.code, error);
+    // Check for admin role (global access)
+    if (userRoles.some(role => role.role === 'admin')) {
+      return true;
+    }
+
+    // Check for specific role in organization
+    if (organizationId) {
+      return userRoles.some(role => 
+        role.role === requiredRole && 
+        role.organizationId === organizationId
+      );
+    }
+
+    // Check for role without organization constraint
+    return userRoles.some(role => role.role === requiredRole);
+  } catch (error) {
+    throw new DatabaseError('Error al verificar permisos', 'PERMISSION_ERROR', error);
   }
-
-  // Check for admin role (global access)
-  if (data.some(role => role.role === 'admin')) {
-    return true;
-  }
-
-  // Check for specific role in organization
-  if (organizationId) {
-    return data.some(role => 
-      role.role === requiredRole && 
-      role.organization_id === organizationId
-    );
-  }
-
-  // Check for role without organization constraint
-  return data.some(role => role.role === requiredRole);
 }
 
 export async function getUserOrganizations(
   client: DatabaseClient,
   userId: string
 ): Promise<string[]> {
-  const { data, error } = await client
-    .from('user_roles')
-    .select('organization_id')
-    .eq('user_id', userId)
-    .eq('is_active', true)
-    .not('organization_id', 'is', null);
+  try {
+    const userRoles = await client.userRole.findMany({
+      where: {
+        userId,
+        isActive: true,
+        organizationId: {
+          not: null
+        }
+      },
+      select: {
+        organizationId: true
+      }
+    });
 
-  if (error) {
-    throw new DatabaseError('Error al obtener organizaciones del usuario', error.code, error);
+    return userRoles
+      .filter(role => role.organizationId)
+      .map(role => role.organizationId!);
+  } catch (error) {
+    throw new DatabaseError('Error al obtener organizaciones del usuario', 'ORG_FETCH_ERROR', error);
   }
-
-  return data.map(role => role.organization_id!);
 }
 
 // =============================================================================
@@ -278,183 +295,56 @@ export async function withTransaction<T>(
 // COMMON QUERY BUILDERS
 // =============================================================================
 
-export function buildSelectQuery(
-  client: DatabaseClient,
-  tableName: string,
-  columns: string = '*'
-) {
-  return client.from(tableName).select(columns);
-}
-
-export function buildInsertQuery<T>(
-  client: DatabaseClient,
-  tableName: string,
-  data: T
-) {
-  return client.from(tableName).insert(data);
-}
-
-export function buildUpdateQuery<T>(
-  client: DatabaseClient,
-  tableName: string,
-  data: T
-) {
-  return client.from(tableName).update(data);
-}
-
-export function buildDeleteQuery(
-  client: DatabaseClient,
-  tableName: string
-) {
-  return client.from(tableName).delete();
-}
+// Note: Query builders are not needed with Prisma
+// Use Prisma's type-safe query methods directly:
+// client.model.findMany(), client.model.create(), client.model.update(), etc.
 
 // =============================================================================
 // COMMON FILTERS
 // =============================================================================
 
-export function applyDateRangeFilter(
-  query: any,
-  column: string,
-  startDate?: string,
-  endDate?: string
-) {
-  if (startDate) {
-    query = query.gte(column, startDate);
-  }
-  if (endDate) {
-    query = query.lte(column, endDate);
-  }
-  return query;
+// Prisma filter helpers
+export function buildDateRangeFilter(startDate?: string, endDate?: string) {
+  const filter: any = {};
+  if (startDate) filter.gte = new Date(startDate);
+  if (endDate) filter.lte = new Date(endDate);
+  return Object.keys(filter).length > 0 ? filter : undefined;
 }
 
-export function applyTextSearchFilter(
-  query: any,
-  column: string,
-  searchTerm?: string
-) {
-  if (searchTerm) {
-    query = query.ilike(column, `%${searchTerm}%`);
-  }
-  return query;
+export function buildTextSearchFilter(searchTerm?: string) {
+  return searchTerm ? {
+    contains: searchTerm,
+    mode: 'insensitive' as const
+  } : undefined;
 }
 
-export function applyPaginationFilter(
-  query: any,
-  page: number,
-  pageSize: number
-) {
-  const { from, to } = calculatePagination(page, pageSize);
-  return query.range(from, to);
+export function buildPaginationOptions(page: number, pageSize: number) {
+  const skip = (page - 1) * pageSize;
+  return {
+    skip,
+    take: pageSize
+  };
 }
 
 // =============================================================================
 // CORRECTION HANDLING
 // =============================================================================
 
-export async function markAsCorrection<T extends Record<string, any>>(
-  client: DatabaseClient,
-  tableName: string,
-  originalId: string,
-  correctedData: T,
-  userId: string
-): Promise<string> {
-  // Get original record
-  const { data: original, error: fetchError } = await client
-    .from(tableName)
-    .select('*')
-    .eq('id', originalId)
-    .single();
-
-  if (fetchError) {
-    throw new DatabaseError('Error al obtener registro original', fetchError.code, fetchError);
-  }
-
-  // Mark original as corrected
-  const { error: updateError } = await client
-    .from(tableName)
-    .update({ is_corrected: true })
-    .eq('id', originalId);
-
-  if (updateError) {
-    throw new DatabaseError('Error al marcar registro como corregido', updateError.code, updateError);
-  }
-
-  // Create new corrected record
-  const { data: newRecord, error: insertError } = await client
-    .from(tableName)
-    .insert({
-      ...correctedData,
-      correction_of: originalId,
-      is_corrected: false,
-      created_by: userId
-    })
-    .select('id')
-    .single();
-
-  if (insertError) {
-    throw new DatabaseError('Error al crear registro corregido', insertError.code, insertError);
-  }
-
-  // Log the correction
-  await logAudit(client, {
-    userId,
-    tableName,
-    recordId: newRecord.id,
-    action: 'INSERT',
-    oldValues: original,
-    newValues: correctedData
-  });
-
-  return newRecord.id;
-}
+// Note: markAsCorrection is model-specific with Prisma
+// Each model should implement its own correction logic
+// using Prisma transactions and proper type safety
 
 // =============================================================================
 // VALIDATION HELPERS
 // =============================================================================
 
-export async function validateUniqueConstraint(
-  client: DatabaseClient,
-  tableName: string,
-  column: string,
-  value: any,
-  excludeId?: string
-): Promise<boolean> {
-  let query = client
-    .from(tableName)
-    .select('id')
-    .eq(column, value);
+// Note: validateUniqueConstraint is model-specific with Prisma
+// Use Prisma's built-in unique constraints and findFirst/findUnique
+// for type-safe validation
 
-  if (excludeId) {
-    query = query.neq('id', excludeId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw new DatabaseError('Error al validar restricción única', error.code, error);
-  }
-
-  return data.length === 0;
-}
-
-export async function validateForeignKey(
-  client: DatabaseClient,
-  tableName: string,
-  id: string
-): Promise<boolean> {
-  const { data, error } = await client
-    .from(tableName)
-    .select('id')
-    .eq('id', id)
-    .single();
-
-  if (error && error.code !== 'PGRST116') { // PGRST116 = not found
-    throw new DatabaseError('Error al validar clave foránea', error.code, error);
-  }
-
-  return !!data;
-}
+// Note: validateForeignKey is model-specific with Prisma
+// Use Prisma's built-in foreign key constraints and findUnique
+// for type-safe validation
 
 // =============================================================================
 // CACHE HELPERS (for future implementation)

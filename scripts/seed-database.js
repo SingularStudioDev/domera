@@ -116,7 +116,7 @@ async function seedDatabase() {
     // Get the first admin user for creating other entities
     const adminUser = createdUsers.find(u => u.role === 'admin').user;
 
-    // 4. Create test projects
+    // 4. Create test projects with feature flags
     console.log('🏗️ Creating test projects...');
     
     const project1 = await prisma.project.create({
@@ -153,6 +153,15 @@ async function seedDatabase() {
           'Solarium',
           'Barbacoa'
         ]),
+        // Project feature flags
+        hasParking: true,
+        hasStudio: false,
+        has1Bedroom: true,
+        has2Bedroom: true,
+        has3Bedroom: true,
+        has4Bedroom: true,
+        has5Bedroom: false,
+        hasCommercial: false,
         createdBy: adminUser.id
       }
     });
@@ -188,11 +197,67 @@ async function seedDatabase() {
           'Ascensor',
           'Portero eléctrico'
         ]),
+        // Project feature flags
+        hasParking: false,
+        hasStudio: true,
+        has1Bedroom: true,
+        has2Bedroom: true,
+        has3Bedroom: false,
+        has4Bedroom: false,
+        has5Bedroom: false,
+        hasCommercial: true,
         createdBy: adminUser.id
       }
     });
 
-    console.log(`✅ Projects created: ${project1.name}, ${project2.name}`);
+    // Create a third project with different features
+    const project3 = await prisma.project.create({
+      data: {
+        organizationId: organization.id,
+        name: 'Complejo Parque Central',
+        slug: 'complejo-parque-central',
+        description: 'Desarrollo mixto con apartamentos residenciales y locales comerciales. Ubicado cerca del Parque Batlle con excelente conectividad.',
+        shortDescription: 'Complejo mixto residencial y comercial',
+        address: 'Av. Italia 3500',
+        neighborhood: 'Parque Batlle',
+        city: 'Montevideo',
+        latitude: -34.8941,
+        longitude: -56.1560,
+        status: 'planning',
+        startDate: new Date('2025-06-01'),
+        estimatedCompletion: new Date('2028-03-31'),
+        totalUnits: 180,
+        availableUnits: 180,
+        basePrice: 95000,
+        currency: 'USD',
+        legalRegime: 'Propiedad Horizontal',
+        images: JSON.stringify([
+          '/images/parque-central-1.jpg',
+          '/images/parque-central-2.jpg',
+          '/images/parque-central-3.jpg'
+        ]),
+        amenities: JSON.stringify([
+          'Área verde',
+          'Juegos infantiles',
+          'Locales comerciales',
+          'Estacionamiento',
+          'Seguridad',
+          'Ascensores'
+        ]),
+        // Project feature flags
+        hasParking: true,
+        hasStudio: true,
+        has1Bedroom: true,
+        has2Bedroom: true,
+        has3Bedroom: true,
+        has4Bedroom: false,
+        has5Bedroom: false,
+        hasCommercial: true,
+        createdBy: adminUser.id
+      }
+    });
+
+    console.log(`✅ Projects created: ${project1.name}, ${project2.name}, ${project3.name}`);
 
     // 5. Create units for Torres del Río
     console.log('🏠 Creating units for Torres del Río...');
@@ -297,9 +362,102 @@ async function seedDatabase() {
       await prisma.unit.create({ data: unitData });
     }
 
-    console.log(`✅ Units created for both projects`);
+    // 7. Create units for Complejo Parque Central
+    console.log('🏠 Creating units for Complejo Parque Central...');
+    const parqueUnitsData = [
+      {
+        projectId: project3.id,
+        unitNumber: 'S01',
+        floor: 1,
+        unitType: 'apartment',
+        status: 'available',
+        bedrooms: 0, // Studio
+        bathrooms: 1,
+        totalArea: 35.0,
+        builtArea: 32.0,
+        orientation: 'Norte',
+        facing: 'Parque',
+        price: 95000,
+        description: 'Studio moderno con vista al parque',
+        features: JSON.stringify(['Kitchenette', 'Balcón', 'Vista al parque']),
+        createdBy: adminUser.id
+      },
+      {
+        projectId: project3.id,
+        unitNumber: 'C101',
+        floor: 1,
+        unitType: 'commercial_space',
+        status: 'available',
+        bedrooms: 0,
+        bathrooms: 1,
+        totalArea: 80.0,
+        builtArea: 75.0,
+        orientation: 'Este',
+        facing: 'Calle',
+        price: 150000,
+        description: 'Local comercial con vidriera a la calle',
+        features: JSON.stringify(['Vidriera', 'Depósito', 'Baño privado']),
+        createdBy: adminUser.id
+      },
+      {
+        projectId: project3.id,
+        unitNumber: '205',
+        floor: 2,
+        unitType: 'apartment',
+        status: 'available',
+        bedrooms: 3,
+        bathrooms: 2,
+        totalArea: 95.0,
+        builtArea: 87.0,
+        orientation: 'Sur',
+        facing: 'Patio',
+        price: 140000,
+        description: 'Apartamento familiar de 3 dormitorios',
+        features: JSON.stringify(['Suite principal', 'Balcón', 'Cocina separada']),
+        createdBy: adminUser.id
+      }
+    ];
 
-    // 7. Create a test professional
+    for (const unitData of parqueUnitsData) {
+      await prisma.unit.create({ data: unitData });
+    }
+
+    console.log(`✅ Units created for all three projects`);
+
+    // 8. Create user favorites
+    console.log('❤️ Creating user favorites...');
+    
+    // Get all created units for favorites
+    const allUnits = await prisma.unit.findMany({
+      select: { id: true, unitNumber: true, projectId: true }
+    });
+    
+    // Get the regular user for creating favorites
+    const regularUser = createdUsers.find(u => u.role === 'user').user;
+    
+    // Create some sample favorites for the regular user
+    const favoritesData = [
+      {
+        userId: regularUser.id,
+        unitId: allUnits.find(u => u.unitNumber === 'A101').id, // Torres del Río unit
+      },
+      {
+        userId: regularUser.id,
+        unitId: allUnits.find(u => u.unitNumber === '301').id, // Urban Living unit
+      },
+      {
+        userId: regularUser.id,
+        unitId: allUnits.find(u => u.unitNumber === 'S01').id, // Studio in Parque Central
+      }
+    ];
+
+    for (const favoriteData of favoritesData) {
+      await prisma.userFavorite.create({ data: favoriteData });
+    }
+    
+    console.log(`✅ Created ${favoritesData.length} user favorites for ${regularUser.email}`);
+
+    // 9. Create a test professional
     console.log('⚖️ Creating test professional...');
     const professional = await prisma.professional.create({
       data: {
@@ -318,19 +476,25 @@ async function seedDatabase() {
     });
     console.log(`✅ Professional created: ${professional.companyName}`);
 
-    // 8. Summary
+    // 10. Summary
     console.log('📊 Seeding completed successfully!');
-    console.log('='.repeat(60));
+    console.log('='.repeat(70));
     console.log(`🏢 Organization: ${organization.name}`);
     console.log(`👥 Test Users created: ${createdUsers.length}`);
     console.log('   Test Users (Password: Password.123):');
     createdUsers.forEach(({ user, role }) => {
       console.log(`   - ${user.email} (${role})`);
     });
-    console.log(`🏗️ Projects: 2 projects with 5 units total`);
+    console.log(`🏗️ Projects: 3 projects with comprehensive features`);
+    console.log('   - Torres del Río: Luxury residential (parking, 1-4 bedrooms)');
+    console.log('   - Urban Living Cordón: Modern urban (studios, 1-2 bed, commercial)');
+    console.log('   - Complejo Parque Central: Mixed-use (all types + commercial)');
+    console.log(`🏠 Units: 8 total units across all projects`);
+    console.log('   - 2 studios, 4 apartments (1-3 bed), 1 commercial space');
+    console.log(`❤️ Favorites: ${favoritesData.length} sample favorites for testing`);
     console.log(`⚖️ Professional: 1 verified professional`);
-    console.log('='.repeat(60));
-    console.log('🚀 Ready for testing with secure authentication!');
+    console.log('='.repeat(70));
+    console.log('🚀 Ready for testing favorites & features systems!');
 
   } catch (error) {
     console.error('❌ Seeding failed:', error);

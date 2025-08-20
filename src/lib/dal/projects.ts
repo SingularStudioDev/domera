@@ -11,26 +11,15 @@ import {
   NotFoundError,
   ConflictError,
   logAudit,
-  validateUniqueConstraint,
   type Result,
   type PaginatedResult,
   success,
   failure,
   formatPaginatedResult,
-  applyPaginationFilter,
-  applyTextSearchFilter,
-  applyDateRangeFilter
+  buildPaginationOptions,
+  buildTextSearchFilter,
+  buildDateRangeFilter
 } from './base';
-import type {
-  Project,
-  Unit,
-  CreateProjectInput,
-  UpdateProjectInput,
-  CreateUnitInput,
-  UpdateUnitInput,
-  ProjectFiltersInput,
-  UnitFiltersInput
-} from '@/types/database';
 import {
   CreateProjectSchema,
   UpdateProjectSchema,
@@ -39,6 +28,101 @@ import {
   ProjectFiltersSchema,
   UnitFiltersSchema
 } from '@/lib/validations/schemas';
+import type { Project, Unit, ProjectStatus, UnitStatus, UnitType } from '@prisma/client';
+
+// Input types for projects and units
+interface ProjectFiltersInput {
+  page: number;
+  pageSize: number;
+  organizationId?: string;
+  status?: ProjectStatus;
+  city?: string;
+  neighborhood?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+interface UnitFiltersInput {
+  page: number;
+  pageSize: number;
+  projectId?: string;
+  unitType?: UnitType;
+  status?: UnitStatus;
+  minBedrooms?: number;
+  maxBedrooms?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  orientation?: string;
+  floor?: number;
+}
+
+interface CreateProjectInput {
+  name: string;
+  slug: string;
+  organizationId: string;
+  description?: string;
+  shortDescription?: string;
+  address: string;
+  neighborhood?: string;
+  city: string;
+  status: ProjectStatus;
+  basePrice?: number;
+  currency: string;
+  images: string[];
+  amenities: string[];
+  startDate?: Date;
+  estimatedCompletion?: Date;
+}
+
+interface UpdateProjectInput {
+  name?: string;
+  slug?: string;
+  description?: string;
+  shortDescription?: string;
+  address?: string;
+  neighborhood?: string;
+  city?: string;
+  status?: ProjectStatus;
+  basePrice?: number;
+  currency?: string;
+  images?: string[];
+  amenities?: string[];
+  startDate?: Date;
+  estimatedCompletion?: Date;
+}
+
+interface CreateUnitInput {
+  projectId: string;
+  unitNumber: string;
+  unitType: UnitType;
+  status: UnitStatus;
+  floor: number;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  price: number;
+  orientation?: string;
+  balcony: boolean;
+  terrace: boolean;
+  features: any;
+  images: string[];
+}
+
+interface UpdateUnitInput {
+  unitNumber?: string;
+  unitType?: UnitType;
+  status?: UnitStatus;
+  floor?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  area?: number;
+  price?: number;
+  orientation?: string;
+  balcony?: boolean;
+  terrace?: boolean;
+  features?: any;
+  images?: string[];
+}
 
 // =============================================================================
 // PROJECT OPERATIONS
@@ -52,57 +136,62 @@ export async function getProjects(
 ): Promise<Result<PaginatedResult<Project>>> {
   try {
     const validFilters = ProjectFiltersSchema.parse(filters);
-    const client = await getDbClient();
+    const client = getDbClient();
 
-    // Build base query
-    let query = client
-      .from('projects')
-      .select(`
-        *,
-        organization:organizations(*),
-        units:units(id, status, unit_type, price)
-      `, { count: 'exact' });
-
-    // Apply filters
-    if (validFilters.organization_id) {
-      query = query.eq('organization_id', validFilters.organization_id);
+    // Build where clause
+    const where: any = {};
+    
+    if (validFilters.organizationId) {
+      where.organizationId = validFilters.organizationId;
     }
     
     if (validFilters.status) {
-      query = query.eq('status', validFilters.status);
+      where.status = validFilters.status;
     }
     
     if (validFilters.city) {
-      query = query.eq('city', validFilters.city);
+      where.city = validFilters.city;
     }
     
     if (validFilters.neighborhood) {
-      query = query.eq('neighborhood', validFilters.neighborhood);
+      where.neighborhood = validFilters.neighborhood;
     }
 
-    if (validFilters.min_price) {
-      query = query.gte('base_price', validFilters.min_price);
+    if (validFilters.minPrice || validFilters.maxPrice) {
+      where.basePrice = {};
+      if (validFilters.minPrice) where.basePrice.gte = validFilters.minPrice;
+      if (validFilters.maxPrice) where.basePrice.lte = validFilters.maxPrice;
     }
 
-    if (validFilters.max_price) {
-      query = query.lte('base_price', validFilters.max_price);
-    }
+    // Get total count
+    const totalCount = await client.project.count({ where });
 
     // Apply pagination
-    query = applyPaginationFilter(query, validFilters.page, validFilters.pageSize);
+    const paginationOptions = buildPaginationOptions(validFilters.page, validFilters.pageSize);
 
-    // Order by created date (newest first)
-    query = query.order('created_at', { ascending: false });
-
-    const { data: projects, error, count } = await query;
-
-    if (error) {
-      throw new DatabaseError('Error al obtener proyectos', error.code, error);
-    }
+    // Get projects with relations
+    const projects = await client.project.findMany({
+      where,
+      include: {
+        organization: true,
+        units: {
+          select: {
+            id: true,
+            status: true,
+            unitType: true,
+            price: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      ...paginationOptions
+    });
 
     const result = formatPaginatedResult(
-      projects || [],
-      count || 0,
+      projects,
+      totalCount,
       validFilters.page,
       validFilters.pageSize
     );
@@ -117,54 +206,73 @@ export async function getProjects(
  * Get public projects (for non-authenticated users)
  */
 export async function getPublicProjects(
-  filters: Omit<ProjectFiltersInput, 'organization_id'> = { page: 1, pageSize: 20 }
+  filters: Omit<ProjectFiltersInput, 'organizationId'> = { page: 1, pageSize: 20 }
 ): Promise<Result<PaginatedResult<Project>>> {
   try {
-    const validFilters = ProjectFiltersSchema.omit({ organization_id: true }).parse(filters);
-    const client = await getDbClient();
+    const validFilters = ProjectFiltersSchema.omit({ organizationId: true }).parse(filters);
+    const client = getDbClient();
 
-    let query = client
-      .from('projects')
-      .select(`
-        *,
-        organization:organizations(name, slug),
-        units:units(id, status, unit_type, price, bedrooms, bathrooms)
-      `, { count: 'exact' })
-      .in('status', ['pre_sale', 'construction']); // Only show active projects
-
-    // Apply filters (same as getProjects but exclude organization_id)
+    // Build where clause - only show active projects
+    const where: any = {
+      status: {
+        in: ['pre_sale', 'construction']
+      }
+    };
+    
     if (validFilters.status) {
-      query = query.eq('status', validFilters.status);
+      where.status = validFilters.status;
     }
     
     if (validFilters.city) {
-      query = query.eq('city', validFilters.city);
+      where.city = validFilters.city;
     }
     
     if (validFilters.neighborhood) {
-      query = query.eq('neighborhood', validFilters.neighborhood);
+      where.neighborhood = validFilters.neighborhood;
     }
 
-    if (validFilters.min_price) {
-      query = query.gte('base_price', validFilters.min_price);
+    if (validFilters.minPrice || validFilters.maxPrice) {
+      where.basePrice = {};
+      if (validFilters.minPrice) where.basePrice.gte = validFilters.minPrice;
+      if (validFilters.maxPrice) where.basePrice.lte = validFilters.maxPrice;
     }
 
-    if (validFilters.max_price) {
-      query = query.lte('base_price', validFilters.max_price);
-    }
+    // Get total count
+    const totalCount = await client.project.count({ where });
 
-    query = applyPaginationFilter(query, validFilters.page, validFilters.pageSize);
-    query = query.order('created_at', { ascending: false });
+    // Apply pagination
+    const paginationOptions = buildPaginationOptions(validFilters.page, validFilters.pageSize);
 
-    const { data: projects, error, count } = await query;
-
-    if (error) {
-      throw new DatabaseError('Error al obtener proyectos públicos', error.code, error);
-    }
+    // Get public projects with limited organization info
+    const projects = await client.project.findMany({
+      where,
+      include: {
+        organization: {
+          select: {
+            name: true,
+            slug: true
+          }
+        },
+        units: {
+          select: {
+            id: true,
+            status: true,
+            unitType: true,
+            price: true,
+            bedrooms: true,
+            bathrooms: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      ...paginationOptions
+    });
 
     const result = formatPaginatedResult(
-      projects || [],
-      count || 0,
+      projects,
+      totalCount,
       validFilters.page,
       validFilters.pageSize
     );
@@ -180,23 +288,18 @@ export async function getPublicProjects(
  */
 export async function getProjectById(projectId: string): Promise<Result<Project>> {
   try {
-    const client = await getDbClient();
+    const client = getDbClient();
 
-    const { data: project, error } = await client
-      .from('projects')
-      .select(`
-        *,
-        organization:organizations(*),
-        units:units(*)
-      `)
-      .eq('id', projectId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        throw new NotFoundError('Proyecto', projectId);
+    const project = await client.project.findUnique({
+      where: { id: projectId },
+      include: {
+        organization: true,
+        units: true
       }
-      throw new DatabaseError('Error al obtener proyecto', error.code, error);
+    });
+
+    if (!project) {
+      throw new NotFoundError('Proyecto', projectId);
     }
 
     return success(project);
@@ -213,24 +316,23 @@ export async function getProjectBySlug(
   projectSlug: string
 ): Promise<Result<Project>> {
   try {
-    const client = await getDbClient();
+    const client = getDbClient();
 
-    const { data: project, error } = await client
-      .from('projects')
-      .select(`
-        *,
-        organization:organizations(*),
-        units:units(*)
-      `)
-      .eq('slug', projectSlug)
-      .eq('organizations.slug', organizationSlug)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        throw new NotFoundError('Proyecto');
+    const project = await client.project.findFirst({
+      where: {
+        slug: projectSlug,
+        organization: {
+          slug: organizationSlug
+        }
+      },
+      include: {
+        organization: true,
+        units: true
       }
-      throw new DatabaseError('Error al obtener proyecto', error.code, error);
+    });
+
+    if (!project) {
+      throw new NotFoundError('Proyecto');
     }
 
     return success(project);

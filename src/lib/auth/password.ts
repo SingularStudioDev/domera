@@ -1,7 +1,6 @@
 // =============================================================================
-// PASSWORD UTILITY FUNCTIONS FOR DOMERA PLATFORM
+// PASSWORD UTILITY FUNCTIONS
 // Secure password hashing and verification using bcryptjs
-// Created: August 2025
 // =============================================================================
 
 import bcrypt from 'bcryptjs';
@@ -34,7 +33,10 @@ export async function hashPassword(password: string): Promise<string> {
  * @param hashedPassword - Hashed password from database
  * @returns Promise<boolean> - True if password matches, false otherwise
  */
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+export async function verifyPassword(
+  password: string,
+  hashedPassword: string
+): Promise<boolean> {
   if (!password || !hashedPassword) {
     return false;
   }
@@ -90,8 +92,16 @@ export function validatePasswordStrength(password: string): {
 
   // Check for common weak passwords
   const commonPasswords = [
-    'password', 'password123', '123456', '123456789', 'qwerty',
-    'abc123', 'admin', 'letmein', 'welcome', 'monkey'
+    'password',
+    'password123',
+    '123456',
+    '123456789',
+    'qwerty',
+    'abc123',
+    'admin',
+    'letmein',
+    'welcome',
+    'monkey',
   ];
 
   if (commonPasswords.includes(password.toLowerCase())) {
@@ -100,7 +110,7 @@ export function validatePasswordStrength(password: string): {
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -114,24 +124,27 @@ export function generateSecurePassword(length: number = 12): string {
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
   const numbers = '0123456789';
   const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-  
+
   const allChars = uppercase + lowercase + numbers + symbols;
-  
+
   let password = '';
-  
+
   // Ensure at least one character from each category
   password += uppercase[Math.floor(Math.random() * uppercase.length)];
   password += lowercase[Math.floor(Math.random() * lowercase.length)];
   password += numbers[Math.floor(Math.random() * numbers.length)];
   password += symbols[Math.floor(Math.random() * symbols.length)];
-  
+
   // Fill the rest randomly
   for (let i = 4; i < length; i++) {
     password += allChars[Math.floor(Math.random() * allChars.length)];
   }
-  
+
   // Shuffle the password to avoid predictable patterns
-  return password.split('').sort(() => 0.5 - Math.random()).join('');
+  return password
+    .split('')
+    .sort(() => 0.5 - Math.random())
+    .join('');
 }
 
 /**
@@ -144,7 +157,7 @@ export const PASSWORD_REQUIREMENTS = {
   REQUIRE_LOWERCASE: true,
   REQUIRE_NUMBERS: true,
   REQUIRE_SYMBOLS: true,
-  SALT_ROUNDS
+  SALT_ROUNDS,
 } as const;
 
 /**

@@ -36,7 +36,6 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 - `/projects` - Project listing page
 - `/projects/[id]` - Dynamic project detail page with gallery, description, amenities
 - `/projects/[id]/units/[unitId]` - Individual unit detail page
-- `/cart` - Shopping cart page (evolves to operation management)
 - `/dashboard` - Organization dashboard
 - `/userDashboard` - User dashboard for active operations
 
@@ -78,9 +77,9 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 
 #### Flujo de Operaciones:
 
-1. Usuario selecciona unidad(es) + propiedades adicionales (cocheras, bodegas)
+1. Usuario selecciona unidad (apartamento, cochera , bodega, etc)
 2. Se genera una operación única (bloquea al usuario para otras)
-3. Se asigna profesional y se generan documentos desde templates
+3. Se asigna profesional y se generan documentos
 4. Usuario descarga, firma externamente (Abitab/Agesic) y sube documentos
 5. Profesional valida documentos y proceso
 6. Operación se completa y usuario queda libre para nueva operación
@@ -106,10 +105,115 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 
 - **TypeScript Configuration**: Strict mode enabled with path aliases `@/*` for `src/*`
 - **Styling Approach**: Uses Tailwind utility classes with custom brand colors (domera-blue: #2563eb, domera-navy: #1e3a8a)
-- **Image Handling**: Mix of Next.js Image component and regular img tags
+- **Image Handling**: regular img tags
 - **Responsive Design**: Mobile-first approach with md: and lg: breakpoints
 - **Animations**: CSS transitions and hover effects, uses Framer Motion library
 - **Database Security**: Row Level Security (RLS) configurado por rol y organización
+
+### React Patterns and Best Practices
+
+#### 🚫 **AVOID useEffect - Critical Guidelines**
+
+**Core Philosophy**: "Effects are an escape hatch from the React paradigm. Don't rush to add Effects."
+
+**What NOT to use Effects for:**
+
+- ❌ **Transforming data for rendering** - Calculate during render instead
+- ❌ **Handling user events** - Use event handlers directly
+- ❌ **Data fetching on component mount** - Use framework patterns (Server Components, etc.)
+- ❌ **Synchronizing state between components** - Lift state up or use shared state
+
+**Preferred Patterns for Domera Platform:**
+
+```typescript
+// ✅ GOOD: Calculate derived state during rendering
+function ProjectList({ projects, selectedFilters }) {
+  const filteredProjects = projects.filter(project =>
+    matchesFilters(project, selectedFilters)
+  );
+  return <div>{/* render */}</div>;
+}
+
+// ✅ GOOD: Handle user interactions in event handlers
+function FavoriteButton({ unitId }) {
+  async function handleToggle() {
+    const result = await toggleFavorite(unitId);
+    if (result.success) {
+      // Revalidate or redirect
+    }
+  }
+  return <button onClick={handleToggle}>Toggle</button>;
+}
+
+// ✅ GOOD: Use useMemo for expensive calculations only
+function ExpensiveCalculation({ largeDataSet }) {
+  const expensiveValue = useMemo(() =>
+    complexCalculation(largeDataSet), [largeDataSet]
+  );
+  return <div>{expensiveValue}</div>;
+}
+
+// ❌ AVOID: Chaining Effects or state synchronization
+// Instead: lift state up or use derived state
+```
+
+**Data Fetching Strategy:**
+
+- **Server Components**: Fetch data at page level
+- **Server Actions**: Handle form submissions and mutations
+- **Event Handlers**: Handle user-triggered data changes
+- **Cache revalidation**: Use `revalidatePath()` after mutations
+
+**State Management Principles:**
+
+- Store minimal state (IDs instead of objects)
+- Calculate derived state during rendering
+- Use "key" prop to reset component state
+- Lift state up for component synchronization
+
+### Backend-First Development Strategy
+
+#### 🎯 **CORE FOCUS: Backend Functionality**
+
+**Development Priority:**
+
+1. **Server Actions** - Core business logic and data mutations
+2. **API Endpoints** - When needed for specific integrations
+3. **Data Access Layer** - Secure CRUD operations with validation
+4. **Frontend** - Will be implemented later by specialized frontend developers
+
+**Backend Design Principles:**
+
+- ✅ **Simplicity for Frontend**: Easy-to-use Server Actions with clear interfaces
+- ✅ **Security First**: All operations properly authenticated and authorized
+- ✅ **No Overcomplexity**: Straightforward data fetching and CRUD operations
+- ✅ **Clear Documentation**: Well-defined interfaces and error handling
+- ✅ **Type Safety**: Full TypeScript support for frontend integration
+
+**What Backend Should Provide:**
+
+```typescript
+// ✅ GOOD: Simple, secure Server Actions
+export async function getUserFavorites(): Promise<FavoriteResult>;
+export async function addToFavorites(unitId: string): Promise<FavoriteResult>;
+export async function getProjectsWithFeatures(): Promise<ProjectResult>;
+
+// ✅ GOOD: Clear result types
+interface FavoriteResult {
+  success: boolean;
+  data?: FavoriteUnit[];
+  error?: string;
+}
+```
+
+**Security Non-Negotiables:**
+
+- 🔒 **Authentication**: Every action validates user session
+- 🔐 **Authorization**: Role-based access control (RBAC)
+- 🛡️ **Input Validation**: Zod schemas for all inputs
+- 🏢 **Multi-tenant**: Organization-based data isolation
+- 📝 **Audit Trail**: All changes logged to audit_logs
+- 🚫 **No Direct DB Access**: Always through DAL with validations
 
 ### Esquema de Base de Datos
 
@@ -135,7 +239,7 @@ notifications, audit_logs, data_corrections
 #### Tipos de Propiedades:
 
 - Apartamentos, locales comerciales, cocheras, bodegas
-- Sistema de agrupación para operaciones (unidad + cochera = 1 operación)
+- Sistema individual para operaciones (unidad, cochera, etc son 1 operación)
 - Estados: disponible, reservado, vendido, en_proceso
 
 ### Data Patterns (Migración Planificada)
@@ -147,13 +251,12 @@ notifications, audit_logs, data_corrections
 
 ### Important Notes
 
-- The project name in package.json is "pozo" but the brand is "Domera"
+- The brand is "Domera"
 - Uses Inter font from Google Fonts
 - Spanish language interface (lang="es")
-- Operates under "Ley de Vivienda Promovida N°18.795" (Uruguay)
-- Platform fee: USD $3,000 (no real estate commissions)
+- Has Projects that operates under "Ley de Vivienda Promovida N°18.795" (Uruguay)
 - Currency: USD for all transactions
-- Target market: Montevideo areas (Pocitos, Carrasco, La Blanqueada)
+- Target market: Montevideo areas (Pocitos, Carrasco, La Blanqueada), Maldonado and Punta del Este for now.
 
 ### Timeline de Implementación
 
@@ -331,52 +434,6 @@ notifications, audit_logs, data_corrections
 #### Pendiente: Dashboard funcional
 
 #### Pendiente: Gestión de profesionales
-
----
-
-## 🎯 CREDENCIALES DE PRUEBA
-
-```
-Email: prueba@test.com
-Password: Password.123
-Roles: user (usuario regular)
-```
-
-## 📂 ESTRUCTURA DE ARCHIVOS IMPLEMENTADA
-
-```
-src/
-├── lib/
-│   ├── supabase/          ✅ Cliente y configuración
-│   ├── auth/              ✅ NextAuth configuración
-│   ├── dal/               ✅ Data Access Layer
-│   └── validations/       ✅ Esquemas Zod
-├── types/
-│   ├── database.ts        ✅ Tipos de DB
-│   └── next-auth.d.ts     ✅ Extensiones NextAuth
-├── hooks/
-│   └── useAuth.ts         ✅ Hooks de autenticación
-├── components/
-│   └── providers/         ✅ Session provider
-└── app/
-    ├── api/auth/          ✅ NextAuth routes
-    └── login/             ✅ Página actualizada
-
-supabase/
-├── schema.sql             ✅ Esquema completo
-├── rls-policies.sql       ✅ Políticas de seguridad
-└── seed-data.sql          ✅ Datos de prueba
-
-middleware.ts              ✅ Protección de rutas
-.env.local.example         ✅ Variables requeridas
-```
-
-## ⚡ COMANDOS PARA CONTINUAR
-
-1. **Setup de Supabase**: Crear proyecto y aplicar esquemas
-2. **Variables de entorno**: Configurar `.env`
-3. **Testing**: Verificar login con credenciales de prueba
-4. **Desarrollo**: Continuar con Server Actions
 
 - Ensure we use prisma and not bypass it with direct supabase connections in order to have accurate process.
 - remember our dev server runs on port 3000
