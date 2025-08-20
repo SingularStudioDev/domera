@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECTS DATA ACCESS LAYER
-// Database operations for projects and units
-// Created: August 2025
+// Database operations for projects only - following single responsibility principle
+// Unit operations have been moved to @/lib/dal/units.ts
 // =============================================================================
 
 import {
@@ -18,19 +18,19 @@ import {
   formatPaginatedResult,
   buildPaginationOptions,
   buildTextSearchFilter,
-  buildDateRangeFilter
+  buildDateRangeFilter,
 } from './base';
 import {
   CreateProjectSchema,
   UpdateProjectSchema,
-  CreateUnitSchema,
-  UpdateUnitSchema,
   ProjectFiltersSchema,
-  UnitFiltersSchema
 } from '@/lib/validations/schemas';
-import type { Project, Unit, ProjectStatus, UnitStatus, UnitType } from '@prisma/client';
+import type { Project, ProjectStatus } from '@prisma/client';
 
-// Input types for projects and units
+// =============================================================================
+// TYPES AND INTERFACES
+// =============================================================================
+
 interface ProjectFiltersInput {
   page: number;
   pageSize: number;
@@ -40,20 +40,6 @@ interface ProjectFiltersInput {
   neighborhood?: string;
   minPrice?: number;
   maxPrice?: number;
-}
-
-interface UnitFiltersInput {
-  page: number;
-  pageSize: number;
-  projectId?: string;
-  unitType?: UnitType;
-  status?: UnitStatus;
-  minBedrooms?: number;
-  maxBedrooms?: number;
-  minPrice?: number;
-  maxPrice?: number;
-  orientation?: string;
-  floor?: number;
 }
 
 interface CreateProjectInput {
@@ -91,39 +77,6 @@ interface UpdateProjectInput {
   estimatedCompletion?: Date;
 }
 
-interface CreateUnitInput {
-  projectId: string;
-  unitNumber: string;
-  unitType: UnitType;
-  status: UnitStatus;
-  floor: number;
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
-  price: number;
-  orientation?: string;
-  balcony: boolean;
-  terrace: boolean;
-  features: any;
-  images: string[];
-}
-
-interface UpdateUnitInput {
-  unitNumber?: string;
-  unitType?: UnitType;
-  status?: UnitStatus;
-  floor?: number;
-  bedrooms?: number;
-  bathrooms?: number;
-  area?: number;
-  price?: number;
-  orientation?: string;
-  balcony?: boolean;
-  terrace?: boolean;
-  features?: any;
-  images?: string[];
-}
-
 // =============================================================================
 // PROJECT OPERATIONS
 // =============================================================================
@@ -140,19 +93,19 @@ export async function getProjects(
 
     // Build where clause
     const where: any = {};
-    
+
     if (validFilters.organizationId) {
       where.organizationId = validFilters.organizationId;
     }
-    
+
     if (validFilters.status) {
       where.status = validFilters.status;
     }
-    
+
     if (validFilters.city) {
       where.city = validFilters.city;
     }
-    
+
     if (validFilters.neighborhood) {
       where.neighborhood = validFilters.neighborhood;
     }
@@ -167,7 +120,10 @@ export async function getProjects(
     const totalCount = await client.project.count({ where });
 
     // Apply pagination
-    const paginationOptions = buildPaginationOptions(validFilters.page, validFilters.pageSize);
+    const paginationOptions = buildPaginationOptions(
+      validFilters.page,
+      validFilters.pageSize
+    );
 
     // Get projects with relations
     const projects = await client.project.findMany({
@@ -179,14 +135,14 @@ export async function getProjects(
             id: true,
             status: true,
             unitType: true,
-            price: true
-          }
-        }
+            price: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
-      ...paginationOptions
+      ...paginationOptions,
     });
 
     const result = formatPaginatedResult(
@@ -198,7 +154,9 @@ export async function getProjects(
 
     return success(result);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : 'Error desconocido'
+    );
   }
 }
 
@@ -206,27 +164,32 @@ export async function getProjects(
  * Get public projects (for non-authenticated users)
  */
 export async function getPublicProjects(
-  filters: Omit<ProjectFiltersInput, 'organizationId'> = { page: 1, pageSize: 20 }
+  filters: Omit<ProjectFiltersInput, 'organizationId'> = {
+    page: 1,
+    pageSize: 20,
+  }
 ): Promise<Result<PaginatedResult<Project>>> {
   try {
-    const validFilters = ProjectFiltersSchema.omit({ organizationId: true }).parse(filters);
+    const validFilters = ProjectFiltersSchema.omit({
+      organizationId: true,
+    }).parse(filters);
     const client = getDbClient();
 
     // Build where clause - only show active projects
     const where: any = {
       status: {
-        in: ['pre_sale', 'construction']
-      }
+        in: ['pre_sale', 'construction'],
+      },
     };
-    
+
     if (validFilters.status) {
       where.status = validFilters.status;
     }
-    
+
     if (validFilters.city) {
       where.city = validFilters.city;
     }
-    
+
     if (validFilters.neighborhood) {
       where.neighborhood = validFilters.neighborhood;
     }
@@ -241,7 +204,10 @@ export async function getPublicProjects(
     const totalCount = await client.project.count({ where });
 
     // Apply pagination
-    const paginationOptions = buildPaginationOptions(validFilters.page, validFilters.pageSize);
+    const paginationOptions = buildPaginationOptions(
+      validFilters.page,
+      validFilters.pageSize
+    );
 
     // Get public projects with limited organization info
     const projects = await client.project.findMany({
@@ -250,8 +216,8 @@ export async function getPublicProjects(
         organization: {
           select: {
             name: true,
-            slug: true
-          }
+            slug: true,
+          },
         },
         units: {
           select: {
@@ -260,14 +226,14 @@ export async function getPublicProjects(
             unitType: true,
             price: true,
             bedrooms: true,
-            bathrooms: true
-          }
-        }
+            bathrooms: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
-      ...paginationOptions
+      ...paginationOptions,
     });
 
     const result = formatPaginatedResult(
@@ -279,14 +245,18 @@ export async function getPublicProjects(
 
     return success(result);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : 'Error desconocido'
+    );
   }
 }
 
 /**
  * Get project by ID
  */
-export async function getProjectById(projectId: string): Promise<Result<Project>> {
+export async function getProjectById(
+  projectId: string
+): Promise<Result<Project>> {
   try {
     const client = getDbClient();
 
@@ -294,8 +264,8 @@ export async function getProjectById(projectId: string): Promise<Result<Project>
       where: { id: projectId },
       include: {
         organization: true,
-        units: true
-      }
+        units: true,
+      },
     });
 
     if (!project) {
@@ -304,7 +274,9 @@ export async function getProjectById(projectId: string): Promise<Result<Project>
 
     return success(project);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : 'Error desconocido'
+    );
   }
 }
 
@@ -322,13 +294,13 @@ export async function getProjectBySlug(
       where: {
         slug: projectSlug,
         organization: {
-          slug: organizationSlug
-        }
+          slug: organizationSlug,
+        },
       },
       include: {
         organization: true,
-        units: true
-      }
+        units: true,
+      },
     });
 
     if (!project) {
@@ -337,7 +309,9 @@ export async function getProjectBySlug(
 
     return success(project);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : 'Error desconocido'
+    );
   }
 }
 
@@ -352,52 +326,50 @@ export async function createProject(
 ): Promise<Result<Project>> {
   try {
     const validInput = CreateProjectSchema.parse(input);
-    const client = await getDbClient();
+    const client = getDbClient();
 
     // Check if slug is unique within organization
-    const isSlugUnique = await validateUniqueConstraint(
-      client,
-      'projects',
-      'slug',
-      validInput.slug
-    );
+    const existingProject = await client.project.findFirst({
+      where: {
+        slug: validInput.slug,
+        organizationId: validInput.organizationId,
+      },
+    });
 
-    if (!isSlugUnique) {
-      throw new ConflictError('Ya existe un proyecto con este slug en la organización');
+    if (existingProject) {
+      throw new ConflictError(
+        'Ya existe un proyecto con este slug en la organización'
+      );
     }
 
     // Create project
-    const { data: project, error } = await client
-      .from('projects')
-      .insert({
+    const project = await client.project.create({
+      data: {
         ...validInput,
-        created_by: userId
-      })
-      .select(`
-        *,
-        organization:organizations(*)
-      `)
-      .single();
-
-    if (error) {
-      throw new DatabaseError('Error al crear proyecto', error.code, error);
-    }
+        createdBy: userId,
+      },
+      include: {
+        organization: true,
+      },
+    });
 
     // Log audit
     await logAudit(client, {
       userId,
-      organizationId: project.organization_id,
+      organizationId: project.organizationId,
       tableName: 'projects',
       recordId: project.id,
       action: 'INSERT',
       newValues: project,
       ipAddress,
-      userAgent
+      userAgent,
     });
 
     return success(project);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : 'Error desconocido'
+    );
   }
 }
 
@@ -413,7 +385,7 @@ export async function updateProject(
 ): Promise<Result<Project>> {
   try {
     const validInput = UpdateProjectSchema.parse(input);
-    const client = await getDbClient();
+    const client = getDbClient();
 
     // Get current project for audit
     const currentResult = await getProjectById(projectId);
@@ -425,340 +397,53 @@ export async function updateProject(
 
     // If slug is being updated, check uniqueness
     if (validInput.slug && validInput.slug !== currentProject.slug) {
-      const isSlugUnique = await validateUniqueConstraint(
-        client,
-        'projects',
-        'slug',
-        validInput.slug,
-        projectId
-      );
+      const existingProject = await client.project.findFirst({
+        where: {
+          slug: validInput.slug,
+          organizationId: currentProject.organizationId,
+          NOT: {
+            id: projectId,
+          },
+        },
+      });
 
-      if (!isSlugUnique) {
-        throw new ConflictError('Ya existe un proyecto con este slug en la organización');
+      if (existingProject) {
+        throw new ConflictError(
+          'Ya existe un proyecto con este slug en la organización'
+        );
       }
     }
 
     // Update project
-    const { data: project, error } = await client
-      .from('projects')
-      .update(validInput)
-      .eq('id', projectId)
-      .select(`
-        *,
-        organization:organizations(*)
-      `)
-      .single();
-
-    if (error) {
-      throw new DatabaseError('Error al actualizar proyecto', error.code, error);
-    }
+    const project = await client.project.update({
+      where: { id: projectId },
+      data: {
+        ...validInput,
+        updatedBy: userId,
+      },
+      include: {
+        organization: true,
+      },
+    });
 
     // Log audit
     await logAudit(client, {
       userId,
-      organizationId: project.organization_id,
+      organizationId: project.organizationId,
       tableName: 'projects',
       recordId: projectId,
       action: 'UPDATE',
       oldValues: currentProject,
       newValues: validInput,
       ipAddress,
-      userAgent
+      userAgent,
     });
 
     return success(project);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
-  }
-}
-
-// =============================================================================
-// UNIT OPERATIONS
-// =============================================================================
-
-/**
- * Get units with filters and pagination
- */
-export async function getUnits(
-  filters: UnitFiltersInput = { page: 1, pageSize: 20 }
-): Promise<Result<PaginatedResult<Unit>>> {
-  try {
-    const validFilters = UnitFiltersSchema.parse(filters);
-    const client = await getDbClient();
-
-    let query = client
-      .from('units')
-      .select(`
-        *,
-        project:projects(
-          *,
-          organization:organizations(*)
-        )
-      `, { count: 'exact' });
-
-    // Apply filters
-    if (validFilters.project_id) {
-      query = query.eq('project_id', validFilters.project_id);
-    }
-
-    if (validFilters.unit_type) {
-      query = query.eq('unit_type', validFilters.unit_type);
-    }
-
-    if (validFilters.status) {
-      query = query.eq('status', validFilters.status);
-    }
-
-    if (validFilters.min_bedrooms) {
-      query = query.gte('bedrooms', validFilters.min_bedrooms);
-    }
-
-    if (validFilters.max_bedrooms) {
-      query = query.lte('bedrooms', validFilters.max_bedrooms);
-    }
-
-    if (validFilters.min_price) {
-      query = query.gte('price', validFilters.min_price);
-    }
-
-    if (validFilters.max_price) {
-      query = query.lte('price', validFilters.max_price);
-    }
-
-    if (validFilters.orientation) {
-      query = query.eq('orientation', validFilters.orientation);
-    }
-
-    if (validFilters.floor !== undefined) {
-      query = query.eq('floor', validFilters.floor);
-    }
-
-    query = applyPaginationFilter(query, validFilters.page, validFilters.pageSize);
-    query = query.order('unit_number', { ascending: true });
-
-    const { data: units, error, count } = await query;
-
-    if (error) {
-      throw new DatabaseError('Error al obtener unidades', error.code, error);
-    }
-
-    const result = formatPaginatedResult(
-      units || [],
-      count || 0,
-      validFilters.page,
-      validFilters.pageSize
+    return failure(
+      error instanceof Error ? error.message : 'Error desconocido'
     );
-
-    return success(result);
-  } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
-  }
-}
-
-/**
- * Get available units for a project
- */
-export async function getAvailableUnits(projectId: string): Promise<Result<Unit[]>> {
-  try {
-    const client = await getDbClient();
-
-    const { data: units, error } = await client
-      .from('units')
-      .select(`
-        *,
-        project:projects(
-          *,
-          organization:organizations(*)
-        )
-      `)
-      .eq('project_id', projectId)
-      .eq('status', 'available')
-      .order('unit_number', { ascending: true });
-
-    if (error) {
-      throw new DatabaseError('Error al obtener unidades disponibles', error.code, error);
-    }
-
-    return success(units || []);
-  } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
-  }
-}
-
-/**
- * Get unit by ID
- */
-export async function getUnitById(unitId: string): Promise<Result<Unit>> {
-  try {
-    const client = await getDbClient();
-
-    const { data: unit, error } = await client
-      .from('units')
-      .select(`
-        *,
-        project:projects(
-          *,
-          organization:organizations(*)
-        )
-      `)
-      .eq('id', unitId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        throw new NotFoundError('Unidad', unitId);
-      }
-      throw new DatabaseError('Error al obtener unidad', error.code, error);
-    }
-
-    return success(unit);
-  } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
-  }
-}
-
-/**
- * Create new unit
- */
-export async function createUnit(
-  input: CreateUnitInput,
-  userId: string,
-  ipAddress?: string,
-  userAgent?: string
-): Promise<Result<Unit>> {
-  try {
-    const validInput = CreateUnitSchema.parse(input);
-    const client = await getDbClient();
-
-    // Check if unit number is unique within project
-    const { data: existingUnit } = await client
-      .from('units')
-      .select('id')
-      .eq('project_id', validInput.project_id)
-      .eq('unit_number', validInput.unit_number)
-      .single();
-
-    if (existingUnit) {
-      throw new ConflictError('Ya existe una unidad con este número en el proyecto');
-    }
-
-    // Create unit
-    const { data: unit, error } = await client
-      .from('units')
-      .insert({
-        ...validInput,
-        created_by: userId
-      })
-      .select(`
-        *,
-        project:projects(
-          *,
-          organization:organizations(*)
-        )
-      `)
-      .single();
-
-    if (error) {
-      throw new DatabaseError('Error al crear unidad', error.code, error);
-    }
-
-    // Update project unit counts
-    await updateProjectUnitCounts(client, validInput.project_id);
-
-    // Log audit
-    await logAudit(client, {
-      userId,
-      organizationId: unit.project.organization_id,
-      tableName: 'units',
-      recordId: unit.id,
-      action: 'INSERT',
-      newValues: unit,
-      ipAddress,
-      userAgent
-    });
-
-    return success(unit);
-  } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
-  }
-}
-
-/**
- * Update unit
- */
-export async function updateUnit(
-  unitId: string,
-  input: UpdateUnitInput,
-  userId: string,
-  ipAddress?: string,
-  userAgent?: string
-): Promise<Result<Unit>> {
-  try {
-    const validInput = UpdateUnitSchema.parse(input);
-    const client = await getDbClient();
-
-    // Get current unit for audit and project info
-    const currentResult = await getUnitById(unitId);
-    if (!currentResult.data) {
-      return failure(currentResult.error || 'Unidad no encontrada');
-    }
-
-    const currentUnit = currentResult.data;
-
-    // If unit number is being updated, check uniqueness
-    if (validInput.unit_number && validInput.unit_number !== currentUnit.unit_number) {
-      const { data: existingUnit } = await client
-        .from('units')
-        .select('id')
-        .eq('project_id', currentUnit.project_id)
-        .eq('unit_number', validInput.unit_number)
-        .neq('id', unitId)
-        .single();
-
-      if (existingUnit) {
-        throw new ConflictError('Ya existe una unidad con este número en el proyecto');
-      }
-    }
-
-    // Update unit
-    const { data: unit, error } = await client
-      .from('units')
-      .update(validInput)
-      .eq('id', unitId)
-      .select(`
-        *,
-        project:projects(
-          *,
-          organization:organizations(*)
-        )
-      `)
-      .single();
-
-    if (error) {
-      throw new DatabaseError('Error al actualizar unidad', error.code, error);
-    }
-
-    // If status changed, update project unit counts
-    if (validInput.status && validInput.status !== currentUnit.status) {
-      await updateProjectUnitCounts(client, currentUnit.project_id);
-    }
-
-    // Log audit
-    await logAudit(client, {
-      userId,
-      organizationId: unit.project.organization_id,
-      tableName: 'units',
-      recordId: unitId,
-      action: 'UPDATE',
-      oldValues: currentUnit,
-      newValues: validInput,
-      ipAddress,
-      userAgent
-    });
-
-    return success(unit);
-  } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
   }
 }
 
@@ -768,26 +453,80 @@ export async function updateUnit(
 
 /**
  * Update project unit counts based on unit statuses
+ * NOTE: This function coordinates with units DAL to get unit counts
  */
-async function updateProjectUnitCounts(client: any, projectId: string): Promise<void> {
-  const { data: units, error } = await client
-    .from('units')
-    .select('status')
-    .eq('project_id', projectId);
+export async function updateProjectUnitCounts(
+  projectId: string
+): Promise<Result<boolean>> {
+  try {
+    const client = getDbClient();
 
-  if (error) {
-    console.error('Error getting units for count update:', error);
-    return;
+    const units = await client.unit.findMany({
+      where: { projectId },
+      select: { status: true },
+    });
+
+    const totalUnits = units.length;
+    const availableUnits = units.filter((u) => u.status === 'available').length;
+
+    await client.project.update({
+      where: { id: projectId },
+      data: {
+        totalUnits,
+        availableUnits,
+      },
+    });
+
+    return success(true);
+  } catch (error) {
+    console.error('Error updating project unit counts:', error);
+    return failure(
+      error instanceof Error
+        ? error.message
+        : 'Error actualizando conteos de unidades'
+    );
   }
+}
 
-  const totalUnits = units.length;
-  const availableUnits = units.filter((u: any) => u.status === 'available').length;
+/**
+ * Get project statistics for a specific project
+ */
+export async function getProjectStats(projectId: string): Promise<
+  Result<{
+    totalUnits: number;
+    availableUnits: number;
+    soldUnits: number;
+    reservedUnits: number;
+    totalRevenue: number;
+  }>
+> {
+  try {
+    const client = getDbClient();
 
-  await client
-    .from('projects')
-    .update({
-      total_units: totalUnits,
-      available_units: availableUnits
-    })
-    .eq('id', projectId);
+    const units = await client.unit.findMany({
+      where: { projectId },
+      select: {
+        status: true,
+        price: true,
+      },
+    });
+
+    const stats = {
+      totalUnits: units.length,
+      availableUnits: units.filter((u) => u.status === 'available').length,
+      soldUnits: units.filter((u) => u.status === 'sold').length,
+      reservedUnits: units.filter((u) => u.status === 'reserved').length,
+      totalRevenue: units
+        .filter((u) => u.status === 'sold')
+        .reduce((sum, unit) => sum + unit.price.toNumber(), 0),
+    };
+
+    return success(stats);
+  } catch (error) {
+    return failure(
+      error instanceof Error
+        ? error.message
+        : 'Error obteniendo estadísticas del proyecto'
+    );
+  }
 }

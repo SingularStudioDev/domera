@@ -1,414 +1,369 @@
 // =============================================================================
 // OPERATIONS SERVER ACTIONS
-// Business logic for managing real estate operations
+// Server actions for operation management - following single responsibility principle
+// Only handles operation-related operations
 // =============================================================================
 
 'use server';
 
-import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
-import { OperationStatus, UnitStatus } from '@prisma/client';
+import { validateSession, requireRole, requireOrganizationAccess } from '@/lib/auth/validation';
+import {
+  hasActiveOperation,
+  getOperationById,
+  getUserActiveOperation,
+  updateOperation,
+  cancelOperation
+} from '@/lib/dal/operations';
+import { 
+  validateUnitsSameOrganization,
+  createOperationWithValidation 
+} from '@/lib/services/operations';
+import type { OperationStatus } from '@prisma/client';
+
+// Input types
+interface CreateOperationInput {
+  unitIds: string[];
+  organizationId: string;
+  totalAmount: number;
+  notes?: string;
+}
+
+interface UpdateOperationInput {
+  status?: OperationStatus;
+  notes?: string;
+}
 
 // =============================================================================
 // TYPES AND INTERFACES
 // =============================================================================
 
-interface CreateOperationInput {
-  unitIds: string[];
-  notes?: string;
-}
-
-interface OperationResult {
+interface OperationActionResult {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 
 // =============================================================================
-// CORE: ONE ACTIVE OPERATION PER USER
+// SERVER ACTIONS FOR OPERATIONS
 // =============================================================================
 
 /**
- * Check if user has an active operation
+ * Create new operation
+ * Requires user authentication and units validation
  */
-export async function getUserActiveOperation(userId: string) {
+export async function createOperationAction(
+  input: CreateOperationInput,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<OperationActionResult> {
   try {
-    const activeOperation = await prisma.operation.findFirst({
-      where: {
-        userId,
-        status: {
-          notIn: ['completed', 'cancelled'],
-        },
-      },
-      include: {
-        operationUnits: {
-          include: {
-            unit: {
-              include: {
-                project: {
-                  select: {
-                    name: true,
-                    slug: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        steps: {
-          orderBy: { stepOrder: 'asc' },
-        },
-      },
-    });
-
-    return activeOperation;
-  } catch (error) {
-    console.error('Error checking active operation:', error);
-    return null;
-  }
-}
-
-/**
- * Enforce business rule: One active operation per user
- */
-async function validateOneActiveOperationRule(
-  userId: string
-): Promise<OperationResult> {
-  const activeOperation = await getUserActiveOperation(userId);
-
-  if (activeOperation) {
-    return {
-      success: false,
-      error: `Ya tienes una operación activa (ID: ${activeOperation.id}). Debes completar o cancelar la operación actual antes de iniciar una nueva.`,
-      data: { activeOperation },
-    };
-  }
-
-  return { success: true };
-}
-
-// =============================================================================
-// OPERATION CREATION AND MANAGEMENT
-// =============================================================================
-
-/**
- * Create a new operation for a user
- */
-export async function createOperation(
-  input: CreateOperationInput
-): Promise<OperationResult> {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    // BUSINESS RULE: One active operation per user
-    const validationResult = await validateOneActiveOperationRule(
-      session.user.id
-    );
-    if (!validationResult.success) {
-      return validationResult;
+    const user = authResult.user!;
+
+    // Check if user already has an active operation
+    const hasActiveResult = await hasActiveOperation(user.id);
+    if (!hasActiveResult.data && hasActiveResult.error) {
+      return { success: false, error: hasActiveResult.error };
     }
-
-    // Validate units exist and are available
-    const units = await prisma.unit.findMany({
-      where: {
-        id: { in: input.unitIds },
-        status: 'available',
-      },
-      include: {
-        project: {
-          select: {
-            name: true,
-            organizationId: true,
-          },
-        },
-      },
-    });
-
-    if (units.length !== input.unitIds.length) {
-      return {
-        success: false,
-        error: 'Una o más unidades no están disponibles o no existen',
+    if (hasActiveResult.data) {
+      return { 
+        success: false, 
+        error: 'Ya tienes una operación activa. Solo puedes tener una operación a la vez.' 
       };
     }
 
-    // Calculate total amount
-    const totalAmount = units.reduce(
-      (sum, unit) => sum + Number(unit.price),
-      0
+    // Validate organization access
+    const orgAccessResult = await requireOrganizationAccess(input.organizationId);
+    if (!orgAccessResult.success) {
+      return { success: false, error: orgAccessResult.error };
+    }
+
+    // Use service layer to create operation with full validation
+    const result = await createOperationWithValidation(
+      user.id, 
+      input, 
+      ipAddress, 
+      userAgent
     );
-    const platformFee = 3000.0; // Fixed platform fee from business model
+    
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
 
-    // Start database transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create operation
-      const operation = await tx.operation.create({
-        data: {
-          userId: session.user.id,
-          organizationId: units[0].project.organizationId, // All units should be from same org
-          status: 'initiated',
-          totalAmount,
-          platformFee,
-          currency: 'USD',
-          notes: input.notes,
-          createdBy: session.user.id,
-        },
-      });
-
-      // Create operation-unit relationships
-      const operationUnits = await Promise.all(
-        units.map((unit) =>
-          tx.operationUnit.create({
-            data: {
-              operationId: operation.id,
-              unitId: unit.id,
-              priceAtReservation: Number(unit.price),
-            },
-          })
-        )
-      );
-
-      // Update unit status to 'reserved'
-      await tx.unit.updateMany({
-        where: { id: { in: input.unitIds } },
-        data: { status: 'reserved' },
-      });
-
-      // Create initial operation steps
-      const initialSteps = [
-        { stepName: 'documents_upload', stepOrder: 1, status: 'pending' },
-        { stepName: 'documents_validation', stepOrder: 2, status: 'pending' },
-        {
-          stepName: 'professional_assignment',
-          stepOrder: 3,
-          status: 'pending',
-        },
-        { stepName: 'signature_process', stepOrder: 4, status: 'pending' },
-        { stepName: 'payment_confirmation', stepOrder: 5, status: 'pending' },
-      ];
-
-      const steps = await Promise.all(
-        initialSteps.map((step) =>
-          tx.operationStep.create({
-            data: {
-              ...step,
-              operationId: operation.id,
-            },
-          })
-        )
-      );
-
-      return { operation, operationUnits, steps };
-    });
-
+    // Revalidate relevant paths
     revalidatePath('/dashboard');
-    revalidatePath('/operations');
+    revalidatePath('/userDashboard');
+    revalidatePath('/projects');
 
-    return {
-      success: true,
-      data: result.operation,
-    };
+    return { success: true, data: result.data };
   } catch (error) {
-    console.error('Error creating operation:', error);
-    return {
-      success: false,
-      error: 'Error interno del servidor',
+    console.error('[SERVER_ACTION] Error creating operation:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error creando operación' 
     };
   }
 }
 
 /**
- * Cancel an active operation
+ * Get operation by ID
+ * Requires authentication and operation access
  */
-export async function cancelOperation(
-  operationId: string,
-  reason: string
-): Promise<OperationResult> {
+export async function getOperationByIdAction(
+  operationId: string
+): Promise<OperationActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    // Verify operation belongs to user
-    const operation = await prisma.operation.findFirst({
-      where: {
-        id: operationId,
-        userId: session.user.id,
-        status: { notIn: ['completed', 'cancelled'] },
-      },
-      include: {
-        operationUnits: true,
-      },
-    });
+    const user = authResult.user!;
+    const isAdmin = user.userRoles.some(role => role.role === 'admin');
 
-    if (!operation) {
-      return {
-        success: false,
-        error: 'Operación no encontrada o no se puede cancelar',
-      };
+    // Get operation (with user access validation if not admin)
+    const result = await getOperationById(operationId, isAdmin ? undefined : user.id);
+    if (!result.data) {
+      return { success: false, error: result.error };
     }
 
-    // Start transaction to cancel operation and free units
-    const result = await prisma.$transaction(async (tx) => {
-      // Update operation status
-      const updatedOperation = await tx.operation.update({
-        where: { id: operationId },
-        data: {
-          status: 'cancelled',
-          cancelledAt: new Date(),
-          cancelledBy: session.user.id,
-          cancellationReason: reason,
-        },
-      });
-
-      // Free up the units (make them available again)
-      const unitIds = operation.operationUnits.map((ou) => ou.unitId);
-      await tx.unit.updateMany({
-        where: { id: { in: unitIds } },
-        data: { status: 'available' },
-      });
-
-      return updatedOperation;
-    });
-
-    revalidatePath('/dashboard');
-    revalidatePath('/operations');
-
-    return {
-      success: true,
-      data: result,
-    };
+    return { success: true, data: result.data };
   } catch (error) {
-    console.error('Error cancelling operation:', error);
-    return {
-      success: false,
-      error: 'Error interno del servidor',
+    console.error('[SERVER_ACTION] Error getting operation:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error obteniendo operación' 
     };
   }
 }
 
 /**
- * Update operation status (for admins and professionals)
+ * Update operation
+ * Requires authentication and operation ownership or admin role
  */
-export async function updateOperationStatus(
+export async function updateOperationAction(
   operationId: string,
-  newStatus: OperationStatus,
-  notes?: string
-): Promise<OperationResult> {
+  input: UpdateOperationInput,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<OperationActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    // Check if user has permission to update operations
-    const hasPermission = session.user.roles.some((role) =>
-      ['admin', 'organization_owner', 'sales_manager', 'professional'].includes(
-        role.role
+    const user = authResult.user!;
+    const isAdmin = user.userRoles.some(role => role.role === 'admin');
+
+    // Check if user can access this operation
+    const operationResult = await getOperationById(operationId, isAdmin ? undefined : user.id);
+    if (!operationResult.data) {
+      return { success: false, error: operationResult.error };
+    }
+
+    const operation = operationResult.data;
+
+    // Validate access: user owns operation, is admin, or has organization access
+    const canUpdate = (
+      operation.userId === user.id || 
+      isAdmin ||
+      user.userRoles.some(role => 
+        role.organizationId === operation.organizationId &&
+        ['organization_owner', 'sales_manager'].includes(role.role)
       )
     );
 
-    if (!hasPermission) {
-      return {
-        success: false,
-        error: 'No tienes permisos para actualizar operaciones',
+    if (!canUpdate) {
+      return { 
+        success: false, 
+        error: 'No tienes permisos para actualizar esta operación' 
       };
     }
 
-    const updatedOperation = await prisma.operation.update({
-      where: { id: operationId },
-      data: {
-        status: newStatus,
-        ...(newStatus === 'completed' && { completedAt: new Date() }),
-        ...(notes && { notes }),
-      },
-    });
-
-    // If operation is completed, make units unavailable (sold)
-    if (newStatus === 'completed') {
-      await prisma.$transaction(async (tx) => {
-        const operationUnits = await tx.operationUnit.findMany({
-          where: { operationId },
-        });
-
-        const unitIds = operationUnits.map((ou) => ou.unitId);
-        await tx.unit.updateMany({
-          where: { id: { in: unitIds } },
-          data: { status: 'sold' },
-        });
-      });
+    // Update operation
+    const result = await updateOperation(operationId, user.id, input, ipAddress, userAgent);
+    if (!result.data) {
+      return { success: false, error: result.error };
     }
 
+    // Revalidate relevant paths
     revalidatePath('/dashboard');
-    revalidatePath('/operations');
-    revalidatePath('/admin');
+    revalidatePath('/userDashboard');
+    revalidatePath(`/operations/${operationId}`);
 
-    return {
-      success: true,
-      data: updatedOperation,
-    };
+    return { success: true, data: result.data };
   } catch (error) {
-    console.error('Error updating operation status:', error);
-    return {
-      success: false,
-      error: 'Error interno del servidor',
+    console.error('[SERVER_ACTION] Error updating operation:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error actualizando operación' 
     };
   }
 }
 
 /**
- * Get all operations for current user
+ * Cancel operation
+ * Requires authentication and operation ownership or admin role
  */
-export async function getUserOperations(): Promise<OperationResult> {
+export async function cancelOperationAction(
+  operationId: string,
+  reason: string,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<OperationActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    const operations = await prisma.operation.findMany({
-      where: { userId: session.user.id },
-      include: {
-        operationUnits: {
-          include: {
-            unit: {
-              include: {
-                project: {
-                  select: {
-                    name: true,
-                    slug: true,
-                    address: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        steps: {
-          orderBy: { stepOrder: 'asc' },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const user = authResult.user!;
+    const isAdmin = user.userRoles.some(role => role.role === 'admin');
 
-    return {
-      success: true,
-      data: operations,
-    };
+    // Check if user can access this operation
+    const operationResult = await getOperationById(operationId, isAdmin ? undefined : user.id);
+    if (!operationResult.data) {
+      return { success: false, error: operationResult.error };
+    }
+
+    const operation = operationResult.data;
+
+    // Validate access: user owns operation, is admin, or has organization access
+    const canCancel = (
+      operation.userId === user.id || 
+      isAdmin ||
+      user.userRoles.some(role => 
+        role.organizationId === operation.organizationId &&
+        ['organization_owner', 'sales_manager'].includes(role.role)
+      )
+    );
+
+    if (!canCancel) {
+      return { 
+        success: false, 
+        error: 'No tienes permisos para cancelar esta operación' 
+      };
+    }
+
+    // Cancel operation
+    const result = await cancelOperation(operationId, user.id, reason, ipAddress, userAgent);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    // NOTE: Service layer should handle unit status updates when operation is cancelled
+    // Revalidate relevant paths
+    revalidatePath('/dashboard');
+    revalidatePath('/userDashboard');
+    revalidatePath('/projects');
+    revalidatePath(`/operations/${operationId}`);
+
+    return { success: true, data: result.data };
   } catch (error) {
-    console.error('Error fetching user operations:', error);
-    return {
-      success: false,
-      error: 'Error interno del servidor',
+    console.error('[SERVER_ACTION] Error cancelling operation:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error cancelando operación' 
+    };
+  }
+}
+
+/**
+ * Get user's active operation
+ * Requires authentication
+ */
+export async function getUserActiveOperationAction(): Promise<OperationActionResult> {
+  try {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+
+    // Get active operation
+    const result = await getUserActiveOperation(user.id);
+    if (!result.data && result.error) {
+      return { success: false, error: result.error };
+    }
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error getting active operation:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error obteniendo operación activa' 
+    };
+  }
+}
+
+/**
+ * Check if user has active operation
+ * Requires authentication
+ */
+export async function hasActiveOperationAction(): Promise<OperationActionResult> {
+  try {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+
+    // Check for active operation
+    const result = await hasActiveOperation(user.id);
+    return { success: result.data || false, data: result.data, error: result.error };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error checking active operation:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error verificando operación activa' 
+    };
+  }
+}
+
+// =============================================================================
+// VALIDATION ACTIONS
+// =============================================================================
+
+/**
+ * Validate units belong to same organization
+ * Used before creating operations
+ */
+export async function validateUnitsSameOrganizationAction(
+  unitIds: string[]
+): Promise<OperationActionResult> {
+  try {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    // Use service layer validation
+    const result = await validateUnitsSameOrganization(unitIds);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error validating units organization:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error validando organización de unidades' 
     };
   }
 }

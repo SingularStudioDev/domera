@@ -1,20 +1,27 @@
 // =============================================================================
 // FAVORITES SERVER ACTIONS
-// Business logic for managing user favorite units
+// Server actions for favorites management - following single responsibility principle
+// Only handles favorites-related operations
 // =============================================================================
 
 'use server';
 
-import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
+import { validateSession } from '@/lib/auth/validation';
+import { getUnitById } from '@/lib/dal/units';
+import {
+  getDbClient,
+  logAudit,
+  success,
+  failure,
+  type Result
+} from '@/lib/dal/base';
 
 // =============================================================================
 // TYPES AND INTERFACES
 // =============================================================================
 
-interface FavoriteResult {
+interface FavoriteActionResult {
   success: boolean;
   data?: unknown;
   error?: string;
@@ -47,37 +54,33 @@ interface FavoriteUnit {
 /**
  * Add a unit to user's favorites
  */
-export async function addToFavorites(unitId: string): Promise<FavoriteResult> {
+export async function addToFavoritesAction(unitId: string): Promise<FavoriteActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    // Check if unit exists and is available
-    const unit = await prisma.unit.findUnique({
-      where: { id: unitId },
-      select: {
-        id: true,
-        unitNumber: true,
-        status: true,
-        project: { select: { name: true } },
-      },
-    });
+    const user = authResult.user!;
+    const client = getDbClient();
 
-    if (!unit) {
+    // Check if unit exists using DAL
+    const unitResult = await getUnitById(unitId);
+    if (!unitResult.data) {
       return {
         success: false,
         error: 'Unidad no encontrada',
       };
     }
 
+    const unit = unitResult.data;
+
     // Check if already favorited
-    const existingFavorite = await prisma.userFavorite.findUnique({
+    const existingFavorite = await client.userFavorite.findUnique({
       where: {
         userId_unitId: {
-          userId: session.user.id,
+          userId: user.id,
           unitId: unitId,
         },
       },
@@ -91,9 +94,9 @@ export async function addToFavorites(unitId: string): Promise<FavoriteResult> {
     }
 
     // Add to favorites
-    const favorite = await prisma.userFavorite.create({
+    const favorite = await client.userFavorite.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         unitId: unitId,
       },
       include: {
@@ -110,21 +113,30 @@ export async function addToFavorites(unitId: string): Promise<FavoriteResult> {
       },
     });
 
+    // Log audit
+    await logAudit(client, {
+      userId: user.id,
+      tableName: 'user_favorites',
+      recordId: favorite.id,
+      action: 'INSERT',
+      newValues: { userId: user.id, unitId },
+    });
+
     revalidatePath('/favorites');
     revalidatePath('/projects');
 
     return {
       success: true,
       data: {
-        message: `${unit.project.name} - ${unit.unitNumber} agregado a favoritos`,
+        message: `${unit.project?.name} - ${unit.unitNumber} agregado a favoritos`,
         favorite,
       },
     };
   } catch (error) {
-    console.error('Error adding to favorites:', error);
+    console.error('[SERVER_ACTION] Error adding to favorites:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error agregando a favoritos',
     };
   }
 }
@@ -132,21 +144,24 @@ export async function addToFavorites(unitId: string): Promise<FavoriteResult> {
 /**
  * Remove a unit from user's favorites
  */
-export async function removeFromFavorites(
+export async function removeFromFavoritesAction(
   unitId: string
-): Promise<FavoriteResult> {
+): Promise<FavoriteActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
+    const user = authResult.user!;
+    const client = getDbClient();
+
     // Check if favorite exists
-    const existingFavorite = await prisma.userFavorite.findUnique({
+    const existingFavorite = await client.userFavorite.findUnique({
       where: {
         userId_unitId: {
-          userId: session.user.id,
+          userId: user.id,
           unitId: unitId,
         },
       },
@@ -167,13 +182,22 @@ export async function removeFromFavorites(
     }
 
     // Remove from favorites
-    await prisma.userFavorite.delete({
+    await client.userFavorite.delete({
       where: {
         userId_unitId: {
-          userId: session.user.id,
+          userId: user.id,
           unitId: unitId,
         },
       },
+    });
+
+    // Log audit
+    await logAudit(client, {
+      userId: user.id,
+      tableName: 'user_favorites',
+      recordId: existingFavorite.id,
+      action: 'DELETE',
+      oldValues: { userId: user.id, unitId },
     });
 
     revalidatePath('/favorites');
@@ -186,10 +210,10 @@ export async function removeFromFavorites(
       },
     };
   } catch (error) {
-    console.error('Error removing from favorites:', error);
+    console.error('[SERVER_ACTION] Error removing from favorites:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error removiendo de favoritos',
     };
   }
 }
@@ -197,27 +221,27 @@ export async function removeFromFavorites(
 /**
  * Toggle favorite status (add if not favorite, remove if favorite)
  */
-export async function toggleFavorite(unitId: string): Promise<FavoriteResult> {
+export async function toggleFavoriteAction(unitId: string): Promise<FavoriteActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
     // Check current favorite status
-    const isFavorite = await checkIsFavorite(unitId);
+    const isFavorite = await checkIsFavoriteAction(unitId);
 
     if (isFavorite) {
-      return await removeFromFavorites(unitId);
+      return await removeFromFavoritesAction(unitId);
     } else {
-      return await addToFavorites(unitId);
+      return await addToFavoritesAction(unitId);
     }
   } catch (error) {
-    console.error('Error toggling favorite:', error);
+    console.error('[SERVER_ACTION] Error toggling favorite:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error alternando favorito',
     };
   }
 }
@@ -225,18 +249,21 @@ export async function toggleFavorite(unitId: string): Promise<FavoriteResult> {
 /**
  * Check if a unit is favorited by current user
  */
-export async function checkIsFavorite(unitId: string): Promise<boolean> {
+export async function checkIsFavoriteAction(unitId: string): Promise<boolean> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
       return false;
     }
 
-    const favorite = await prisma.userFavorite.findUnique({
+    const user = authResult.user!;
+    const client = getDbClient();
+
+    const favorite = await client.userFavorite.findUnique({
       where: {
         userId_unitId: {
-          userId: session.user.id,
+          userId: user.id,
           unitId: unitId,
         },
       },
@@ -244,7 +271,7 @@ export async function checkIsFavorite(unitId: string): Promise<boolean> {
 
     return !!favorite;
   } catch (error) {
-    console.error('Error checking favorite status:', error);
+    console.error('[SERVER_ACTION] Error checking favorite status:', error);
     return false;
   }
 }
@@ -252,16 +279,19 @@ export async function checkIsFavorite(unitId: string): Promise<boolean> {
 /**
  * Get all user favorites with full unit details
  */
-export async function getUserFavorites(): Promise<FavoriteResult> {
+export async function getUserFavoritesAction(): Promise<FavoriteActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    const favorites = await prisma.userFavorite.findMany({
-      where: { userId: session.user.id },
+    const user = authResult.user!;
+    const client = getDbClient();
+
+    const favorites = await client.userFavorite.findMany({
+      where: { userId: user.id },
       include: {
         unit: {
           include: {
@@ -289,7 +319,7 @@ export async function getUserFavorites(): Promise<FavoriteResult> {
       price: Number(fav.unit.price),
       bedrooms: fav.unit.bedrooms,
       bathrooms: fav.unit.bathrooms,
-      totalArea: Number(fav.unit.totalArea || 0),
+      totalArea: Number(fav.unit.area || 0), // Note: using 'area' as per DAL
       unitType: fav.unit.unitType,
       status: fav.unit.status,
       description: fav.unit.description,
@@ -311,10 +341,10 @@ export async function getUserFavorites(): Promise<FavoriteResult> {
       },
     };
   } catch (error) {
-    console.error('Error fetching user favorites:', error);
+    console.error('[SERVER_ACTION] Error fetching user favorites:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error obteniendo favoritos del usuario',
     };
   }
 }
@@ -322,34 +352,29 @@ export async function getUserFavorites(): Promise<FavoriteResult> {
 /**
  * Get favorite statistics for current user
  */
-export async function getFavoriteStats(): Promise<FavoriteResult> {
+export async function getFavoriteStatsAction(): Promise<FavoriteActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    const stats = await prisma.userFavorite.aggregate({
-      where: { userId: session.user.id },
+    const user = authResult.user!;
+    const client = getDbClient();
+
+    const stats = await client.userFavorite.aggregate({
+      where: { userId: user.id },
       _count: { id: true },
     });
 
-    // Get favorites by project
-    const favoritesByProject = await prisma.userFavorite.groupBy({
-      by: ['unitId'],
-      where: { userId: session.user.id },
-      _count: { unitId: true },
-      orderBy: { _count: { unitId: 'desc' } },
-    });
-
     // Get project details for favorites
-    const projectStats = await prisma.project.findMany({
+    const projectStats = await client.project.findMany({
       where: {
         units: {
           some: {
             favoritedBy: {
-              some: { userId: session.user.id },
+              some: { userId: user.id },
             },
           },
         },
@@ -362,7 +387,7 @@ export async function getFavoriteStats(): Promise<FavoriteResult> {
             units: {
               where: {
                 favoritedBy: {
-                  some: { userId: session.user.id },
+                  some: { userId: user.id },
                 },
               },
             },
@@ -384,10 +409,10 @@ export async function getFavoriteStats(): Promise<FavoriteResult> {
       },
     };
   } catch (error) {
-    console.error('Error fetching favorite stats:', error);
+    console.error('[SERVER_ACTION] Error fetching favorite stats:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error obteniendo estadísticas de favoritos',
     };
   }
 }
@@ -395,19 +420,22 @@ export async function getFavoriteStats(): Promise<FavoriteResult> {
 /**
  * Get multiple favorite statuses for units (for efficient checking)
  */
-export async function getMultipleFavoriteStatus(
+export async function getMultipleFavoriteStatusAction(
   unitIds: string[]
 ): Promise<Record<string, boolean>> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
       return {};
     }
 
-    const favorites = await prisma.userFavorite.findMany({
+    const user = authResult.user!;
+    const client = getDbClient();
+
+    const favorites = await client.userFavorite.findMany({
       where: {
-        userId: session.user.id,
+        userId: user.id,
         unitId: { in: unitIds },
       },
       select: { unitId: true },
@@ -422,7 +450,7 @@ export async function getMultipleFavoriteStatus(
 
     return favoriteMap;
   } catch (error) {
-    console.error('Error checking multiple favorite statuses:', error);
+    console.error('[SERVER_ACTION] Error checking multiple favorite statuses:', error);
     return {};
   }
 }

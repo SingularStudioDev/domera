@@ -1,167 +1,332 @@
 // =============================================================================
 // PROJECTS SERVER ACTIONS
-// Server actions for project management and sales data
+// Server actions for project management - following single responsibility principle
+// Only handles project-related operations
 // =============================================================================
 
 'use server';
 
-import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
-import { ProjectStatus, UnitStatus } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
+import { validateSession, requireRole, requireOrganizationAccess, validateProjectAccess } from '@/lib/auth/validation';
+import {
+  getProjects,
+  getPublicProjects,
+  getProjectById,
+  getProjectBySlug,
+  createProject,
+  updateProject,
+  getProjectStats
+} from '@/lib/dal/projects';
+import type { ProjectStatus } from '@prisma/client';
+
+// Input types
+interface ProjectFiltersInput {
+  page: number;
+  pageSize: number;
+  organizationId?: string;
+  status?: ProjectStatus;
+  city?: string;
+  neighborhood?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+interface CreateProjectInput {
+  name: string;
+  slug: string;
+  organizationId: string;
+  description?: string;
+  shortDescription?: string;
+  address: string;
+  neighborhood?: string;
+  city: string;
+  status: ProjectStatus;
+  basePrice?: number;
+  currency: string;
+  images: string[];
+  amenities: string[];
+  startDate?: Date;
+  estimatedCompletion?: Date;
+}
+
+interface UpdateProjectInput {
+  name?: string;
+  slug?: string;
+  description?: string;
+  shortDescription?: string;
+  address?: string;
+  neighborhood?: string;
+  city?: string;
+  status?: ProjectStatus;
+  basePrice?: number;
+  currency?: string;
+  images?: string[];
+  amenities?: string[];
+  startDate?: Date;
+  estimatedCompletion?: Date;
+}
 
 // =============================================================================
 // TYPES AND INTERFACES
 // =============================================================================
 
-export interface ProjectSalesData {
-  id: string;
-  name: string;
-  address: string;
-  neighborhood: string;
-  city: string;
-  status: ProjectStatus;
-  totalUnits: number;
-  availableUnits: number;
-  soldUnits: number;
-  averagePrice: number;
-  currency: string;
-}
-
-export interface PaginatedProjectsResponse {
-  projects: ProjectSalesData[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+interface ProjectActionResult {
+  success: boolean;
+  data?: unknown;
+  error?: string;
 }
 
 // =============================================================================
-// SERVER ACTIONS
+// SERVER ACTIONS FOR PROJECTS
 // =============================================================================
 
 /**
- * Get projects with sales statistics and pagination
+ * Get projects with filters and pagination
+ * Requires authentication for full access, public for limited access
  */
-export async function getProjectsWithSales(
-  page: number = 1,
-  limit: number = 10
-): Promise<PaginatedProjectsResponse> {
+export async function getProjectsAction(
+  filters: ProjectFiltersInput = { page: 1, pageSize: 20 }
+): Promise<ProjectActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      throw new Error('Usuario no autenticado');
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    // Calculate offset for pagination
-    const offset = (page - 1) * limit;
+    const user = authResult.user!;
 
-    // Get total count
-    const totalCount = await prisma.project.count();
+    // Filter by organization if user is not admin
+    const isAdmin = user.userRoles.some(role => role.role === 'admin');
+    if (!isAdmin && !filters.organizationId) {
+      // Get user's organization
+      const userOrg = user.userRoles.find(role => role.organizationId);
+      if (userOrg) {
+        filters.organizationId = userOrg.organizationId!;
+      }
+    }
 
-    // Get projects with unit statistics
-    const projects = await prisma.project.findMany({
-      skip: offset,
-      take: limit,
-      orderBy: { name: 'asc' },
-      include: {
-        units: {
-          select: {
-            status: true,
-            price: true,
-          },
-        },
-        _count: {
-          select: {
-            units: true,
-          },
-        },
-      },
-    });
+    // Get projects
+    const result = await getProjects(filters);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
 
-    // Transform data to include sales statistics
-    const projectsWithSales: ProjectSalesData[] = projects.map((project) => {
-      const soldUnits = project.units.filter(
-        (unit) => unit.status === UnitStatus.sold
-      ).length;
-      const availableUnits = project.units.filter(
-        (unit) => unit.status === UnitStatus.available
-      ).length;
-
-      // Calculate average price from all units
-      const totalPrice = project.units.reduce(
-        (sum, unit) => sum + Number(unit.price),
-        0
-      );
-      const averagePrice =
-        project.units.length > 0 ? totalPrice / project.units.length : 0;
-
-      return {
-        id: project.id,
-        name: project.name,
-        address: project.address,
-        neighborhood: project.neighborhood || 'Sin especificar',
-        city: project.city,
-        status: project.status,
-        totalUnits: project._count.units,
-        availableUnits,
-        soldUnits,
-        averagePrice: Math.round(averagePrice),
-        currency: project.currency,
-      };
-    });
-
-    const totalPages = Math.ceil(totalCount / limit);
-
-    return {
-      projects: projectsWithSales,
-      total: totalCount,
-      page,
-      limit,
-      totalPages,
-    };
+    return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error fetching projects with sales:', error);
-    throw new Error('Error al obtener proyectos');
+    console.error('[SERVER_ACTION] Error getting projects:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error obteniendo proyectos' 
+    };
   }
 }
 
 /**
- * Get project statistics summary
+ * Get public projects (for non-authenticated users)
+ * No authentication required
  */
-export async function getProjectsSummary() {
+export async function getPublicProjectsAction(
+  filters: Omit<ProjectFiltersInput, 'organizationId'> = { page: 1, pageSize: 20 }
+): Promise<ProjectActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      throw new Error('Usuario no autenticado');
+    const result = await getPublicProjects(filters);
+    if (!result.data) {
+      return { success: false, error: result.error };
     }
 
-    const summary = await prisma.project.aggregate({
-      _count: { id: true },
-      _sum: { totalUnits: true, availableUnits: true },
-    });
-
-    // Get sold units count
-    const soldUnitsCount = await prisma.unit.count({
-      where: { status: UnitStatus.sold },
-    });
-
-    // Get reserved units count
-    const reservedUnitsCount = await prisma.unit.count({
-      where: { status: UnitStatus.reserved },
-    });
-
-    return {
-      totalProjects: summary._count.id || 0,
-      totalUnits: summary._sum.totalUnits || 0,
-      availableUnits: summary._sum.availableUnits || 0,
-      soldUnits: soldUnitsCount,
-      reservedUnits: reservedUnitsCount,
-    };
+    return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error fetching projects summary:', error);
-    throw new Error('Error al obtener resumen de proyectos');
+    console.error('[SERVER_ACTION] Error getting public projects:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error obteniendo proyectos públicos' 
+    };
+  }
+}
+
+/**
+ * Get project by ID
+ * Public access for browsing
+ */
+export async function getProjectByIdAction(
+  projectId: string
+): Promise<ProjectActionResult> {
+  try {
+    const result = await getProjectById(projectId);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error getting project:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error obteniendo proyecto' 
+    };
+  }
+}
+
+/**
+ * Get project by slug
+ * Public access for browsing
+ */
+export async function getProjectBySlugAction(
+  organizationSlug: string,
+  projectSlug: string
+): Promise<ProjectActionResult> {
+  try {
+    const result = await getProjectBySlug(organizationSlug, projectSlug);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error getting project by slug:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error obteniendo proyecto' 
+    };
+  }
+}
+
+/**
+ * Create new project
+ * Requires organization access and appropriate role
+ */
+export async function createProjectAction(
+  input: CreateProjectInput,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<ProjectActionResult> {
+  try {
+    // Validate organization access
+    const orgAccessResult = await requireOrganizationAccess(input.organizationId);
+    if (!orgAccessResult.success) {
+      return { success: false, error: orgAccessResult.error };
+    }
+
+    // Check if user has appropriate role
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+    const hasPermission = user.userRoles.some(role => 
+      ['admin', 'organization_owner', 'sales_manager'].includes(role.role)
+    );
+
+    if (!hasPermission) {
+      return { 
+        success: false, 
+        error: 'No tienes permisos para crear proyectos' 
+      };
+    }
+
+    // Create project
+    const result = await createProject(input, user.id, ipAddress, userAgent);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    // Revalidate relevant paths
+    revalidatePath('/projects');
+    revalidatePath('/dashboard');
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error creating project:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error creando proyecto' 
+    };
+  }
+}
+
+/**
+ * Update project
+ * Requires project access and appropriate role
+ */
+export async function updateProjectAction(
+  projectId: string,
+  input: UpdateProjectInput,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<ProjectActionResult> {
+  try {
+    // Validate project access
+    const projectAccessResult = await validateProjectAccess(projectId);
+    if (!projectAccessResult.success) {
+      return { success: false, error: projectAccessResult.error };
+    }
+
+    // Check if user has appropriate role
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+    const hasPermission = user.userRoles.some(role => 
+      ['admin', 'organization_owner', 'sales_manager'].includes(role.role)
+    );
+
+    if (!hasPermission) {
+      return { 
+        success: false, 
+        error: 'No tienes permisos para actualizar proyectos' 
+      };
+    }
+
+    // Update project
+    const result = await updateProject(projectId, input, user.id, ipAddress, userAgent);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    // Revalidate relevant paths
+    revalidatePath('/projects');
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath('/dashboard');
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error updating project:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error actualizando proyecto' 
+    };
+  }
+}
+
+/**
+ * Get project statistics
+ * Requires project access
+ */
+export async function getProjectStatsAction(
+  projectId: string
+): Promise<ProjectActionResult> {
+  try {
+    // Validate project access
+    const projectAccessResult = await validateProjectAccess(projectId);
+    if (!projectAccessResult.success) {
+      return { success: false, error: projectAccessResult.error };
+    }
+
+    const result = await getProjectStats(projectId);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error getting project stats:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error obteniendo estadísticas del proyecto' 
+    };
   }
 }

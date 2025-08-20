@@ -1,21 +1,28 @@
 // =============================================================================
 // DOCUMENTS SERVER ACTIONS
-// Business logic for managing document types, templates, and uploads
+// Server actions for document management - following single responsibility principle
+// Only handles document-related operations
 // =============================================================================
 
 'use server';
 
-import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
-import { DocumentType, DocumentStatus } from '@prisma/client';
+import { validateSession, requireRole, requireOrganizationAccess } from '@/lib/auth/validation';
+import { getOperationById } from '@/lib/dal/operations';
+import {
+  getDbClient,
+  logAudit,
+  success,
+  failure,
+  type Result
+} from '@/lib/dal/base';
+import type { DocumentType, DocumentStatus } from '@prisma/client';
 
 // =============================================================================
 // TYPES AND INTERFACES
 // =============================================================================
 
-interface DocumentResult {
+interface DocumentActionResult {
   success: boolean;
   data?: unknown;
   error?: string;
@@ -47,17 +54,26 @@ interface DocumentTemplateInput {
 /**
  * Get all document templates for an organization
  */
-export async function getDocumentTemplates(
+export async function getDocumentTemplatesAction(
   organizationId?: string
-): Promise<DocumentResult> {
+): Promise<DocumentActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    const templates = await prisma.documentTemplate.findMany({
+    // Validate organization access if organizationId provided
+    if (organizationId) {
+      const orgAccessResult = await requireOrganizationAccess(organizationId);
+      if (!orgAccessResult.success) {
+        return { success: false, error: orgAccessResult.error };
+      }
+    }
+
+    const client = getDbClient();
+    const templates = await client.documentTemplate.findMany({
       where: {
         OR: [
           { organizationId: organizationId },
@@ -77,10 +93,10 @@ export async function getDocumentTemplates(
       data: templates,
     };
   } catch (error) {
-    console.error('Error fetching document templates:', error);
+    console.error('[SERVER_ACTION] Error fetching document templates:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error obteniendo plantillas de documentos',
     };
   }
 }
@@ -88,33 +104,44 @@ export async function getDocumentTemplates(
 /**
  * Create a new document template
  */
-export async function createDocumentTemplate(
-  input: DocumentTemplateInput
-): Promise<DocumentResult> {
+export async function createDocumentTemplateAction(
+  input: DocumentTemplateInput,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<DocumentActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication and check role
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    // Check if user has permission to create templates
-    const hasPermission = session.user.roles.some((role) =>
+    const user = authResult.user!;
+    const hasPermission = user.userRoles.some((role) =>
       ['admin', 'organization_owner'].includes(role.role)
     );
 
     if (!hasPermission) {
       return {
         success: false,
-        error: 'No tienes permisos para crear templates de documentos',
+        error: 'No tienes permisos para crear plantillas de documentos',
       };
     }
 
     // Get user's organization
-    const userRole = session.user.roles.find((role) => role.organizationId);
+    const userRole = user.userRoles.find((role) => role.organizationId);
     const organizationId = userRole?.organizationId || null;
 
-    const template = await prisma.documentTemplate.create({
+    // Validate organization access if creating for organization
+    if (organizationId) {
+      const orgAccessResult = await requireOrganizationAccess(organizationId);
+      if (!orgAccessResult.success) {
+        return { success: false, error: orgAccessResult.error };
+      }
+    }
+
+    const client = getDbClient();
+    const template = await client.documentTemplate.create({
       data: {
         documentType: input.documentType,
         name: input.name,
@@ -122,8 +149,20 @@ export async function createDocumentTemplate(
         templateContent: input.templateContent,
         fileUrl: input.fileUrl,
         organizationId,
-        createdBy: session.user.id,
+        createdBy: user.id,
       },
+    });
+
+    // Log audit
+    await logAudit(client, {
+      userId: user.id,
+      organizationId,
+      tableName: 'document_templates',
+      recordId: template.id,
+      action: 'INSERT',
+      newValues: template,
+      ipAddress,
+      userAgent,
     });
 
     revalidatePath('/admin/templates');
@@ -133,10 +172,10 @@ export async function createDocumentTemplate(
       data: template,
     };
   } catch (error) {
-    console.error('Error creating document template:', error);
+    console.error('[SERVER_ACTION] Error creating document template:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error creando plantilla de documento',
     };
   }
 }
@@ -148,35 +187,29 @@ export async function createDocumentTemplate(
 /**
  * Get required documents for an operation based on its current step
  */
-export async function getRequiredDocumentsForOperation(
+export async function getRequiredDocumentsForOperationAction(
   operationId: string
-): Promise<DocumentResult> {
+): Promise<DocumentActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    // Get operation with current step
-    const operation = await prisma.operation.findFirst({
-      where: {
-        id: operationId,
-        userId: session.user.id,
-      },
-      include: {
-        steps: {
-          orderBy: { stepOrder: 'asc' },
-        },
-      },
-    });
+    const user = authResult.user!;
+    const isAdmin = user.userRoles.some(role => role.role === 'admin');
 
-    if (!operation) {
+    // Get operation using DAL (with user access validation if not admin)
+    const operationResult = await getOperationById(operationId, isAdmin ? undefined : user.id);
+    if (!operationResult.data) {
       return {
         success: false,
         error: 'Operación no encontrada',
       };
     }
+
+    const operation = operationResult.data;
 
     // Define required documents based on operation status and steps
     const documentRequirements = getDocumentRequirementsByStatus(
@@ -184,7 +217,8 @@ export async function getRequiredDocumentsForOperation(
     );
 
     // Get existing documents for this operation
-    const existingDocs = await prisma.document.findMany({
+    const client = getDbClient();
+    const existingDocs = await client.document.findMany({
       where: { operationId },
       orderBy: { createdAt: 'desc' },
     });
@@ -198,10 +232,10 @@ export async function getRequiredDocumentsForOperation(
       },
     };
   } catch (error) {
-    console.error('Error fetching required documents:', error);
+    console.error('[SERVER_ACTION] Error fetching required documents:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error obteniendo documentos requeridos',
     };
   }
 }
@@ -288,26 +322,27 @@ function getDocumentRequirementsByStatus(status: string): Array<{
 /**
  * Upload a document for an operation
  */
-export async function uploadDocument(
-  input: CreateDocumentInput
-): Promise<DocumentResult> {
+export async function uploadDocumentAction(
+  input: CreateDocumentInput,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<DocumentActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
+
+    const user = authResult.user!;
+    const client = getDbClient();
 
     // If operationId is provided, verify user owns the operation
     if (input.operationId) {
-      const operation = await prisma.operation.findFirst({
-        where: {
-          id: input.operationId,
-          userId: session.user.id,
-        },
-      });
-
-      if (!operation) {
+      const isAdmin = user.userRoles.some(role => role.role === 'admin');
+      const operationResult = await getOperationById(input.operationId, isAdmin ? undefined : user.id);
+      
+      if (!operationResult.data) {
         return {
           success: false,
           error: 'Operación no encontrada o no autorizada',
@@ -316,13 +351,13 @@ export async function uploadDocument(
     }
 
     // Get user's organization
-    const userRole = session.user.roles.find((role) => role.organizationId);
+    const userRole = user.userRoles.find((role) => role.organizationId);
     const organizationId = userRole?.organizationId || null;
 
-    const document = await prisma.document.create({
+    const document = await client.document.create({
       data: {
         operationId: input.operationId,
-        userId: session.user.id,
+        userId: user.id,
         organizationId,
         documentType: input.documentType,
         title: input.title,
@@ -332,18 +367,30 @@ export async function uploadDocument(
         fileSize: input.fileSize,
         mimeType: input.mimeType,
         status: 'uploaded',
-        uploadedBy: session.user.id,
+        uploadedBy: user.id,
       },
+    });
+
+    // Log audit
+    await logAudit(client, {
+      userId: user.id,
+      organizationId,
+      tableName: 'documents',
+      recordId: document.id,
+      action: 'INSERT',
+      newValues: document,
+      ipAddress,
+      userAgent,
     });
 
     // Update operation status if this was the first document upload
     if (input.operationId) {
-      const operation = await prisma.operation.findUnique({
+      const operation = await client.operation.findUnique({
         where: { id: input.operationId },
       });
 
       if (operation?.status === 'initiated') {
-        await prisma.operation.update({
+        await client.operation.update({
           where: { id: input.operationId },
           data: { status: 'documents_pending' },
         });
@@ -358,10 +405,10 @@ export async function uploadDocument(
       data: document,
     };
   } catch (error) {
-    console.error('Error uploading document:', error);
+    console.error('[SERVER_ACTION] Error uploading document:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error subiendo documento',
     };
   }
 }
@@ -369,20 +416,22 @@ export async function uploadDocument(
 /**
  * Validate a document (for professionals and admins)
  */
-export async function validateDocument(
+export async function validateDocumentAction(
   documentId: string,
   status: DocumentStatus,
-  notes?: string
-): Promise<DocumentResult> {
+  notes?: string,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<DocumentActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication and check role
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    // Check if user has permission to validate documents
-    const hasPermission = session.user.roles.some((role) =>
+    const user = authResult.user!;
+    const hasPermission = user.userRoles.some((role) =>
       ['admin', 'organization_owner', 'professional'].includes(role.role)
     );
 
@@ -393,14 +442,41 @@ export async function validateDocument(
       };
     }
 
-    const updatedDocument = await prisma.document.update({
+    const client = getDbClient();
+    
+    // Get current document for audit
+    const currentDocument = await client.document.findUnique({
+      where: { id: documentId },
+    });
+
+    if (!currentDocument) {
+      return {
+        success: false,
+        error: 'Documento no encontrado',
+      };
+    }
+
+    const updatedDocument = await client.document.update({
       where: { id: documentId },
       data: {
         status,
-        validatedBy: session.user.id,
+        validatedBy: user.id,
         validatedAt: new Date(),
         validationNotes: notes,
       },
+    });
+
+    // Log audit
+    await logAudit(client, {
+      userId: user.id,
+      organizationId: currentDocument.organizationId,
+      tableName: 'documents',
+      recordId: documentId,
+      action: 'UPDATE',
+      oldValues: { status: currentDocument.status },
+      newValues: { status, validationNotes: notes },
+      ipAddress,
+      userAgent,
     });
 
     // Check if all required documents for the operation are validated
@@ -416,10 +492,10 @@ export async function validateDocument(
       data: updatedDocument,
     };
   } catch (error) {
-    console.error('Error validating document:', error);
+    console.error('[SERVER_ACTION] Error validating document:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error validando documento',
     };
   }
 }
@@ -429,7 +505,8 @@ export async function validateDocument(
  */
 async function checkAndUpdateOperationDocumentStatus(operationId: string) {
   try {
-    const operation = await prisma.operation.findUnique({
+    const client = getDbClient();
+    const operation = await client.operation.findUnique({
       where: { id: operationId },
       include: {
         documents: true,
@@ -454,7 +531,7 @@ async function checkAndUpdateOperationDocumentStatus(operationId: string) {
 
     // Update operation status if all documents are validated
     if (allRequiredValidated && operation.status === 'documents_pending') {
-      await prisma.operation.update({
+      await client.operation.update({
         where: { id: operationId },
         data: { status: 'under_validation' },
       });
@@ -467,16 +544,19 @@ async function checkAndUpdateOperationDocumentStatus(operationId: string) {
 /**
  * Get all documents for current user
  */
-export async function getUserDocuments(): Promise<DocumentResult> {
+export async function getUserDocumentsAction(): Promise<DocumentActionResult> {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
     }
 
-    const documents = await prisma.document.findMany({
-      where: { userId: session.user.id },
+    const user = authResult.user!;
+    const client = getDbClient();
+
+    const documents = await client.document.findMany({
+      where: { userId: user.id },
       include: {
         operation: {
           select: {
@@ -494,10 +574,10 @@ export async function getUserDocuments(): Promise<DocumentResult> {
       data: documents,
     };
   } catch (error) {
-    console.error('Error fetching user documents:', error);
+    console.error('[SERVER_ACTION] Error fetching user documents:', error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error obteniendo documentos del usuario',
     };
   }
 }

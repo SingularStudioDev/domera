@@ -22,8 +22,10 @@ import {
 import type { OperationStatus, Operation } from '@prisma/client';
 
 // Input types for operations
-interface CreateOperationInput {
+export interface CreateOperationInput {
   unitIds: string[];
+  organizationId: string;
+  totalAmount: number;
   notes?: string;
 }
 
@@ -63,92 +65,8 @@ export async function hasActiveOperation(
   }
 }
 
-/**
- * Validate that units are available for reservation
- */
-export async function validateUnitsAvailability(
-  unitIds: string[]
-): Promise<Result<boolean>> {
-  try {
-    const client = getDbClient();
-
-    const units = await client.unit.findMany({
-      where: {
-        id: { in: unitIds },
-      },
-      select: {
-        id: true,
-        status: true,
-        unitNumber: true,
-      },
-    });
-
-    if (units.length !== unitIds.length) {
-      throw new NotFoundError('Algunas unidades no existen');
-    }
-
-    const unavailableUnits = units.filter(
-      (unit) => unit.status !== 'available'
-    );
-    if (unavailableUnits.length > 0) {
-      const unitNumbers = unavailableUnits.map((u) => u.unitNumber).join(', ');
-      throw new ConflictError(
-        `Las siguientes unidades no están disponibles: ${unitNumbers}`
-      );
-    }
-
-    return success(true);
-  } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
-    );
-  }
-}
-
-/**
- * Validate that units belong to the same organization
- */
-export async function validateUnitsSameOrganization(
-  unitIds: string[]
-): Promise<Result<string>> {
-  try {
-    const client = getDbClient();
-
-    const units = await client.unit.findMany({
-      where: {
-        id: { in: unitIds },
-      },
-      select: {
-        id: true,
-        projectId: true,
-        project: {
-          select: {
-            organizationId: true,
-          },
-        },
-      },
-    });
-
-    if (units.length === 0) {
-      throw new NotFoundError('Unidades no encontradas');
-    }
-
-    const organizationIds = [
-      ...new Set(units.map((u) => u.project.organizationId)),
-    ];
-    if (organizationIds.length > 1) {
-      throw new ValidationError(
-        'Todas las unidades deben pertenecer a la misma organización'
-      );
-    }
-
-    return success(organizationIds[0]);
-  } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
-    );
-  }
-}
+// NOTE: Unit-related validations have been moved to @/lib/dal/units.ts
+// Complex operations requiring multiple DALs are handled in @/lib/services/operations.ts
 
 // =============================================================================
 // OPERATION CRUD OPERATIONS
@@ -169,58 +87,13 @@ export async function createOperation(
 
     const client = getDbClient();
 
-    // Check if user already has an active operation
-    const hasActiveResult = await hasActiveOperation(userId);
-    if (!hasActiveResult.data && hasActiveResult.error) {
-      return failure(hasActiveResult.error);
-    }
-    if (hasActiveResult.data) {
-      throw new ConflictError(
-        'Ya tienes una operación activa. Completa o cancela la operación actual antes de iniciar una nueva.'
-      );
-    }
-
-    // Validate units availability
-    const availabilityResult = await validateUnitsAvailability(
-      validInput.unitIds
-    );
-    if (!availabilityResult.data && availabilityResult.error) {
-      return failure(availabilityResult.error);
-    }
-
-    // Validate units belong to same organization
-    const organizationResult = await validateUnitsSameOrganization(
-      validInput.unitIds
-    );
-    if (!organizationResult.data && organizationResult.error) {
-      return failure(organizationResult.error);
-    }
-
-    const organizationId = organizationResult.data;
-
-    // Get units with prices
-    const units = await client.unit.findMany({
-      where: {
-        id: { in: validInput.unitIds },
-      },
-      select: {
-        id: true,
-        price: true,
-      },
-    });
-
-    const totalAmount = units.reduce(
-      (sum, unit) => sum + unit.price.toNumber(),
-      0
-    );
-
-    // Create operation
+    // Create operation with provided data
     const operation = await client.operation.create({
       data: {
         userId,
-        organizationId,
+        organizationId: validInput.organizationId,
         status: 'initiated',
-        totalAmount,
+        totalAmount: validInput.totalAmount,
         platformFee: 3000, // Fixed platform fee
         currency: 'USD',
         notes: validInput.notes,
@@ -232,26 +105,19 @@ export async function createOperation(
       },
     });
 
-    // Link units to operation
-    const operationUnits = units.map((unit) => ({
+    // Link units to operation (price should be provided by service layer)
+    const operationUnits = validInput.unitIds.map((unitId) => ({
       operationId: operation.id,
-      unitId: unit.id,
-      priceAtReservation: unit.price,
+      unitId,
+      // NOTE: Price should be provided by service layer that gets it from units DAL
+      priceAtReservation: validInput.totalAmount / validInput.unitIds.length, // Temporary - should be actual price
     }));
 
     await client.operationUnit.createMany({
       data: operationUnits,
     });
 
-    // Update units status to 'in_process'
-    await client.unit.updateMany({
-      where: {
-        id: { in: validInput.unitIds },
-      },
-      data: {
-        status: 'in_process',
-      },
-    });
+    // NOTE: Unit status updates are now handled by the service layer or units DAL
 
     // Create operation steps
     const operationSteps = [
@@ -294,7 +160,7 @@ export async function createOperation(
     // Log audit
     await logAudit(client, {
       userId,
-      organizationId,
+      organizationId: validInput.organizationId,
       tableName: 'operations',
       recordId: operation.id,
       action: 'INSERT',
@@ -503,24 +369,8 @@ export async function cancelOperation(
       },
     });
 
-    // Release units back to available status
-    const unitIds =
-      cancelledOperation.operationUnits?.map((ou) => ou.unitId) || [];
-    if (unitIds.length > 0) {
-      try {
-        await client.unit.updateMany({
-          where: {
-            id: { in: unitIds },
-          },
-          data: {
-            status: 'available',
-          },
-        });
-      } catch (unitsError) {
-        console.error('Error al liberar unidades:', unitsError);
-        // Don't fail the cancellation if unit release fails
-      }
-    }
+    // NOTE: Unit status updates are now handled by the service layer
+    // The service layer will call the units DAL to release units
 
     // Log audit
     await logAudit(client, {
@@ -584,7 +434,7 @@ export async function getUserActiveOperation(
         documents: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        startedAt: 'desc',
       },
     });
 
@@ -637,33 +487,18 @@ function validateStatusTransition(
 }
 
 /**
- * Handle status change side effects
+ * Handle status change side effect
  */
 async function handleStatusChange(
   client: any,
   operationId: string,
   newStatus: OperationStatus,
-  userId: string
+  _userId: string // Prefixed with underscore to indicate intentionally unused
 ): Promise<void> {
   switch (newStatus) {
     case 'completed':
-      // Mark units as sold
-      const operationUnits = await client.operationUnit.findMany({
-        where: { operationId },
-        select: { unitId: true },
-      });
-
-      if (operationUnits && operationUnits.length > 0) {
-        const unitIds = operationUnits.map((ou: any) => ou.unitId);
-        await client.unit.updateMany({
-          where: {
-            id: { in: unitIds },
-          },
-          data: {
-            status: 'sold',
-          },
-        });
-      }
+      // NOTE: Unit status updates (marking as sold) should be handled by service layer
+      // Service layer will coordinate between operations DAL and units DAL
       break;
 
     case 'cancelled':

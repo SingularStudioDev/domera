@@ -245,7 +245,7 @@ export const UpdateProjectSchema = CreateProjectSchema.partial().omit(['organiza
 export const CreateUnitSchema = z.object({
   project_id: UUIDSchema,
   unit_number: z.string().min(1, 'Número de unidad es requerido').max(50, 'Número muy largo'),
-  floor: z.number().int('Piso debe ser un entero').optional(),
+  floor: z.number().int('Piso debe ser un entero').min(-10, 'Piso muy bajo (mínimo: -10 para garages profundos)').max(100, 'Piso muy alto').optional(),
   unit_type: UnitTypeSchema,
   bedrooms: z.number().int('Dormitorios debe ser un entero').min(0, 'No puede ser negativo').default(0),
   bathrooms: z.number().int('Baños debe ser un entero').min(0, 'No puede ser negativo').default(0),
@@ -264,6 +264,78 @@ export const CreateUnitSchema = z.object({
 
 export const UpdateUnitSchema = CreateUnitSchema.partial().omit(['project_id']);
 
+// =============================================================================
+// BULK UNIT SCHEMAS
+// =============================================================================
+
+export const BulkCreateUnitsSchema = z.object({
+  project_id: UUIDSchema,
+  units: z.array(CreateUnitSchema.omit({ project_id: true }))
+    .min(1, 'Debe incluir al menos una unidad')
+    .max(500, 'Máximo 500 unidades por lote para mantener rendimiento')
+    .refine((units) => {
+      // Check for duplicate unit numbers within the batch
+      const unitNumbers = units.map(u => u.unit_number.toLowerCase());
+      const uniqueNumbers = new Set(unitNumbers);
+      return unitNumbers.length === uniqueNumbers.size;
+    }, {
+      message: 'Se encontraron números de unidad duplicados en el lote'
+    })
+    .refine((units) => {
+      // Validate garage unit types for negative floors
+      const invalidGarageUnits = units.filter(unit => 
+        unit.floor !== undefined && 
+        unit.floor < 0 && 
+        !['garage', 'cochera', 'deposito', 'storage'].includes(unit.unit_type.toLowerCase())
+      );
+      return invalidGarageUnits.length === 0;
+    }, {
+      message: 'Unidades en pisos negativos (garages) deben tener tipo: garage, cochera, deposito o storage'
+    })
+    .refine((units) => {
+      // Validate bedroom/bathroom consistency
+      const invalidUnits = units.filter(unit => 
+        unit.bedrooms > 0 && unit.bathrooms === 0
+      );
+      return invalidUnits.length === 0;
+    }, {
+      message: 'Unidades con dormitorios deben tener al menos 1 baño'
+    })
+    .refine((units) => {
+      // Validate reasonable price ranges
+      const invalidPriceUnits = units.filter(unit => 
+        unit.price < 1000 || unit.price > 10000000
+      );
+      return invalidPriceUnits.length === 0;
+    }, {
+      message: 'Precios deben estar entre $1,000 y $10,000,000 USD'
+    })
+});
+
+// =============================================================================
+// BULK OPERATION RESULT TYPES
+// =============================================================================
+
+export interface BulkUnitValidationError {
+  index: number;
+  unitNumber?: string;
+  field: string;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
+export interface BulkOperationResult<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  validationErrors?: BulkUnitValidationError[];
+  performance?: {
+    processedCount: number;
+    duration: number;
+    itemsPerSecond: number;
+  };
+}
+
 export const UpdateUnitStatusSchema = z.object({
   status: UnitStatusSchema
 });
@@ -273,7 +345,9 @@ export const UpdateUnitStatusSchema = z.object({
 // =============================================================================
 
 export const CreateOperationSchema = z.object({
-  unit_ids: z.array(UUIDSchema).min(1, 'Debe seleccionar al menos una unidad'),
+  unitIds: z.array(UUIDSchema).min(1, 'Debe seleccionar al menos una unidad'),
+  organizationId: UUIDSchema,
+  totalAmount: z.number().min(0, 'Monto total debe ser positivo'),
   notes: z.string().max(1000, 'Notas muy largas').optional()
 });
 
@@ -453,6 +527,7 @@ export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof UpdateProjectSchema>;
 export type CreateUnitInput = z.infer<typeof CreateUnitSchema>;
+export type BulkCreateUnitsInput = z.infer<typeof BulkCreateUnitsSchema>;
 export type UpdateUnitInput = z.infer<typeof UpdateUnitSchema>;
 export type CreateOperationInput = z.infer<typeof CreateOperationSchema>;
 export type UpdateOperationInput = z.infer<typeof UpdateOperationSchema>;
