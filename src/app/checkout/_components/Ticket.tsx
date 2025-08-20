@@ -1,0 +1,122 @@
+"use client"
+
+import { ArrowRightIcon, DownloadIcon } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+
+interface TicketProps {
+  handleFileUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  selectedFile?: File | null;
+}
+
+export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: TicketProps = {}) {
+  const [localSelectedFile, setLocalSelectedFile] = useState<File | null>(null);
+  
+  const selectedFile = propSelectedFile ?? localSelectedFile;
+  
+  const handleLocalFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (handleFileUpload) {
+      handleFileUpload(event);
+    } else {
+      const file = event.target.files?.[0] || null;
+      setLocalSelectedFile(file);
+    }
+  };
+  return (
+    <div className="mb-20 w-full flex gap-20">
+      <div className="max-w-[900px] flex-1">
+        <h2 className="mb-8 text-3xl font-bold text-black">
+          Descargar boleto de reserva
+        </h2>
+        <p className="mb-8 text-gray-700">
+          Firmá el boleto de reserva con tu firma digital (Abitab o Agesic) y
+          generá un documento con validez legal. Al hacerlo, aceptás las
+          condiciones y responsabilidades establecidas.
+        </p>
+
+        <Link
+          href="#"
+          className="mb-8 inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+        >
+          <DownloadIcon className="h-4 w-4" />
+          Descargar boleto de reserva
+        </Link>
+
+        <p className="mb-8 text-gray-700">
+          Una vez firmado, subilo a la plataforma y en minutos vas a recibir al
+          mail registrado una copia del mismo. Podes revisarlo con tu escribano
+          y subirlo cuando quieras.
+        </p>
+        <p className="mb-8 text-gray-700">
+          Una vez subido al sistema tendrás 2 días hábiles para hacer el
+          depósito de la seña para mantener la reserva.
+        </p>
+
+        {/* Bank Information */}
+        <div className="mb-8 grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-gray-700">
+              Banco: Santander
+              <br />
+              Titular: Dahiana mendez
+              <br />
+              Cuenta: 123456
+              <br />
+              Moneda: USD
+            </p>
+          </div>
+          <div>
+            <p className="text-gray-700">
+              Banco: BROU
+              <br />
+              Titular: Dahiana mendez
+              <br />
+              Cuenta: 0000123456 00002
+              <br />
+              Moneda: USD
+            </p>
+          </div>
+        </div>
+
+        {/* File Upload */}
+        <div className="mb-8 max-w-[400px]">
+          <div className="mb-2 flex gap-1">
+            <span className="text-sm text-gray-600">Archivo</span>
+            <span className="text-sm text-red-600">*</span>
+          </div>
+          <div className="rounded border border-dashed border-gray-300 p-8 text-center">
+            <p className="mb-4 text-sm text-black">
+              Arrastra el archivo o selecciona desde tu dispositivo
+            </p>
+            <input
+              type="file"
+              onChange={handleLocalFileUpload}
+              className="hidden"
+              id="file-upload"
+              accept=".pdf,.doc,.docx"
+            />
+            <label
+              htmlFor="file-upload"
+              className="cursor-pointer rounded-full border border-blue-600 bg-white px-6 py-2 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white"
+            >
+              Cargar archivo
+            </label>
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          className={`flex w-fit cursor-pointer items-center justify-center rounded-full px-8 py-3 text-white transition-colors duration-300 ${
+            selectedFile
+              ? 'bg-blue-600 hover:bg-blue-700'
+              : 'cursor-not-allowed bg-gray-300'
+          }`}
+          disabled={!selectedFile}
+        >
+          Proceder a la reserva
+          <ArrowRightIcon className="ml-4 h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}

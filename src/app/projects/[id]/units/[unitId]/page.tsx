@@ -341,7 +341,7 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
                     </p>
                   </div>
                   <Link
-                    href="/cart"
+                    href="/checkout"
                     className="flex items-center justify-center rounded-full bg-blue-600 px-8 py-3 text-white transition-colors hover:bg-blue-700"
                   >
                     Comprar
@@ -452,7 +452,7 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
           {/* Bottom CTA */}
           <div className="mb-16 flex w-full items-center justify-center text-center">
             <Link
-              href="/cart"
+              href="/checkout"
               className="flex w-fit items-center justify-center rounded-full bg-blue-600 px-12 py-4 text-xl font-medium text-white transition-colors hover:bg-blue-700"
             >
               Comprar unidad

@@ -16,18 +16,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Footer from '@/components/Footer';
 
-const ProjectDetailPage = () => {
-  const params = useParams();
-  const projectId = params.id;
-
-  const [filters, setFilters] = useState({
-    piso: 'Mostrar todo',
-    tipologia: 'Mostrar todo',
-    orientacion: 'Mostrar todo',
-  });
-
   // Datos de ejemplo del proyecto
-  const projectData = {
+ export  const projectData = {
     '1': {
       title: 'Winks America',
       price: '$228.000',
@@ -212,6 +202,18 @@ Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica l
     },
     // Datos para otros proyectos...
   };
+
+const ProjectDetailPage = () => {
+  const params = useParams();
+  const projectId = params.id;
+
+  const [filters, setFilters] = useState({
+    piso: 'Mostrar todo',
+    tipologia: 'Mostrar todo',
+    orientacion: 'Mostrar todo',
+  });
+
+
 
   const project =
     projectData[projectId as keyof typeof projectData] || projectData['1'];

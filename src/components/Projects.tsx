@@ -1,8 +1,7 @@
 'use client';
 
-import { ArrowRightIcon } from 'lucide-react';
-import Link from 'next/link';
 import ProjectCard from './ProjectCard';
+import MainButton from './MainButton';
 
 const Projects = () => {
   const projects = [
@@ -94,13 +93,9 @@ const Projects = () => {
 
         {/* Load More Button */}
         <div className="mx-auto flex w-full items-center justify-center text-center">
-          <Link
-            href="/projects"
-            className="flex cursor-pointer items-center gap-5 rounded-full border border-[#0040FF] px-8 py-3 font-medium text-[#0040FF] transition-colors duration-200 hover:bg-[#0040FF] hover:text-white"
-          >
+          <MainButton href="/projects" showArrow>
             Proyectos
-            <ArrowRightIcon className="h-5 w-5" />
-          </Link>
+          </MainButton>
         </div>
       </div>
     </section>

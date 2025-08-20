@@ -137,7 +137,7 @@ body {
 }
 
 .dashboard-title {
-  @apply text-3xl font-bold text-gray-900;
+  @apply text-3xl font-bold text-black;
 }
 
 
