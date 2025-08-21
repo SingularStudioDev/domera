@@ -2,9 +2,9 @@
 
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
-import { OrgMenuItems } from '@/utils/MenuItems';
+import {  SuperAdminMenuItems } from '@/utils/MenuItems';
 
-export default function DashboardLayout({
+export default function SuperDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -12,8 +12,9 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-white">
-      <AppSidebar menuItems={OrgMenuItems} />
-        <main className="flex flex-1 flex-col overflow-auto bg-[#F5F5F5] pt-7 p-6">
+        <AppSidebar menuItems={SuperAdminMenuItems} />
+
+        <main className="flex flex-1 flex-col overflow-auto bg-[#F5F5F5] p-6 pt-7">
           {children}
         </main>
       </div>

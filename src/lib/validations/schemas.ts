@@ -149,9 +149,11 @@ export const CreateOrganizationSchema = z.object({
   email: EmailSchema,
   phone: PhoneSchema.optional(),
   address: z.string().max(500, 'Dirección muy larga').optional(),
-  tax_id: TaxIdSchema.optional(),
-  website_url: z.string().url('URL inválida').optional(),
-  description: z.string().max(1000, 'Descripción muy larga').optional()
+  taxId: TaxIdSchema.optional(),
+  websiteUrl: z.string().url('URL inválida').optional(),
+  description: z.string().max(1000, 'Descripción muy larga').optional(),
+  status: OrganizationStatusSchema.default('pending_approval'),
+  logoUrl: z.string().url('URL de logo inválida').optional()
 });
 
 export const UpdateOrganizationSchema = CreateOrganizationSchema.partial();

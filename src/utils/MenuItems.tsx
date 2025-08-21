@@ -5,9 +5,10 @@ import {
   BellIcon,
   UserIcon,
   MessagesSquareIcon,
+  BuildingIcon,
 } from 'lucide-react';
 
-export const menuItems = [
+export const OrgMenuItems = [
   {
     title: 'Dashboard',
     url: '/dashboard',
@@ -37,5 +38,13 @@ export const menuItems = [
     title: 'Perfil',
     url: '/dashboard/notifications',
     icon: UserIcon,
+  },
+];
+
+export const SuperAdminMenuItems = [
+  {
+    title: 'Organizaciónes',
+    url: '/superDashboard/organizations',
+    icon: BuildingIcon,
   },
 ];

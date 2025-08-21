@@ -17,6 +17,21 @@ export default withAuth(
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
 
+    // Handle super admin routes first
+    if (pathname.startsWith('/superDashboard')) {
+      // Check if user has super admin role (admin with null organizationId)
+      const userRoles = token?.roles || [];
+      const isSuperAdmin = userRoles.some((role: any) => 
+        role.role === 'admin' && role.organizationId === null
+      );
+
+      if (!isSuperAdmin) {
+        return NextResponse.redirect(new URL('/superLogin', req.url));
+      }
+      
+      return response;
+    }
+
     // Define protected routes and their required roles
     const protectedRoutes = {
       '/dashboard': ['admin'],
@@ -70,8 +85,10 @@ export default withAuth(
           '/projects',
           '/projects/[id]',
           '/login',
+          '/superLogin',
           '/register',
           '/api/public',
+          '/api/auth',
         ];
 
         // Check if route is public

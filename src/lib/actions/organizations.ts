@@ -33,31 +33,27 @@ interface OrganizationFiltersInput {
 interface CreateOrganizationInput {
   name: string;
   slug: string;
-  description?: string;
-  website?: string;
-  email?: string;
+  email: string;
   phone?: string;
   address?: string;
-  city?: string;
-  country?: string;
   taxId?: string;
+  websiteUrl?: string;
+  description?: string;
   status: OrganizationStatus;
-  settings: any;
+  logoUrl?: string;
 }
 
 interface UpdateOrganizationInput {
   name?: string;
   slug?: string;
-  description?: string;
-  website?: string;
   email?: string;
   phone?: string;
   address?: string;
-  city?: string;
-  country?: string;
   taxId?: string;
+  websiteUrl?: string;
+  description?: string;
   status?: OrganizationStatus;
-  settings?: any;
+  logoUrl?: string;
 }
 
 // =============================================================================

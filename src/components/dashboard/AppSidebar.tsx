@@ -14,10 +14,20 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Logo from '@/assets/Domera.svg';
-import { menuItems } from '@/utils/MenuItems';
-import { DoorOpenIcon } from 'lucide-react';
+import { DoorOpenIcon, LucideProps } from 'lucide-react';
+import { ForwardRefExoticComponent, RefAttributes } from 'react';
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  menuItems: {
+    title: string;
+    url: string;
+    icon: ForwardRefExoticComponent<
+      Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
+    >;
+  }[];
+}
+
+export function AppSidebar({ menuItems }: AppSidebarProps) {
   const pathname = usePathname();
 
   const isMenuItemActive = (itemUrl: string) => {
