@@ -37,7 +37,7 @@ const Process = () => {
       <div className="container mx-auto">
         {/* Section Header */}
         <div className="flex flex-col gap-5 text-start md:gap-10">
-          <h2 className="mb-4 text-3xl leading-tight text-black lg:text-7xl">
+          <h2 className="text-3xl leading-tight text-black lg:text-7xl">
             Transformá la manera de invertir en
             <br />
             propiedades en pozo

@@ -1,15 +1,18 @@
 'use client';
 
-import { 
-  Heart, 
-  StarIcon, 
-  Car, 
-  Home, 
-  Bed, 
+import {
+  Heart,
+  StarIcon,
+  Car,
+  Home,
+  Bed,
   Building2,
-  Store 
+  Store,
+  BedDoubleIcon,
+  CarFrontIcon,
+  ShoppingCartIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -40,26 +43,72 @@ const ProjectCard = ({
   features = [],
 }: ProjectCardProps) => {
   const [favorite, setFavorite] = useState(isFavorite);
+  const [projectFeatures, setProjectFeatures] = useState<ProjectFeature[]>([]);
+
+  const sortFeatures = (features: ProjectFeature[]) => {
+    return features.sort((a, b) => {
+      // Studio always first
+      if (a.name === 'studio') return -1;
+      if (b.name === 'studio') return 1;
+
+      // Bedrooms in middle
+      const aIsBedroom = a.name.includes('bedroom');
+      const bIsBedroom = b.name.includes('bedroom');
+
+      if (aIsBedroom && !bIsBedroom) return -1;
+      if (!aIsBedroom && bIsBedroom) return 1;
+
+      // Sort bedrooms by number (1_bedroom, 2_bedroom, etc.)
+      if (aIsBedroom && bIsBedroom) {
+        const aNum = parseInt(a.name.match(/(\d+)_bedroom/)?.[1] || '0');
+        const bNum = parseInt(b.name.match(/(\d+)_bedroom/)?.[1] || '0');
+        return aNum - bNum;
+      }
+
+      // Parking and commercial at bottom (keep original order)
+      return 0;
+    });
+  };
+
+  useEffect(() => {
+    const featuresWithTrue = features.filter(
+      (feature) => feature.hasFeature === true
+    );
+    const sortedFeatures = sortFeatures(featuresWithTrue);
+    setProjectFeatures(sortedFeatures);
+  }, [features]);
 
   const getFeatureIcon = (featureName: string) => {
-    const iconProps = { size: 16, className: "text-gray-600" };
-    
+    const isBedroomFeature =
+      featureName.includes('bedroom') || featureName === 'studio';
+    const iconProps = {
+      size: 19,
+      className: ` ${isBedroomFeature ? 'mr-2' : ''}`,
+    };
+
     switch (featureName) {
       case 'parking':
-        return <Car {...iconProps} />;
+        return <CarFrontIcon {...iconProps} />;
       case 'studio':
-        return <Home {...iconProps} />;
       case '1_bedroom':
       case '2_bedroom':
       case '3_bedroom':
       case '4_bedroom':
       case '5_bedroom':
-        return <Bed {...iconProps} />;
+        return <BedDoubleIcon {...iconProps} />;
       case 'commercial':
-        return <Store {...iconProps} />;
+        return <ShoppingCartIcon {...iconProps} />;
       default:
         return <Building2 {...iconProps} />;
     }
+  };
+
+  const getBedroomNumber = (featureName: string) => {
+    if (featureName === 'studio') {
+      return '0';
+    }
+    const match = featureName.match(/(\d+)_bedroom/);
+    return match ? match[1] : null;
   };
 
   return (
@@ -73,33 +122,39 @@ const ProjectCard = ({
 
         {/* Status Badge */}
         <div className="group-hover:text-primaryColor absolute top-3 left-3 flex gap-2 text-black transition duration-300">
-          <span className="rounded-2xl bg-white px-6 py-2 text-lg">
+          <span className="rounded-2xl bg-white px-4 py-1 text-lg shadow-sm">
             {status}
           </span>
 
-          <span className="rounded-2xl bg-white px-6 py-2 text-lg">{date}</span>
+          <span className="rounded-2xl bg-white px-4 py-1 text-lg shadow-sm">
+            {date}
+          </span>
         </div>
 
         {/* Top Right Icons */}
-        <div className="absolute top-3 right-3 flex flex-col space-y-2">
-           {/* Features */}
-           {features.length > 0 && (
-              <div className="mt-2 flex flex-col flex-wrap gap-2">
-                {features.map((feature) => (
+        <div className="absolute top-3 right-3 flex flex-col gap-2">
+          {/* Features */}
+          {projectFeatures.length > 0 && (
+            <div className="flex flex-col flex-wrap gap-2">
+              {projectFeatures.map((feature) => {
+                const bedroomNumber = getBedroomNumber(feature.name);
+                return (
                   <div
                     key={feature.name}
-                    className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                      feature.hasFeature 
-                    ? 'bg-white border-2 border-white' 
-                        : 'bg-gray-300 border-2 border-gray-300'
-                    }`}
+                    className="group-hover:text-primaryColor relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-white text-black shadow-sm"
                     title={feature.name}
                   >
                     {getFeatureIcon(feature.name)}
+                    {bedroomNumber && (
+                      <span className="absolute top-4 right-0 min-w-[16px] rounded-full bg-white px-1 py-0.5 text-center text-xs leading-none">
+                        x{bedroomNumber}
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="absolute right-6 bottom-3 left-3 flex w-full items-end gap-5">
