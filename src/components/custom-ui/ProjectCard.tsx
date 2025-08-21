@@ -1,9 +1,22 @@
 'use client';
 
-import { Heart, StarIcon } from 'lucide-react';
+import { 
+  Heart, 
+  StarIcon, 
+  Car, 
+  Home, 
+  Bed, 
+  Building2,
+  Store 
+} from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+
+interface ProjectFeature {
+  name: string;
+  hasFeature: boolean;
+}
 
 interface ProjectCardProps {
   id: string;
@@ -13,6 +26,7 @@ interface ProjectCardProps {
   status: string;
   date: string;
   isFavorite?: boolean;
+  features?: ProjectFeature[];
 }
 
 const ProjectCard = ({
@@ -23,8 +37,30 @@ const ProjectCard = ({
   status,
   date,
   isFavorite = false,
+  features = [],
 }: ProjectCardProps) => {
   const [favorite, setFavorite] = useState(isFavorite);
+
+  const getFeatureIcon = (featureName: string) => {
+    const iconProps = { size: 16, className: "text-gray-600" };
+    
+    switch (featureName) {
+      case 'parking':
+        return <Car {...iconProps} />;
+      case 'studio':
+        return <Home {...iconProps} />;
+      case '1_bedroom':
+      case '2_bedroom':
+      case '3_bedroom':
+      case '4_bedroom':
+      case '5_bedroom':
+        return <Bed {...iconProps} />;
+      case 'commercial':
+        return <Store {...iconProps} />;
+      default:
+        return <Building2 {...iconProps} />;
+    }
+  };
 
   return (
     <Link
@@ -46,23 +82,31 @@ const ProjectCard = ({
 
         {/* Top Right Icons */}
         <div className="absolute top-3 right-3 flex flex-col space-y-2">
-          <img
-            src="/Frame-1.png"
-            alt="heart"
-            className="h-full w-38 transition duration-300 group-hover:hidden"
-          />
-          <img
-            src="/Frame-2.png"
-            alt="heart"
-            className="hidden h-full w-38 transition duration-300 group-hover:block"
-          />
+           {/* Features */}
+           {features.length > 0 && (
+              <div className="mt-2 flex flex-col flex-wrap gap-2">
+                {features.map((feature) => (
+                  <div
+                    key={feature.name}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                      feature.hasFeature 
+                    ? 'bg-white border-2 border-white' 
+                        : 'bg-gray-300 border-2 border-gray-300'
+                    }`}
+                    title={feature.name}
+                  >
+                    {getFeatureIcon(feature.name)}
+                  </div>
+                ))}
+              </div>
+            )}
         </div>
 
         <div className="absolute right-6 bottom-3 left-3 flex w-full items-end gap-5">
           <div className="relative flex w-[calc(100%-100px)] max-w-[400px] flex-col">
             {/* Bloque superior con curva hacia la derecha */}
             <span className="group-hover:text-primaryColor relative w-fit rounded-t-2xl bg-white px-3 py-2 text-3xl font-medium text-black transition duration-300">
-              {title}
+              {title.length > 12 ? `${title.slice(0, 12)}...` : title}
 
               <svg
                 className="absolute -right-5 -bottom-[1px] h-[20px] w-[20px]"
@@ -72,15 +116,7 @@ const ProjectCard = ({
                 xmlns="http://www.w3.org/2000/svg"
                 preserveAspectRatio="none"
               >
-                <path
-                  d="
-    M0 0
-    Q2 160 160 160
-    H0
-    Z
-  "
-                  fill="#FFF"
-                />
+                <path d="M0 0 Q2 160 160 160 H0 Z" fill="#FFF" />
               </svg>
             </span>
 
