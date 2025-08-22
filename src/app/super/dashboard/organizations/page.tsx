@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import {
   Card,
   CardHeader,
@@ -15,8 +15,8 @@ import { createOrganizationAction } from '@/lib/actions/organizations';
 import { Upload, X, Image } from 'lucide-react';
 
 export default function OrganizationsPage() {
-  const { data: session } = useSession();
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, isLoading: isSessionLoading, isAuthenticated } = useSuperAdmin();
+  const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -90,7 +90,7 @@ export default function OrganizationsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitLoading(true);
     setError(null);
     setSuccess(null);
 
@@ -136,14 +136,22 @@ export default function OrganizationsPage() {
       setError('Error inesperado al crear la organizaci�n');
       console.error('Error:', err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitLoading(false);
     }
   };
 
-  if (!session) {
+  if (isSessionLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p>Cargando...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Redirigiendo al login...</p>
       </div>
     );
   }
@@ -393,8 +401,8 @@ export default function OrganizationsPage() {
 
               {/* Submit Button */}
               <div className="flex justify-end">
-                <Button type="submit" disabled={isLoading} className="px-6">
-                  {isLoading ? 'Creando...' : 'Crear Organizacion'}
+                <Button type="submit" disabled={isSubmitLoading} className="px-6">
+                  {isSubmitLoading ? 'Creando...' : 'Crear Organizacion'}
                 </Button>
               </div>
             </form>

@@ -8,29 +8,21 @@ import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
+import { superAdminMiddleware, requiresSuperAdminAccess } from '@/lib/middleware/super-admin';
 
 export default withAuth(
   async function middleware(req: NextRequest) {
-    // Update Supabase session
+    const { pathname } = req.nextUrl;
+
+    // Handle super admin routes with enhanced security
+    if (pathname.startsWith('/super')) {
+      return await superAdminMiddleware(req);
+    }
+    
+    // Update Supabase session for regular routes
     const response = await updateSession(req);
     
     const token = req.nextauth.token;
-    const { pathname } = req.nextUrl;
-
-    // Handle super admin routes first
-    if (pathname.startsWith('/superDashboard')) {
-      // Check if user has super admin role (admin with null organizationId)
-      const userRoles = token?.roles || [];
-      const isSuperAdmin = userRoles.some((role: any) => 
-        role.role === 'admin' && role.organizationId === null
-      );
-
-      if (!isSuperAdmin) {
-        return NextResponse.redirect(new URL('/superLogin', req.url));
-      }
-      
-      return response;
-    }
 
     // Define protected routes and their required roles
     const protectedRoutes = {
@@ -85,7 +77,7 @@ export default withAuth(
           '/projects',
           '/projects/[id]',
           '/login',
-          '/superLogin',
+          '/super',
           '/register',
           '/api/public',
           '/api/auth',

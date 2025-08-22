@@ -9,6 +9,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { prisma } from '@/lib/prisma';
 import { RoleType } from '@prisma/client';
+import { validateSuperAdminSession } from '@/lib/auth/super-admin';
+import { extractRealIP, sanitizeUserAgent } from '@/lib/utils/security';
+import { headers } from 'next/headers';
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -55,55 +58,106 @@ export interface RoleValidationResult {
  */
 export async function validateSession(): Promise<AuthValidationResult> {
   try {
+    // First try NextAuth session
     const session = await getServerSession(authOptions);
 
-    if (!session?.user) {
-      return {
-        success: false,
-        error: 'Usuario no autenticado',
-      };
-    }
-
-    // Get full user data with roles from database
-    const user = await prisma.user.findFirst({
-      where: {
-        email: session.user.email!,
-        isActive: true,
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatarUrl: true,
-        userRoles: {
-          where: { isActive: true },
-          select: {
-            role: true,
-            organizationId: true,
-            isActive: true,
-            organization: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
+    if (session?.user) {
+      // Get full user data with roles from database
+      const user = await prisma.user.findFirst({
+        where: {
+          email: session.user.email!,
+          isActive: true,
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+          userRoles: {
+            where: { isActive: true },
+            select: {
+              role: true,
+              organizationId: true,
+              isActive: true,
+              organization: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!user) {
-      return {
-        success: false,
-        error: 'Usuario no encontrado en la base de datos',
-      };
+      if (user) {
+        return {
+          success: true,
+          user: user as AuthenticatedUser,
+        };
+      }
+    }
+
+    // If no NextAuth session, try super admin session
+    const headersList = await headers();
+    const cookieHeader = headersList.get('cookie');
+    console.log('[DEBUG] Cookie header:', cookieHeader);
+    
+    const sessionCookies = cookieHeader
+      ?.split(';')
+      .filter(c => c.trim().startsWith('super-admin-session='))
+      .map(c => c.split('=')[1]);
+    
+    const sessionCookie = sessionCookies?.pop(); // Get the last one
+
+    console.log('[DEBUG] Session cookie found:', sessionCookie ? 'Yes' : 'No');
+
+    if (sessionCookie) {
+      const ipAddress = extractRealIP(headersList);
+      const sessionValidation = await validateSuperAdminSession(sessionCookie, ipAddress);
+      
+      if (sessionValidation.valid && sessionValidation.userId) {
+        // Get user with roles for super admin
+        const user = await prisma.user.findUnique({
+          where: { id: sessionValidation.userId },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            userRoles: {
+              where: { isActive: true },
+              select: {
+                role: true,
+                organizationId: true,
+                isActive: true,
+                organization: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (user) {
+          return {
+            success: true,
+            user: user as AuthenticatedUser,
+          };
+        }
+      }
     }
 
     return {
-      success: true,
-      user: user as AuthenticatedUser,
+      success: false,
+      error: 'Usuario no autenticado',
     };
   } catch (error) {
     console.error('Error validating session:', error);
