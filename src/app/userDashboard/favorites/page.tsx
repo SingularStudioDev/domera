@@ -3,8 +3,6 @@
 import { Heart, Grid3X3, Filter } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Header from '@/components/header/Header';
-import Footer from '@/components/Footer';
 import ProjectCard from '@/components/custom-ui/ProjectCard';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -44,7 +42,7 @@ const mockFavoriteProjects: FavoriteProject[] = [
     neighborhood: 'Pocitos',
   },
   {
-    id: '3',
+    id: '2',
     title: 'Le Mont',
     price: '$325.000',
     image: '/project-le-mont.png',
@@ -53,6 +51,30 @@ const mockFavoriteProjects: FavoriteProject[] = [
     isFavorite: true,
     rooms: 3,
     isNew: false,
+    neighborhood: 'Pocitos',
+  },
+  {
+    id: '3',
+    title: 'Alzira',
+    price: '$312.000',
+    image: '/project-alzira.png',
+    status: 'Pocitos',
+    date: 'Jul 2028',
+    isFavorite: true,
+    rooms: 1,
+    isNew: true,
+    neighborhood: 'Carrasco',
+  },
+  {
+    id: '4',
+    title: 'Alo 26',
+    price: '$167.000',
+    image: '/project-alo-26-7e5196.png',
+    status: 'Pocitos',
+    date: 'Jul 2028',
+    isFavorite: true,
+    rooms: 2,
+    isNew: true,
     neighborhood: 'Pocitos',
   },
   {
@@ -133,7 +155,7 @@ const FavoritesPage = () => {
 
   // Loading state component
   const LoadingState = () => (
-    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
       {[...Array(6)].map((_, index) => (
         <div key={index} className="animate-pulse">
           <div className="h-[547px] rounded-3xl bg-gray-200"></div>
@@ -157,7 +179,7 @@ const FavoritesPage = () => {
       </p>
       <Link
         href="/projects"
-        className="inline-flex items-center gap-2 rounded-full bg-primaryColor px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+        className="bg-primaryColor inline-flex items-center gap-2 rounded-full px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
       >
         <Grid3X3 className="h-5 w-5" />
         Ver Proyectos
@@ -166,12 +188,10 @@ const FavoritesPage = () => {
   );
 
   return (
-    <>
-      <Header />
-      <main className="bg-white pt-36">
+      <section className="bg-white pt-26">
         <div className="container mx-auto">
           {/* Hero Section */}
-          <div className="mb-8 flex w-full items-center justify-between gap-8">
+          <div className="flex w-full mb-4 items-center justify-between gap-8">
             <h1 className="dashboard-title">Favoritos</h1>
 
             {/* Filters Section */}
@@ -252,7 +272,7 @@ const FavoritesPage = () => {
           </div>
 
           {/* Content Section */}
-          <div className="mb-16">
+          <div>
             {isLoading ? (
               <LoadingState />
             ) : favoriteProjects.length === 0 ? (
@@ -283,7 +303,7 @@ const FavoritesPage = () => {
                     </p>
                     <Link
                       href="/projects"
-                      className="inline-flex items-center gap-2 rounded-full border border-primaryColor px-8 py-3 font-medium text-primaryColor transition-colors hover:bg-primaryColor hover:text-white"
+                      className="border-primaryColor text-primaryColor hover:bg-primaryColor inline-flex items-center gap-2 rounded-full border px-8 py-3 font-medium transition-colors hover:text-white"
                     >
                       <Grid3X3 className="h-5 w-5" />
                       Ver Todos los Proyectos
@@ -294,7 +314,7 @@ const FavoritesPage = () => {
             ) : (
               <>
                 {/* Projects Grid */}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {filteredProjects.map((project) => (
                     <ProjectCard
                       key={project.id}
@@ -322,7 +342,7 @@ const FavoritesPage = () => {
                     </p>
                     <Link
                       href="/projects"
-                      className="inline-flex items-center gap-2 rounded-full border border-primaryColor px-8 py-3 font-medium text-primaryColor transition-colors hover:bg-primaryColor hover:text-white"
+                      className="border-primaryColor text-primaryColor hover:bg-primaryColor inline-flex items-center gap-2 rounded-full border px-8 py-3 font-medium transition-colors hover:text-white"
                     >
                       <Grid3X3 className="h-5 w-5" />
                       Ver Todos los Proyectos
@@ -333,9 +353,7 @@ const FavoritesPage = () => {
             )}
           </div>
         </div>
-      </main>
-      <Footer />
-    </>
+      </section>
   );
 };
 

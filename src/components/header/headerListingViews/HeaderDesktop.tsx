@@ -13,7 +13,7 @@ import { signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 import { ChevronDown, ChevronDownIcon, DoorOpenIcon } from 'lucide-react';
-import { adminMenuItems, menuItems, userMenuItems } from '../headerItems';
+import { adminMenuItems, HeaderMenuItems, menuItems, userMenuItems } from '../headerItems';
 
 const HeaderDesktop = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -25,7 +25,9 @@ const HeaderDesktop = () => {
   };
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-[999] p-5">
+    <header
+      className={`${pathname.startsWith('/userDashboard') ? 'absolute' : 'fixed'} top-0 right-0 left-0 z-[999] p-5`}
+    >
       <div className="container mx-auto flex items-center justify-between gap-5 overflow-hidden">
         <div className="w-full rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5]">
           <div className="flex h-[70px] w-full items-center justify-between px-6">
@@ -81,7 +83,7 @@ const HeaderDesktop = () => {
                   align="end"
                   className="mt-7 w-fit rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5] p-2"
                 >
-                  {(isAdmin ? adminMenuItems : userMenuItems).map((item) => {
+                  {(isAdmin ? adminMenuItems : HeaderMenuItems).map((item) => {
                     const isActive = item.href === pathname;
 
                     return (
@@ -119,7 +121,7 @@ const HeaderDesktop = () => {
                 <DropdownMenuTrigger asChild className="w-full">
                   <button className="hover:text-primaryColor flex w-full cursor-pointer items-center justify-between gap-3 text-base font-normal text-black transition-colors duration-200 outline-none hover:bg-gray-100">
                     <span>Login</span>
-                    <ChevronDown className="h-4.5 w-4.5" strokeWidth={1.8}/>
+                    <ChevronDown className="h-4.5 w-4.5" strokeWidth={1.8} />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent

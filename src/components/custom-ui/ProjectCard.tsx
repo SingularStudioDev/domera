@@ -12,7 +12,7 @@ import {
   CarFrontIcon,
   ShoppingCartIcon,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -32,6 +32,31 @@ interface ProjectCardProps {
   features?: ProjectFeature[];
 }
 
+const sortFeatures = (features: ProjectFeature[]) => {
+  return features.sort((a, b) => {
+    // Studio always first
+    if (a.name === 'studio') return -1;
+    if (b.name === 'studio') return 1;
+
+    // Bedrooms in middle
+    const aIsBedroom = a.name.includes('bedroom');
+    const bIsBedroom = b.name.includes('bedroom');
+
+    if (aIsBedroom && !bIsBedroom) return -1;
+    if (!aIsBedroom && bIsBedroom) return 1;
+
+    // Sort bedrooms by number (1_bedroom, 2_bedroom, etc.)
+    if (aIsBedroom && bIsBedroom) {
+      const aNum = parseInt(a.name.match(/(\d+)_bedroom/)?.[1] || '0');
+      const bNum = parseInt(b.name.match(/(\d+)_bedroom/)?.[1] || '0');
+      return aNum - bNum;
+    }
+
+    // Parking and commercial at bottom (keep original order)
+    return 0;
+  });
+};
+
 const ProjectCard = ({
   id,
   title,
@@ -42,40 +67,11 @@ const ProjectCard = ({
   isFavorite = false,
   features = [],
 }: ProjectCardProps) => {
-  const [favorite, setFavorite] = useState(isFavorite);
-  const [projectFeatures, setProjectFeatures] = useState<ProjectFeature[]>([]);
-
-  const sortFeatures = (features: ProjectFeature[]) => {
-    return features.sort((a, b) => {
-      // Studio always first
-      if (a.name === 'studio') return -1;
-      if (b.name === 'studio') return 1;
-
-      // Bedrooms in middle
-      const aIsBedroom = a.name.includes('bedroom');
-      const bIsBedroom = b.name.includes('bedroom');
-
-      if (aIsBedroom && !bIsBedroom) return -1;
-      if (!aIsBedroom && bIsBedroom) return 1;
-
-      // Sort bedrooms by number (1_bedroom, 2_bedroom, etc.)
-      if (aIsBedroom && bIsBedroom) {
-        const aNum = parseInt(a.name.match(/(\d+)_bedroom/)?.[1] || '0');
-        const bNum = parseInt(b.name.match(/(\d+)_bedroom/)?.[1] || '0');
-        return aNum - bNum;
-      }
-
-      // Parking and commercial at bottom (keep original order)
-      return 0;
-    });
-  };
-
-  useEffect(() => {
+  const projectFeatures = useMemo(() => {
     const featuresWithTrue = features.filter(
       (feature) => feature.hasFeature === true
     );
-    const sortedFeatures = sortFeatures(featuresWithTrue);
-    setProjectFeatures(sortedFeatures);
+    return sortFeatures(featuresWithTrue);
   }, [features]);
 
   const getFeatureIcon = (featureName: string) => {
@@ -114,11 +110,15 @@ const ProjectCard = ({
   return (
     <Link
       href={`/projects/${id}`}
-      className="relative block overflow-hidden rounded-3xl bg-white shadow-md transition-shadow duration-300 hover:shadow-xl"
+      className="relative block overflow-hidden rounded-3xl bg-white transition-shadow duration-300 hover:shadow-lg"
     >
       {/* Image */}
       <div className="group relative h-[567px] overflow-hidden md:h-[547px]">
-        <img src={image} alt={title} className="h-full w-full object-cover" />
+        <img
+          src={image ? image : '/project-placeholder.png'}
+          alt={title}
+          className="h-full w-full object-cover"
+        />
 
         {/* Status Badge */}
         <div className="group-hover:text-primaryColor absolute top-3 left-3 flex gap-2 text-black transition duration-300">

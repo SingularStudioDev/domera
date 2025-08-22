@@ -7,13 +7,21 @@ import {
   LayoutDashboardIcon,
 } from 'lucide-react';
 
-export const userMenuItems = [
-  { title: 'Perfil', href: '/userDashboard', icon: User },
-  { title: 'Compras', href: '/userDashboard', icon: ShoppingCartIcon },
+export const DashboardUserMenuItems = [
+  { title: 'Compras', href: '/userDashboard/shopping', icon: ShoppingCartIcon },
   { title: 'Favoritos', href: '/userDashboard/favorites', icon: StarIcon },
-  { title: 'Chat', href: '/userDashboard/chat', icon: MessagesSquareIcon },
+  // { title: 'Chat', href: '/userDashboard/chat', icon: MessagesSquareIcon },
   { title: 'Notificaciones', href: '/dashboard', icon: BellIcon },
+  { title: 'Perfil', href: '/userDashboard', icon: User },
 ];
+
+export const HeaderMenuItems = [
+  { title: 'Compras', href: '/userDashboard/shopping', icon: ShoppingCartIcon },
+  { title: 'Favoritos', href: '/userDashboard/favorites', icon: StarIcon },
+  { title: 'Notificaciones', href: '/userDashboard', icon: BellIcon },
+  { title: 'Perfil', href: '/userDashboard', icon: User },
+];
+
 
 export const adminMenuItems = [
   { title: 'Perfil', href: '/dashboard/profile', icon: User },

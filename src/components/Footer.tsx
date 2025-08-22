@@ -4,7 +4,7 @@ import { FaSquareXTwitter, FaSquareInstagram } from 'react-icons/fa6';
 
 export default function Footer() {
   return (
-    <footer className="relative z-10 rounded-t-3xl bg-[#011D6F] text-white">
+    <footer className="relative z-50 rounded-t-3xl bg-[#011D6F] text-white">
       <div className="flex h-full flex-col justify-between">
         {/* Contact Info */}
         <div className="container mx-auto flex h-full flex-col justify-between gap-6 px-4 py-12 md:flex-row md:gap-1 md:px-0 md:py-22">
