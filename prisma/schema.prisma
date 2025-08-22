@@ -193,6 +193,8 @@ model User {
   correctedBy                 User?                    @relation("UserCorrections", fields: [correctionOf], references: [id])
   corrections                 User[]                   @relation("UserCorrections")
   favorites                   UserFavorite[]
+  twoFactorToken              TwoFactorToken?
+  superAdminSession           SuperAdminSession?
 
   @@map("users")
 }
@@ -585,4 +587,55 @@ model DataCorrection {
   approver  User? @relation("CorrectionApprover", fields: [approvedBy], references: [id])
 
   @@map("data_corrections")
+}
+
+// =============================================================================
+// SUPER ADMIN SECURITY AND 2FA
+// =============================================================================
+
+model TwoFactorToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @unique @map("user_id") @db.Uuid
+  token     String    // Hashed 6-digit token
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  isUsed    Boolean   @default(false) @map("is_used")
+  attempts  Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("two_factor_tokens")
+}
+
+model SuperAdminSession {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @unique @map("user_id") @db.Uuid
+  sessionToken String    @map("session_token") // Hashed session token
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz
+  ipAddress    String?   @map("ip_address") @db.VarChar(45)
+  userAgent    String?   @map("user_agent")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastUsed     DateTime  @default(now()) @map("last_used") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("super_admin_sessions")
+}
+
+model SecurityLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  eventType      String   @map("event_type") @db.VarChar(100)
+  userIdentifier String   @map("user_identifier") @db.VarChar(255)
+  result         String   @db.VarChar(50)
+  ipAddress      String?  @map("ip_address") @db.VarChar(45)
+  userAgent      String?  @map("user_agent")
+  timestamp      DateTime @default(now()) @db.Timestamptz
+  metadata       Json     @default("{}")
+
+  @@index([eventType, timestamp])
+  @@index([userIdentifier, timestamp])
+  @@map("security_logs")
 }

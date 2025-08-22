@@ -1,7 +1,6 @@
 // =============================================================================
 // PROJECTS DATA ACCESS LAYER
-// Database operations for projects only - following single responsibility principle
-// Unit operations have been moved to @/lib/dal/units.ts
+// Database operations for projects
 // =============================================================================
 
 import {

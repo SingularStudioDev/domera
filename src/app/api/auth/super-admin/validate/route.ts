@@ -1,60 +1,77 @@
 // =============================================================================
-// SUPER ADMIN VALIDATION API ENDPOINT
-// Validates super admin credentials before NextAuth sign-in
+// SUPER ADMIN CREDENTIAL VALIDATION API
+// Validates super admin credentials and triggers 2FA flow
 // =============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { validateSuperAdmin } from '@/lib/auth/super-admin';
-import { headers } from 'next/headers';
+import { validateSuperAdminCredentials, generateAndSend2FAToken } from '@/lib/auth/super-admin';
+import { extractRealIP, sanitizeUserAgent } from '@/lib/utils/security';
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting protection - basic implementation
-    const headersList = headers();
-    const forwarded = headersList.get('x-forwarded-for');
-    const ip = forwarded?.split(',')[0] || 'unknown';
-    
-    // Parse request body
     const { email, password } = await request.json();
 
-    // Validate required fields
+    // Validate input
     if (!email || !password) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Email y contraseña son requeridos' 
-        },
+        { success: false, error: 'Email y contraseña son requeridos' },
         { status: 400 }
       );
     }
 
-    // Validate super admin credentials
-    const result = await validateSuperAdmin(email, password);
+    // Extract security metadata
+    const ipAddress = extractRealIP(request.headers);
+    const userAgent = sanitizeUserAgent(request.headers.get('user-agent'));
 
-    // Return validation result
-    if (result.success) {
-      return NextResponse.json({
-        success: true,
-        message: 'Super administrador validado correctamente'
-      });
-    } else {
+    // Validate credentials
+    const validationResult = await validateSuperAdminCredentials(
+      email.toLowerCase().trim(),
+      password,
+      ipAddress,
+      userAgent
+    );
+
+    if (!validationResult.success) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: result.error 
-        },
+        { success: false, error: validationResult.error },
         { status: 401 }
       );
     }
 
+    const user = validationResult.user!;
+
+    // Generate and send 2FA token
+    const tokenResult = await generateAndSend2FAToken(
+      user.id,
+      user.email,
+      ipAddress,
+      userAgent
+    );
+
+    if (!tokenResult.success) {
+      return NextResponse.json(
+        { success: false, error: tokenResult.error },
+        { status: 500 }
+      );
+    }
+
+    // Return success with user info (no sensitive data)
+    return NextResponse.json({
+      success: true,
+      data: {
+        userId: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        requiresEmailVerification: true,
+        tokenExpiry: tokenResult.expiresAt?.toISOString()
+      }
+    });
+
   } catch (error) {
-    console.error('Super admin validation API error:', error);
-    
+    console.error('[API] Super admin validation error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Error interno del servidor' 
-      },
+      { success: false, error: 'Error interno del servidor' },
       { status: 500 }
     );
   }

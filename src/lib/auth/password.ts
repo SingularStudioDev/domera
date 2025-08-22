@@ -161,6 +161,26 @@ export const PASSWORD_REQUIREMENTS = {
 } as const;
 
 /**
+ * Hash a token or short string (no minimum length requirement)
+ * Used for 2FA tokens, session tokens, etc.
+ * @param token - Token to hash
+ * @returns Promise<string> - Hashed token
+ */
+export async function hashToken(token: string): Promise<string> {
+  if (!token) {
+    throw new Error('Token cannot be empty');
+  }
+
+  try {
+    const hashedToken = await bcrypt.hash(token, SALT_ROUNDS);
+    return hashedToken;
+  } catch (error) {
+    console.error('Error hashing token:', error);
+    throw new Error('Failed to hash token');
+  }
+}
+
+/**
  * Test password for development - DO NOT USE IN PRODUCTION
  * This is the standard password for all test users
  */
