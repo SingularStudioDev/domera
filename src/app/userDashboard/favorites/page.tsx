@@ -3,7 +3,7 @@
 import { Heart, Grid3X3, Filter } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import ProjectCard from '@/components/custom-ui/ProjectCard';
+import UnitCard from '@/app/projects/[slug]/units/_components/UnitCard';
 import { Separator } from '@/components/ui/separator';
 import {
   Select,
@@ -12,92 +12,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { getUserFavoritesAction } from '@/lib/actions/favourites';
 
-// Project type matching the existing patterns
-interface FavoriteProject {
+// Unit type for UnitCard component
+interface FavoriteUnit {
   id: string;
   title: string;
+  description: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: string;
+  orientation: string;
   price: string;
+  type: string;
   image: string;
-  status: string;
-  date: string;
-  isFavorite: boolean;
-  rooms?: number;
-  isNew?: boolean;
-  neighborhood?: string;
+  available: boolean;
+  statusIcon: boolean | string;
+  isFavorite?: boolean;
+  projectSlug?: string;
 }
 
-// Mock favorite projects data following existing patterns
-const mockFavoriteProjects: FavoriteProject[] = [
-  {
-    id: '1',
-    title: 'Alo 26',
-    price: '$167.000',
-    image: '/project-alo-26-7e5196.png',
-    status: 'Pocitos',
-    date: 'Jul 2028',
-    isFavorite: true,
-    rooms: 2,
-    isNew: true,
-    neighborhood: 'Pocitos',
-  },
-  {
-    id: '2',
-    title: 'Le Mont',
-    price: '$325.000',
-    image: '/project-le-mont.png',
-    status: 'Pocitos',
-    date: 'Dic 2027',
-    isFavorite: true,
-    rooms: 3,
-    isNew: false,
-    neighborhood: 'Pocitos',
-  },
-  {
-    id: '3',
-    title: 'Alzira',
-    price: '$312.000',
-    image: '/project-alzira.png',
-    status: 'Pocitos',
-    date: 'Jul 2028',
-    isFavorite: true,
-    rooms: 1,
-    isNew: true,
-    neighborhood: 'Carrasco',
-  },
-  {
-    id: '4',
-    title: 'Alo 26',
-    price: '$167.000',
-    image: '/project-alo-26-7e5196.png',
-    status: 'Pocitos',
-    date: 'Jul 2028',
-    isFavorite: true,
-    rooms: 2,
-    isNew: true,
-    neighborhood: 'Pocitos',
-  },
-  {
-    id: '5',
-    title: 'Alzira',
-    price: '$312.000',
-    image: '/project-alzira.png',
-    status: 'Pocitos',
-    date: 'Jul 2028',
-    isFavorite: true,
-    rooms: 1,
-    isNew: true,
-    neighborhood: 'Carrasco',
-  },
-];
-
 const FavoritesPage = () => {
-  const [favoriteProjects, setFavoriteProjects] = useState<FavoriteProject[]>(
-    []
-  );
-  const [filteredProjects, setFilteredProjects] = useState<FavoriteProject[]>(
-    []
-  );
+  const [favoriteUnits, setFavoriteUnits] = useState<FavoriteUnit[]>([]);
+  const [filteredUnits, setFilteredUnits] = useState<FavoriteUnit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filter states
@@ -106,52 +43,93 @@ const FavoritesPage = () => {
   const [selectedNeighborhood, setSelectedNeighborhood] =
     useState<string>('all');
 
-  // Simulate loading favorite projects (future: replace with API call)
+  // Load favorite units from server
   useEffect(() => {
     const loadFavorites = async () => {
       setIsLoading(true);
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      setFavoriteProjects(mockFavoriteProjects);
-      setIsLoading(false);
+      try {
+        const result = await getUserFavoritesAction();
+        if (result.success && result.data) {
+          const transformedUnits: FavoriteUnit[] = (
+            result.data as { favorites: unknown[] }
+          ).favorites.map(
+            (unit: {
+              id: string;
+              unitNumber: string;
+              price: number;
+              bedrooms: number;
+              bathrooms: number;
+              totalArea: number;
+              unitType: string;
+              status: string;
+              description?: string;
+              project: {
+                id: string;
+                name: string;
+                slug: string;
+                address: string;
+                neighborhood?: string;
+              };
+            }) => ({
+              id: unit.id,
+              title: `${unit.project.name} - ${unit.unitNumber}`,
+              description:
+                unit.description ||
+                `${unit.unitType} en ${unit.project.neighborhood || unit.project.address}`,
+              bedrooms: unit.bedrooms,
+              bathrooms: unit.bathrooms,
+              area: `${unit.totalArea}m²`,
+              orientation: 'Norte', // Default value, adjust based on your data
+              price: `$${unit.price.toLocaleString()}`,
+              type: unit.unitType,
+              image: '/project-default.png', // Default image, adjust based on your data
+              available: unit.status === 'available',
+              statusIcon: unit.status === 'available',
+              isFavorite: true,
+              projectSlug: unit.project.slug,
+            })
+          );
+          setFavoriteUnits(transformedUnits);
+        }
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadFavorites();
   }, []);
 
-  // Filter projects based on selected filters
+  // Filter units based on selected filters
   useEffect(() => {
-    let filtered = favoriteProjects;
+    let filtered = favoriteUnits;
 
     // Filter by rooms
     if (selectedRooms !== 'all') {
       if (selectedRooms === '4+') {
-        filtered = filtered.filter(
-          (project) => project.rooms && project.rooms >= 4
-        );
+        filtered = filtered.filter((unit) => unit.bedrooms >= 4);
       } else {
         filtered = filtered.filter(
-          (project) => project.rooms === parseInt(selectedRooms)
+          (unit) => unit.bedrooms === parseInt(selectedRooms)
         );
       }
     }
 
-    // Filter by new construction
+    // Filter by new construction (available status)
     if (selectedNew !== 'all') {
-      filtered = filtered.filter((project) =>
-        selectedNew === 'true' ? project.isNew : !project.isNew
+      filtered = filtered.filter((unit) =>
+        selectedNew === 'true' ? unit.available : !unit.available
       );
     }
 
-    // Filter by neighborhood
+    // Filter by type (using unit type instead of neighborhood)
     if (selectedNeighborhood !== 'all') {
-      filtered = filtered.filter(
-        (project) => project.neighborhood === selectedNeighborhood
-      );
+      filtered = filtered.filter((unit) => unit.type === selectedNeighborhood);
     }
 
-    setFilteredProjects(filtered);
-  }, [favoriteProjects, selectedRooms, selectedNew, selectedNeighborhood]);
+    setFilteredUnits(filtered);
+  }, [favoriteUnits, selectedRooms, selectedNew, selectedNeighborhood]);
 
   // Loading state component
   const LoadingState = () => (
@@ -171,11 +149,11 @@ const FavoritesPage = () => {
         <Heart className="h-12 w-12 text-gray-400" />
       </div>
       <h3 className="mb-4 text-2xl font-semibold text-gray-800">
-        No tienes proyectos favoritos
+        No tienes unidades favoritas
       </h3>
       <p className="mb-8 max-w-md text-lg text-gray-600">
-        Explora nuestros proyectos y marca como favoritos los que m�s te
-        interesen.
+        Explora nuestros proyectos y marca como favoritas las unidades que más
+        te interesen.
       </p>
       <Link
         href="/projects"
@@ -188,172 +166,154 @@ const FavoritesPage = () => {
   );
 
   return (
-      <section className="bg-white pt-26">
-        <div className="container mx-auto">
-          {/* Hero Section */}
-          <div className="flex w-full mb-4 items-center justify-between gap-8">
-            <h1 className="dashboard-title">Favoritos</h1>
+    <section className="bg-white pt-26">
+      <div className="container mx-auto">
+        {/* Hero Section */}
+        <div className="mb-4 flex w-full items-center justify-between gap-8">
+          <h1 className="dashboard-title">Favoritos</h1>
 
-            {/* Filters Section */}
-            <div className="flex w-4/6 flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
-                {/* Rooms Filter */}
-                <div className="w-full space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Habitaciones
-                  </label>
-                  <Select
-                    value={selectedRooms}
-                    onValueChange={setSelectedRooms}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue
-                        placeholder="Seleccionar"
-                        className="w-full"
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="1">1 habitación</SelectItem>
-                      <SelectItem value="2">2 habitaciones</SelectItem>
-                      <SelectItem value="3">3 habitaciones</SelectItem>
-                      <SelectItem value="4+">4+ habitaciones</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Filters Section */}
+          <div className="flex w-4/6 flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
+              {/* Rooms Filter */}
+              <div className="w-full space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Habitaciones
+                </label>
+                <Select value={selectedRooms} onValueChange={setSelectedRooms}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccionar" className="w-full" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="1">1 habitación</SelectItem>
+                    <SelectItem value="2">2 habitaciones</SelectItem>
+                    <SelectItem value="3">3 habitaciones</SelectItem>
+                    <SelectItem value="4+">4+ habitaciones</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {/* New Construction Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Estreno
-                  </label>
-                  <Select value={selectedNew} onValueChange={setSelectedNew}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="true">A estrenar</SelectItem>
-                      <SelectItem value="false">Usado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* New Construction Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Estreno
+                </label>
+                <Select value={selectedNew} onValueChange={setSelectedNew}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="true">A estrenar</SelectItem>
+                    <SelectItem value="false">Usado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {/* Neighborhood Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Barrio
-                  </label>
-                  <Select
-                    value={selectedNeighborhood}
-                    onValueChange={setSelectedNeighborhood}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Pocitos">Pocitos</SelectItem>
-                      <SelectItem value="Carrasco">Carrasco</SelectItem>
-                      <SelectItem value="La Blanqueada">
-                        La Blanqueada
-                      </SelectItem>
-                      <SelectItem value="Punta Carretas">
-                        Punta Carretas
-                      </SelectItem>
-                      <SelectItem value="Centro">Centro</SelectItem>
-                      <SelectItem value="Cordón">Cordón</SelectItem>
-                      <SelectItem value="Parque Rodó">Parque Rodó</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Unit Type Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Tipo de Unidad
+                </label>
+                <Select
+                  value={selectedNeighborhood}
+                  onValueChange={setSelectedNeighborhood}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="Apartamento">Apartamento</SelectItem>
+                    <SelectItem value="Penthouse">Penthouse</SelectItem>
+                    <SelectItem value="Monoambiente">Monoambiente</SelectItem>
+                    <SelectItem value="Dúplex">Dúplex</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
-
-          {/* Content Section */}
-          <div>
-            {isLoading ? (
-              <LoadingState />
-            ) : favoriteProjects.length === 0 ? (
-              <EmptyState />
-            ) : filteredProjects.length === 0 ? (
-              <div>
-                <div className="flex flex-col items-center justify-center text-center">
-                  <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-50">
-                    <Filter className="h-12 w-12 text-gray-400" />
-                  </div>
-                  <h3 className="mb-4 text-2xl font-semibold text-gray-800">
-                    No se encontraron proyectos
-                  </h3>
-                  <p className="mb-8 max-w-md text-lg text-gray-600">
-                    Intenta ajustar los filtros para encontrar proyectos que
-                    coincidan con tus criterios.
-                  </p>
-                </div>
-                <Separator className="my-12" />
-                {/* Continue browsing section */}
-                <div>
-                  <div className="text-center">
-                    <h3 className="mb-2 text-2xl font-semibold text-gray-800">
-                      Buscas mas opciones?
-                    </h3>
-                    <p className="mb-8 text-lg text-gray-600">
-                      Explora todos nuestros proyectos disponibles
-                    </p>
-                    <Link
-                      href="/projects"
-                      className="border-primaryColor text-primaryColor hover:bg-primaryColor inline-flex items-center gap-2 rounded-full border px-8 py-3 font-medium transition-colors hover:text-white"
-                    >
-                      <Grid3X3 className="h-5 w-5" />
-                      Ver Todos los Proyectos
-                    </Link>
-                  </div>
-                </div>{' '}
-              </div>
-            ) : (
-              <>
-                {/* Projects Grid */}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  {filteredProjects.map((project) => (
-                    <ProjectCard
-                      key={project.id}
-                      id={project.id}
-                      title={project.title}
-                      price={project.price}
-                      image={project.image}
-                      status={project.status}
-                      date={project.date}
-                      isFavorite={project.isFavorite}
-                    />
-                  ))}
-                </div>
-
-                <Separator className="my-14" />
-
-                {/* Continue browsing section */}
-                <div>
-                  <div className="text-center">
-                    <h3 className="mb-2 text-2xl font-semibold text-gray-800">
-                      Buscas mas opciones?
-                    </h3>
-                    <p className="mb-8 text-lg text-gray-600">
-                      Explora todos nuestros proyectos disponibles
-                    </p>
-                    <Link
-                      href="/projects"
-                      className="border-primaryColor text-primaryColor hover:bg-primaryColor inline-flex items-center gap-2 rounded-full border px-8 py-3 font-medium transition-colors hover:text-white"
-                    >
-                      <Grid3X3 className="h-5 w-5" />
-                      Ver Todos los Proyectos
-                    </Link>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
         </div>
-      </section>
+
+        {/* Content Section */}
+        <div>
+          {isLoading ? (
+            <LoadingState />
+          ) : favoriteUnits.length === 0 ? (
+            <EmptyState />
+          ) : filteredUnits.length === 0 ? (
+            <div>
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-50">
+                  <Filter className="h-12 w-12 text-gray-400" />
+                </div>
+                <h3 className="mb-4 text-2xl font-semibold text-gray-800">
+                  No se encontraron unidades
+                </h3>
+                <p className="mb-8 max-w-md text-lg text-gray-600">
+                  Intenta ajustar los filtros para encontrar unidades que
+                  coincidan con tus criterios.
+                </p>
+              </div>
+              <Separator className="my-12" />
+              {/* Continue browsing section */}
+              <div>
+                <div className="text-center">
+                  <h3 className="mb-2 text-2xl font-semibold text-gray-800">
+                    Buscas mas opciones?
+                  </h3>
+                  <p className="mb-8 text-lg text-gray-600">
+                    Explora todos nuestros proyectos disponibles
+                  </p>
+                  <Link
+                    href="/projects"
+                    className="border-primaryColor text-primaryColor hover:bg-primaryColor inline-flex items-center gap-2 rounded-full border px-8 py-3 font-medium transition-colors hover:text-white"
+                  >
+                    <Grid3X3 className="h-5 w-5" />
+                    Ver Todos los Proyectos
+                  </Link>
+                </div>
+              </div>{' '}
+            </div>
+          ) : (
+            <>
+              {/* Units Grid */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {filteredUnits.map((unit) => (
+                  <UnitCard
+                    key={unit.id}
+                    unit={unit}
+                    projectId={unit.projectSlug || ''}
+                  />
+                ))}
+              </div>
+
+              <Separator className="my-14" />
+
+              {/* Continue browsing section */}
+              <div>
+                <div className="text-center">
+                  <h3 className="mb-2 text-2xl font-semibold text-gray-800">
+                    Buscas mas opciones?
+                  </h3>
+                  <p className="mb-8 text-lg text-gray-600">
+                    Explora todos nuestros proyectos disponibles
+                  </p>
+                  <Link
+                    href="/projects"
+                    className="border-primaryColor text-primaryColor hover:bg-primaryColor inline-flex items-center gap-2 rounded-full border px-8 py-3 font-medium transition-colors hover:text-white"
+                  >
+                    <Grid3X3 className="h-5 w-5" />
+                    Ver Todos los Proyectos
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
   );
 };
 

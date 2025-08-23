@@ -283,7 +283,6 @@ export async function getProjectById(
  * Get project by slug
  */
 export async function getProjectBySlug(
-  organizationSlug: string,
   projectSlug: string
 ): Promise<Result<Project>> {
   try {
@@ -292,9 +291,7 @@ export async function getProjectBySlug(
     const project = await client.project.findFirst({
       where: {
         slug: projectSlug,
-        organization: {
-          slug: organizationSlug,
-        },
+
       },
       include: {
         organization: true,

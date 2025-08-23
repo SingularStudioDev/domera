@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from 'react';
 import UnitFilter from './UnitFilter';
 import UnitCard from './UnitCard';

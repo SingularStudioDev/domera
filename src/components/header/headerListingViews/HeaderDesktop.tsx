@@ -13,7 +13,11 @@ import { signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 import { ChevronDown, ChevronDownIcon, DoorOpenIcon } from 'lucide-react';
-import { adminMenuItems, HeaderMenuItems, menuItems, userMenuItems } from '../headerItems';
+import {
+  adminMenuItems,
+  HeaderMenuItems,
+  menuItems,
+} from '../headerItems';
 
 const HeaderDesktop = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -60,7 +64,7 @@ const HeaderDesktop = () => {
         </div>
 
         {/* User/Login Section */}
-        <div className="flex h-[70px] w-full max-w-32 items-center justify-center rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5]">
+        <div className="flex h-[70px] w-fit max-w-52 items-center justify-center rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5] px-7">
           <div className="flex items-center">
             {isLoading ? (
               <div className="flex items-center px-7 py-2">
@@ -73,15 +77,17 @@ const HeaderDesktop = () => {
                   asChild
                   className="focus:ring-0 focus:outline-none"
                 >
-                  <button className="hover:text-blue-60 flex cursor-pointer items-center space-x-2 rounded-md bg-transparent px-5 text-base font-normal transition-colors duration-200 hover:bg-gray-100">
-                    <span className="max-w-24 truncate">{user.firstName}</span>
+                  <button className="hover:text-blue-60 flex cursor-pointer items-center space-x-2 rounded-md bg-transparent text-base font-normal transition-colors duration-200 hover:bg-gray-100">
+                    <span className="w-fit max-w-44 truncate">
+                      {user.firstName} {user.lastName}
+                    </span>
                     <ChevronDownIcon className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent
-                  align="end"
-                  className="mt-7 w-fit rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5] p-2"
+                  align="center"
+                  className="mt-7 ml-4.5 w-fit rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5] p-2"
                 >
                   {(isAdmin ? adminMenuItems : HeaderMenuItems).map((item) => {
                     const isActive = item.href === pathname;

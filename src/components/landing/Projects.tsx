@@ -16,6 +16,7 @@ interface ProjectFeature {
 
 interface ProjectDisplayData {
   id: string;
+  slug: string;
   title: string;
   price: string;
   image: string;
@@ -90,6 +91,7 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   return {
     id: project.id,
     title: project.name,
+    slug: project.slug,
     price,
     image,
     status,
@@ -146,6 +148,7 @@ export default async function Projects({
                 }
               >
                 <ProjectCard
+                slug={projectData.slug}
                   id={projectData.id}
                   title={projectData.title}
                   price={projectData.price}

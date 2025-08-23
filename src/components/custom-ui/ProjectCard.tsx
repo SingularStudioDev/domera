@@ -2,7 +2,6 @@
 
 import {
   Heart,
-  StarIcon,
   Car,
   Home,
   Bed,
@@ -12,9 +11,10 @@ import {
   CarFrontIcon,
   ShoppingCartIcon,
 } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { toggleFavoriteAction } from '@/lib/actions/favourites';
 
 interface ProjectFeature {
   name: string;
@@ -23,6 +23,7 @@ interface ProjectFeature {
 
 interface ProjectCardProps {
   id: string;
+  slug: string;
   title: string;
   price: string;
   image: string;
@@ -59,6 +60,7 @@ const sortFeatures = (features: ProjectFeature[]) => {
 
 const ProjectCard = ({
   id,
+  slug,
   title,
   price,
   image,
@@ -67,12 +69,34 @@ const ProjectCard = ({
   isFavorite = false,
   features = [],
 }: ProjectCardProps) => {
+  const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(isFavorite);
+  const [isLoading, setIsLoading] = useState(false);
+
   const projectFeatures = useMemo(() => {
     const featuresWithTrue = features.filter(
       (feature) => feature.hasFeature === true
     );
     return sortFeatures(featuresWithTrue);
   }, [features]);
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsLoading(true);
+    try {
+      const result = await toggleFavoriteAction(id);
+      if (result.success) {
+        setIsCurrentlyFavorite(!isCurrentlyFavorite);
+      } else {
+        console.error('Error toggling favorite:', result.error);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getFeatureIcon = (featureName: string) => {
     const isBedroomFeature =
@@ -109,7 +133,7 @@ const ProjectCard = ({
 
   return (
     <Link
-      href={`/projects/${id}`}
+      href={`/projects/${slug}`}
       className="relative block overflow-hidden rounded-3xl bg-white transition-shadow duration-300 hover:shadow-lg"
     >
       {/* Image */}
@@ -181,9 +205,17 @@ const ProjectCard = ({
             </span>
           </div>
 
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white">
-            <StarIcon className="group-hover:text-primaryColor h-7 w-7 text-black transition duration-300" />
-          </div>
+          <button 
+            onClick={handleFavoriteClick}
+            disabled={isLoading}
+            className="flex cursor-pointer h-14 w-14 items-center justify-center rounded-2xl bg-white hover:bg-gray-50 transition-colors duration-300 disabled:opacity-50"
+          >
+            {isCurrentlyFavorite ? (
+              <Heart fill='#0040ff' className="group-hover:text-primaryColor h-7 w-7 text-blue-600 transition duration-300" />
+            ) : (
+              <Heart className="group-hover:text-primaryColor h-7 w-7 text-black transition duration-300" />
+            )}
+          </button>
         </div>
       </div>
     </Link>
