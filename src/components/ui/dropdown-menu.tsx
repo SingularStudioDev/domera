@@ -6,7 +6,12 @@ import { Check, ChevronRight, Circle } from "lucide-react"
 
 import { cva } from "class-variance-authority"
 
-const DropdownMenu = DropdownMenuPrimitive.Root
+const DropdownMenu = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>
+>((props, ref) => (
+  <DropdownMenuPrimitive.Root {...props} modal={false} />
+))
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 

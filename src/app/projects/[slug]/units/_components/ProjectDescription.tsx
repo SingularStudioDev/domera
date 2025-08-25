@@ -2,10 +2,12 @@ import Image from 'next/image';
 
 interface ProjectDescriptionProps {
   description: string;
+  adress: string;
 }
 
 export default function ProjectDescription({
   description,
+  adress,
 }: ProjectDescriptionProps) {
   return (
     <div className="flex flex-col gap-5">
@@ -21,9 +23,9 @@ export default function ProjectDescription({
 
         <div>
           <div className="flex flex-col">
-            <p className="mb-2 font-semibold text-black">Desarrolla:</p>
+            <p className="mb-2 font-semibold text-black">Direccion:</p>
             <p className="mb-8 max-w-[600px] whitespace-pre-line text-black">
-              Av. de las Américas & Melchora Cuenca
+              {adress}
             </p>
           </div>
 

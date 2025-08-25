@@ -12,17 +12,51 @@ export default function ProjectDetails({
     return lines.slice(1); // Skip the title line
   };
 
+  const parseAmenities = (amenitiesData: string): string[] => {
+    try {
+      // Si es un JSON string válido, parsearlo
+      const parsed = JSON.parse(amenitiesData);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+      // Si no es array, retornar como array de un elemento
+      return [parsed.toString()];
+    } catch {
+      // Si no es JSON válido, tratarlo como texto plano
+      if (
+        !amenitiesData ||
+        amenitiesData.trim() === '' ||
+        amenitiesData === 'Amenidades a confirmar'
+      ) {
+        return [];
+      }
+      // Si contiene saltos de línea, dividir por líneas y filtrar
+      if (amenitiesData.includes('\n')) {
+        return amenitiesData
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line && !line.toLowerCase().includes('amenidades'))
+          .map((line) => line.replace(/^-\s*/, ''));
+      }
+      // Retornar como array de un elemento
+      return [amenitiesData];
+    }
+  };
+
   return (
     <div className="mt-4 grid gap-8 md:mt-10 md:grid-cols-3">
       <div>
         <h3 className="mb-4 text-lg font-bold text-black">Aménities</h3>
         <div className="text-sm text-black">
-          {parseContent(amenities).map((line, index) => (
-            <p key={index}>{line}</p>
-          ))}
+          <ul className="list-none space-y-1">
+            {parseAmenities(amenities).map((amenity, index) => (
+              <li key={index}>- {amenity}</li>
+            ))}
+          </ul>
         </div>
       </div>
 
+      {/* TODO: Esto tambien tiene que estar en la base de datos como un notas adicionales */}
       <div>
         <h3 className="mb-4 text-lg font-bold text-black">
           Características adicionales
@@ -34,6 +68,7 @@ export default function ProjectDetails({
         </div>
       </div>
 
+      {/* TODO: Esto tiene que estar en la base de datos */}
       <div>
         <h3 className="mb-4 text-lg font-bold text-black">Inversión</h3>
         <div className="text-sm text-black">

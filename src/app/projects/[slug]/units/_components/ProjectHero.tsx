@@ -20,7 +20,7 @@ export default function ProjectHero({
             alt={title}
             className="h-[95vh] w-full rounded-b-3xl object-cover"
           />
-          <div className="absolute inset-0 z-10 rounded-b-3xl bg-gradient-to-b from-black/30 to-black/80"></div>
+          <div className="absolute inset-0 z-10 rounded-b-3xl bg-gradient-to-b from-black/10 to-black/50"></div>
 
           {/* Project Info Overlay */}
           <div className="absolute bottom-0 left-0 z-20 h-full w-full">
@@ -35,7 +35,7 @@ export default function ProjectHero({
               </div>
 
               <div className="flex w-full items-center justify-between">
-                <div className="flex w-fit flex-col gap-2 rounded-2xl bg-white px-6 py-2 text-black">
+                <div className="flex w-fit flex-col gap-3 rounded-2xl bg-white px-6 py-2 text-black">
                   <h1 className="text-3xl font-semibold md:text-6xl">
                     {title}
                   </h1>
@@ -44,11 +44,11 @@ export default function ProjectHero({
                   </p>
                 </div>
 
-                <img
+                {/* <img
                   src="/unit-spects.png"
                   alt={title}
                   className="hidden h-1/2 w-fit object-cover md:block"
-                />
+                /> */}
               </div>
             </div>
           </div>

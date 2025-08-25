@@ -8,6 +8,7 @@ import ProjectDetails from './units/_components/ProjectDetails';
 import ProjectLocation from './units/_components/ProjectLocation';
 import ProjectProgress from './units/_components/ProjectProgress';
 import AvailableUnits from './units/_components/AvailableUnits';
+import ProjectImageCarousel from '@/components/custom-ui/ProjectImageCarousel';
 import { getProjectBySlug } from '@/lib/dal/projects';
 import { getUnits } from '@/lib/dal/units';
 import { formatCurrency } from '@/utils/utils';
@@ -56,7 +57,7 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
   const units = unitsResult.data?.data || [];
 
   // Get favorite statuses for all units
-  const unitIds = units.map(unit => unit.id);
+  const unitIds = units.map((unit) => unit.id);
   const favoriteStatuses = await getMultipleFavoriteStatusAction(unitIds);
 
   // Transform units data for display
@@ -94,11 +95,16 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
 
   // Default content for sections that don't have database fields yet
   const amenitiesText = Array.isArray(project.amenities)
-    ? `Amenidades:\n\n- ${project.amenities.join('\n- ')}`
-    : 'Amenidades a confirmar';
+    ? JSON.stringify(project.amenities)
+    : (project.amenities as string) || 'Amenidades a confirmar';
   const additionalFeatures = 'Características adicionales a definir';
   const planFiles: string[] = [];
-  const progressImages = ['/progress-placeholder.png'];
+  // Usar las imágenes del proyecto para mostrar el progreso (temporalmente)
+  const progressImages = Array.isArray(project.images) 
+    ? project.images as string[]
+    : typeof project.images === 'string' 
+      ? project.images
+      : [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -110,7 +116,6 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
           price={basePrice}
           location={`${project.neighborhood || project.city}`}
           date={estimatedDate}
-          image={heroImage}
         />
 
         <div>
@@ -120,20 +125,27 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
             <div className="flex flex-col gap-5">
               <ProjectDescription
                 description={project.description || 'Descripción próximamente'}
+                adress={project.address || 'Direccion próximamente'}
               />
+
 
               <ProjectDetails
                 amenities={amenitiesText}
                 additionalFeatures={additionalFeatures}
               />
 
-              <img
-                src="/pro-big.png"
-                alt="Proyecto"
-                className="h-auto w-full py-5 md:py-10"
+              <ProjectImageCarousel
+                images={project.images as string[] || []}
+                projectName={project.name}
+                className="py-5 md:py-10"
               />
 
-              <ProjectLocation planFiles={planFiles} />
+              <ProjectLocation 
+                planFiles={planFiles} 
+                latitude={project.latitude ? Number(project.latitude) : null}
+                longitude={project.longitude ? Number(project.longitude) : null}
+                projectName={project.name}
+              />
 
               <ProjectProgress progressImages={progressImages} />
             </div>

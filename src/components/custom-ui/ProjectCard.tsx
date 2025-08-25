@@ -205,7 +205,7 @@ const ProjectCard = ({
             </span>
           </div>
 
-          <button 
+          {/* <button 
             onClick={handleFavoriteClick}
             disabled={isLoading}
             className="flex cursor-pointer h-14 w-14 items-center justify-center rounded-2xl bg-white hover:bg-gray-50 transition-colors duration-300 disabled:opacity-50"
@@ -215,7 +215,7 @@ const ProjectCard = ({
             ) : (
               <Heart className="group-hover:text-primaryColor h-7 w-7 text-black transition duration-300" />
             )}
-          </button>
+          </button> */}
         </div>
       </div>
     </Link>
