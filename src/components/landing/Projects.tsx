@@ -25,7 +25,7 @@ interface ProjectDisplayData {
   features: ProjectFeature[];
 }
 
-// TODO: Revisar esta funcion al detalle para que devuelva todo lo que se necesita 
+// TODO: Revisar esta funcion al detalle para que devuelva todo lo que se necesita
 const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   const price = project.basePrice
     ? formatCurrency(parseFloat(project.basePrice.toString()), project.currency)
@@ -39,28 +39,8 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
       })
     : 'Fecha TBD';
 
-  // Parse images from JSON field - handle different Prisma JSON return types
-  let images: string[] = [];
-  try {
-    if (typeof project.images === 'string') {
-      // If it's a JSON string, parse it
-      images = JSON.parse(project.images);
-    } else if (Array.isArray(project.images)) {
-      // If it's already an array, use it directly
-      images = project.images.filter((img) => typeof img === 'string');
-    } else if (project.images && typeof project.images === 'object') {
-      // If it's an object (Prisma JsonValue), extract array
-      images = Array.isArray(project.images) ? project.images : [];
-    }
-  } catch (error) {
-    console.error('Error parsing project images:', error);
-    images = [];
-  }
-
-  const image =
-    images.length > 0 && images[0]
-      ? String(images[0])
-      : '/project-placeholder.png';
+  // Use project slug for main image with fallback
+  const image = `/images/${project.slug}-main.png`;
 
   // Create features array from boolean fields
   const projectWithFeatures = project as Project & {
@@ -148,7 +128,7 @@ export default async function Projects({
                 }
               >
                 <ProjectCard
-                slug={projectData.slug}
+                  slug={projectData.slug}
                   id={projectData.id}
                   title={projectData.title}
                   price={projectData.price}

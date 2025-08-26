@@ -10,30 +10,12 @@ import ProjectProgress from './units/_components/ProjectProgress';
 import AvailableUnits from './units/_components/AvailableUnits';
 import ProjectImageCarousel from '@/components/custom-ui/ProjectImageCarousel';
 import { getProjectBySlug } from '@/lib/dal/projects';
-import { getUnits } from '@/lib/dal/units';
 import { formatCurrency } from '@/utils/utils';
-import { getMultipleFavoriteStatusAction } from '@/lib/actions/favourites';
 
 interface ProjectPageProps {
   params: {
     slug: string;
   };
-}
-
-interface UnitForDisplay {
-  id: string;
-  title: string;
-  description: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: string;
-  orientation: string;
-  price: string;
-  type: string;
-  image: string;
-  available: boolean;
-  statusIcon: boolean;
-  isFavorite?: boolean;
 }
 
 const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
@@ -47,42 +29,7 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
 
   const project = projectResult.data;
 
-  // Fetch units for this project
-  const unitsResult = await getUnits({
-    page: 1,
-    pageSize: 100,
-    projectId: project.id,
-  });
-
-  const units = unitsResult.data?.data || [];
-
-  // Get favorite statuses for all units
-  const unitIds = units.map((unit) => unit.id);
-  const favoriteStatuses = await getMultipleFavoriteStatusAction(unitIds);
-
-  // Transform units data for display
-  const availableUnits: UnitForDisplay[] = units.map((unit) => ({
-    id: unit.id,
-    title: `Unidad ${unit.unitNumber} - Piso ${unit.floor}`,
-    description: `${unit.bedrooms} dormitorios, ${unit.bathrooms} baños`,
-    bedrooms: unit.bedrooms,
-    bathrooms: unit.bathrooms,
-    area: `${Number(unit.dimensions) || 0}m²`,
-    orientation: unit.orientation || 'No especificado',
-    price: formatCurrency(Number(unit.price), project.currency),
-    type: unit.unitType,
-    image: Array.isArray(unit.images)
-      ? (unit.images[0] as string)
-      : '/unit-placeholder.png',
-    available: unit.status === 'available',
-    statusIcon: unit.status !== 'available',
-    isFavorite: favoriteStatuses[unit.id] || false,
-  }));
-
   // Format project data
-  const heroImage = Array.isArray(project.images)
-    ? (project.images[0] as string)
-    : '/project-placeholder.png';
   const basePrice = project.basePrice
     ? formatCurrency(Number(project.basePrice), project.currency)
     : 'Consultar';
@@ -93,18 +40,42 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
       }).format(project.estimatedCompletion)
     : 'A definir';
 
-  // Default content for sections that don't have database fields yet
-  const amenitiesText = Array.isArray(project.amenities)
-    ? JSON.stringify(project.amenities)
-    : (project.amenities as string) || 'Amenidades a confirmar';
-  const additionalFeatures = 'Características adicionales a definir';
-  const planFiles: string[] = [];
-  // Usar las imágenes del proyecto para mostrar el progreso (temporalmente)
-  const progressImages = Array.isArray(project.images) 
-    ? project.images as string[]
-    : typeof project.images === 'string' 
-      ? project.images
+  // Pass amenities data directly without converting to string
+  const amenitiesData = project.amenities || 'Amenidades a confirmar';
+  const planFiles: string[] = project.masterPlanFiles;
+  // Parse and filter images following project patterns
+  const allImages = Array.isArray(project.images)
+    ? (project.images as string[])
+    : typeof project.images === 'string'
+      ? (() => {
+          try {
+            const parsed = JSON.parse(project.images as string);
+            return Array.isArray(parsed) ? parsed : [project.images];
+          } catch {
+            return [project.images];
+          }
+        })()
       : [];
+
+  // Filter images that match the pattern ${slug}-${number}
+  const carouselImages = allImages.filter((imagePath) => {
+    const imageName = imagePath.split('/').pop()?.split('.')[0];
+    if (!imageName) return false;
+    const regex = new RegExp(
+      `^${projectSlug.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}-\\d+$`
+    );
+    return regex.test(imageName);
+  });
+
+  // Filter images that match the pattern ${slug}-progress-${number}
+  const progressImages = allImages.filter((imagePath) => {
+    const imageName = imagePath.split('/').pop()?.split('.')[0];
+    if (!imageName) return false;
+    const regex = new RegExp(
+      `^${projectSlug.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}-progress-\\d+$`
+    );
+    return regex.test(imageName);
+  });
 
   return (
     <div className="min-h-screen bg-white">
@@ -116,8 +87,8 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
           price={basePrice}
           location={`${project.neighborhood || project.city}`}
           date={estimatedDate}
+          slug={projectSlug}
         />
-
         <div>
           <ProjectInfo />
 
@@ -128,20 +99,17 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
                 adress={project.address || 'Direccion próximamente'}
               />
 
-
-              <ProjectDetails
-                amenities={amenitiesText}
-                additionalFeatures={additionalFeatures}
-              />
+              <ProjectDetails amenities={amenitiesData} />
 
               <ProjectImageCarousel
-                images={project.images as string[] || []}
+                images={carouselImages}
                 projectName={project.name}
-                className="py-5 md:py-10"
+                slug={projectSlug}
+                className="my-5 md:my-10"
               />
 
-              <ProjectLocation 
-                planFiles={planFiles} 
+              <ProjectLocation
+                planFiles={planFiles}
                 latitude={project.latitude ? Number(project.latitude) : null}
                 longitude={project.longitude ? Number(project.longitude) : null}
                 projectName={project.name}
@@ -151,7 +119,7 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
             </div>
           </div>
 
-          <AvailableUnits units={availableUnits} projectId={project.id} />
+          <AvailableUnits projectId={project.id} />
         </div>
       </main>
 

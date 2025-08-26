@@ -3,34 +3,36 @@
 import React, { useState, useCallback } from 'react';
 import { cn } from '@/utils/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useImageParser } from '@/hooks/useImageParser';
 
 interface ProjectImageCarouselProps {
-  images: string[] | string;
+  images: string[];
   projectName: string;
+  slug: string;
   className?: string;
 }
 
 const ProjectImageCarousel: React.FC<ProjectImageCarouselProps> = ({
   images,
   projectName,
+  slug,
   className,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const { images: parsedImages, hasImages } = useImageParser(images);
+  // Images are already filtered in the parent component
+  const hasFinalImages = images.length > 0;
 
   const goToPrevious = useCallback(() => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? parsedImages.length - 1 : prevIndex - 1
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1
     );
-  }, [parsedImages.length]);
+  }, [images.length]);
 
   const goToNext = useCallback(() => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === parsedImages.length - 1 ? 0 : prevIndex + 1
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1
     );
-  }, [parsedImages.length]);
+  }, [images.length]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -46,7 +48,7 @@ const ProjectImageCarousel: React.FC<ProjectImageCarouselProps> = ({
   );
 
   // Handle empty or single image arrays
-  if (!hasImages) {
+  if (!hasFinalImages) {
     return (
       <div
         className={cn(
@@ -61,11 +63,11 @@ const ProjectImageCarousel: React.FC<ProjectImageCarouselProps> = ({
     );
   }
 
-  if (parsedImages.length === 1) {
+  if (images.length === 1) {
     return (
       <div className={cn('relative w-full', className)}>
         <img
-          src={parsedImages[0]}
+          src={images[0]}
           alt={`Imagen de ${projectName}`}
           className="h-[80dvh] w-full rounded-lg object-cover"
         />
@@ -84,7 +86,7 @@ const ProjectImageCarousel: React.FC<ProjectImageCarouselProps> = ({
       {/* Main image container */}
       <div className="relative overflow-hidden rounded-lg">
         <img
-          src={parsedImages[currentIndex]}
+          src={images[currentIndex]}
           alt={`Imagen ${currentIndex + 1} de ${projectName}`}
           className="h-[80dvh] w-full object-cover transition-opacity duration-300"
         />
@@ -111,7 +113,7 @@ const ProjectImageCarousel: React.FC<ProjectImageCarouselProps> = ({
         {/* Image counter */}
         <div className="absolute right-4 bottom-4 z-10">
           <div className="rounded-full bg-black/10 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
-            {currentIndex + 1}/{parsedImages.length} imágenes
+            {currentIndex + 1}/{images.length} imágenes
           </div>
         </div>
       </div>

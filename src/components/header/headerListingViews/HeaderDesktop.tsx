@@ -30,7 +30,7 @@ const HeaderDesktop = () => {
 
   return (
     <header
-      className={`${pathname.startsWith('/userDashboard') ? 'absolute' : 'fixed'} top-0 right-0 left-0 z-[999] p-5`}
+      className={`${pathname.startsWith('/userDashboard') ? 'absolute' : 'fixed'} top-0 right-0 left-0 z-[2000] p-5`}
     >
       <div className="container mx-auto flex items-center justify-between gap-5 overflow-hidden">
         <div className="w-full rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5]">

@@ -7,7 +7,7 @@ import {
   CarouselItem,
 } from '@/components/ui/carousel';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useImageParser } from '@/hooks/useImageParser';
+import { useImageParser } from '@/hooks/useJsonArrayParser';
 
 interface ProjectProgressProps {
   progressImages: string[] | string;

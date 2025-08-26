@@ -139,9 +139,13 @@ const ProjectCard = ({
       {/* Image */}
       <div className="group relative h-[567px] overflow-hidden md:h-[547px]">
         <img
-          src={image ? image : '/project-placeholder.png'}
+          src={image}
           alt={title}
           className="h-full w-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/project-placeholder.png';
+          }}
         />
 
         {/* Status Badge */}

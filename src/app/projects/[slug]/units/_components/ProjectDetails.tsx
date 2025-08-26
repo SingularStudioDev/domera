@@ -1,70 +1,125 @@
 interface ProjectDetailsProps {
-  amenities: string;
-  additionalFeatures: string;
+  amenities: string | object | null;
 }
 
 export default function ProjectDetails({
   amenities,
-  additionalFeatures,
 }: ProjectDetailsProps) {
-  const parseContent = (content: string) => {
-    const lines = content.split('\n').filter((line) => line.trim());
-    return lines.slice(1); // Skip the title line
-  };
-
-  const parseAmenities = (amenitiesData: string): string[] => {
+  const parseAmenityData = (amenitiesData: string | object | null) => {
+    // Si es null o undefined, retornar estructura vacía
+    if (!amenitiesData) {
+      return {
+        detalles: [],
+        amenities: []
+      };
+    }
+    
+    // Si ya es un objeto, usarlo directamente
+    if (typeof amenitiesData === 'object' && !Array.isArray(amenitiesData)) {
+      const data = amenitiesData as any;
+      if (data.detalles || data.amenities) {
+        return {
+          detalles: data.detalles || [],
+          amenities: data.amenities || []
+        };
+      }
+    }
+    
+    // Si es un array, tratarlo como amenities
+    if (Array.isArray(amenitiesData)) {
+      return {
+        detalles: [],
+        amenities: amenitiesData
+      };
+    }
+    
+    // Si no es string, convertirlo
+    const stringData = typeof amenitiesData === 'string' ? amenitiesData : JSON.stringify(amenitiesData);
     try {
       // Si es un JSON string válido, parsearlo
-      const parsed = JSON.parse(amenitiesData);
-      if (Array.isArray(parsed)) {
-        return parsed;
+      const parsed = JSON.parse(stringData);
+      
+      // Verificar si tiene la nueva estructura con detalles y amenities
+      if (parsed && typeof parsed === 'object' && (parsed.detalles || parsed.amenities)) {
+        return {
+          detalles: parsed.detalles || [],
+          amenities: parsed.amenities || []
+        };
       }
-      // Si no es array, retornar como array de un elemento
-      return [parsed.toString()];
+      
+      // Si es un array simple (formato anterior), tratarlo como amenities
+      if (Array.isArray(parsed)) {
+        return {
+          detalles: [],
+          amenities: parsed
+        };
+      }
+      
+      // Si no es array ni objeto, retornar como amenity único
+      return {
+        detalles: [],
+        amenities: [parsed.toString()]
+      };
     } catch {
       // Si no es JSON válido, tratarlo como texto plano
       if (
-        !amenitiesData ||
-        amenitiesData.trim() === '' ||
-        amenitiesData === 'Amenidades a confirmar'
+        !stringData ||
+        stringData.trim() === '' ||
+        stringData === 'Amenidades a confirmar'
       ) {
-        return [];
+        return {
+          detalles: [],
+          amenities: []
+        };
       }
+      
       // Si contiene saltos de línea, dividir por líneas y filtrar
-      if (amenitiesData.includes('\n')) {
-        return amenitiesData
+      if (stringData.includes('\n')) {
+        const items = stringData
           .split('\n')
           .map((line) => line.trim())
           .filter((line) => line && !line.toLowerCase().includes('amenidades'))
           .map((line) => line.replace(/^-\s*/, ''));
+        
+        return {
+          detalles: [],
+          amenities: items
+        };
       }
-      // Retornar como array de un elemento
-      return [amenitiesData];
+      
+      // Retornar como amenity único
+      return {
+        detalles: [],
+        amenities: [stringData]
+      };
     }
   };
+
+  const { detalles, amenities: amenitiesList } = parseAmenityData(amenities);
 
   return (
     <div className="mt-4 grid gap-8 md:mt-10 md:grid-cols-3">
       <div>
-        <h3 className="mb-4 text-lg font-bold text-black">Aménities</h3>
+        <h3 className="mb-4 text-lg font-bold text-black">Amenities</h3>
         <div className="text-sm text-black">
           <ul className="list-none space-y-1">
-            {parseAmenities(amenities).map((amenity, index) => (
+            {amenitiesList.map((amenity: string, index: number) => (
               <li key={index}>- {amenity}</li>
             ))}
           </ul>
         </div>
       </div>
 
-      {/* TODO: Esto tambien tiene que estar en la base de datos como un notas adicionales */}
       <div>
         <h3 className="mb-4 text-lg font-bold text-black">
           Características adicionales
         </h3>
         <div className="text-sm text-black">
-          {parseContent(additionalFeatures).map((line, index) => (
-            <p key={index}>{line}</p>
-          ))}
+          <ul className="list-none space-y-1">
+            {detalles.map((detalle: string, index: number) => (
+              <li key={index}>- {detalle}</li>
+            ))}
+          </ul>
         </div>
       </div>
 

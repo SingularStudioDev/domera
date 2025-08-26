@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   BedIcon,
@@ -24,6 +24,7 @@ interface Unit {
   price: string;
   type: string;
   image: string;
+  unitNumber: string;
   available: boolean;
   statusIcon: boolean | string;
   isFavorite?: boolean;
@@ -31,11 +32,14 @@ interface Unit {
 
 interface UnitCardProps {
   unit: Unit;
-  projectId: string;
+  projectSlug: string;
 }
 
-export default function UnitCard({ unit, projectId }: UnitCardProps) {
-  const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(unit.isFavorite || false);
+export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
+  const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(
+    unit.isFavorite || false
+  );
+  const router = useRouter();
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -46,21 +50,25 @@ export default function UnitCard({ unit, projectId }: UnitCardProps) {
     const newState = !isCurrentlyFavorite;
     setIsCurrentlyFavorite(newState);
 
-    console.log(`[FAVORITE] Optimistic update: ${previousState} -> ${newState} for unit ${unit.id}`);
-
     // Procesar backend en segundo plano
     try {
       const result = await toggleFavoriteAction(unit.id);
-      console.log(`[FAVORITE] Server response:`, result);
-      
+
       if (result.success) {
         // El servidor procesó correctamente - mantener el nuevo estado
-        console.log(`[FAVORITE] Success: keeping state as ${newState}`);
       } else {
         // Error del servidor - revertir
-        console.log(`[FAVORITE] Error: reverting to ${previousState}`);
+
         setIsCurrentlyFavorite(previousState);
-        console.error('Error toggling favorite:', result.error);
+
+        // Si es error de autenticación, redirigir al login
+        if (
+          result.error?.includes('autenticado') ||
+          result.error?.includes('sesión')
+        ) {
+          router.push('/login');
+          return;
+        }
       }
     } catch (error) {
       // Error de red - revertir
@@ -71,25 +79,23 @@ export default function UnitCard({ unit, projectId }: UnitCardProps) {
   };
 
   return (
-    <div className="group hover:border-primaryColor overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-300">
+    <div className="group hover:border-primaryColor flex flex-grow flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-300">
       <div className="relative">
-        <Image
-          src={unit.image}
+        <img
+          src={`/images/unit-${unit.unitNumber}-main.png`}
           alt={unit.title}
-          width={414}
-          height={267}
           className="h-64 w-full rounded-t-2xl object-cover"
         />
         <div className="absolute top-3 left-3 flex gap-2">
           <span className="flex items-center justify-center rounded-2xl bg-gray-200 px-4 py-2 text-sm font-medium text-black">
             {unit.type}
           </span>
-          <button 
+          <button
             onClick={handleFavoriteClick}
-            className="rounded-2xl cursor-pointer bg-gray-200 px-4 py-2 text-sm font-medium text-black hover:bg-gray-300 transition-colors duration-300"
+            className="cursor-pointer rounded-2xl bg-gray-200 px-4 py-2 text-sm font-medium text-black transition-colors duration-300 hover:bg-gray-300"
           >
             {isCurrentlyFavorite ? (
-              <Heart fill='#0040ff' className="h-5 w-5 text-blue-600" />
+              <Heart fill="#0040ff" className="h-5 w-5 text-blue-600" />
             ) : (
               <Heart className="h-5 w-5 text-black" />
             )}
@@ -97,7 +103,7 @@ export default function UnitCard({ unit, projectId }: UnitCardProps) {
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-4">
         <div className="mb-4">
           <h4 className="group-hover:text-primaryColor mb-1 text-2xl font-semibold text-black transition duration-300">
             {unit.title}
@@ -128,7 +134,7 @@ export default function UnitCard({ unit, projectId }: UnitCardProps) {
           </div>
         </div>
 
-        <div className="flex items-end justify-between">
+        <div className="mt-auto flex items-end justify-between">
           <div>
             <p className="mb-1 font-semibold text-black">Precio</p>
             <p className="group-hover:text-primaryColor text-3xl font-bold text-black transition duration-300">
@@ -137,7 +143,7 @@ export default function UnitCard({ unit, projectId }: UnitCardProps) {
           </div>
 
           <Link
-            href={`/projects/${projectId}/units/${unit.id}`}
+            href={`/projects/${projectSlug}/units/${unit.id}`}
             className="border-primaryColor text-primaryColor hover:bg-primaryColor flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition-colors hover:text-white"
           >
             Comprar

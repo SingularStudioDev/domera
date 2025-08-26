@@ -8,7 +8,6 @@ import {
   Bed,
   Square,
   Calendar,
-  ChefHat,
   CircleDollarSign,
   Wallet,
   ListCheck,
@@ -17,176 +16,128 @@ import {
   StarIcon,
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { getUnitByIdAction } from '@/lib/actions/units';
+import { formatCurrency, formatCurrencyUYU } from '@/utils/utils';
+import { useImageParser, useFeatureParser } from '@/hooks/useJsonArrayParser';
 import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import Image from 'next/image';
 
+interface UnitData {
+  id: string;
+  unitNumber: string;
+  description: string | null;
+  bedrooms: number;
+  bathrooms: number;
+  totalArea: number | null;
+  builtArea: number | null;
+  orientation: string | null;
+  facing: string | null;
+  price: number;
+  currency: string;
+  features: string[] | string | null;
+  images: string[] | string | null;
+  floor: number | null;
+  unitType: string;
+  status: string;
+  dimensions: string | null;
+  floorPlanUrl: string | null;
+  project: {
+    name: string;
+    slug: string;
+    estimatedCompletion: Date | null;
+  };
+}
+
 const UnitDetailPage = () => {
   const params = useParams();
-  const projectId = params.id;
-  const unitId = params.unitId;
+  const projectSlug = params.slug as string;
+  const unitId = params.unitId as string;
+  
+  const [unit, setUnit] = useState<UnitData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Datos de ejemplo de las unidades
-  const unitData = {
-    '604': {
-      title: 'Unidad 604 - Piso 6',
-      price: '$190.000',
-      projectName: 'Winks America',
-      location: 'Frente',
-      orientation: 'Norte',
-      bathrooms: 2,
-      bedrooms: 2,
-      builtArea: '120m2',
-      balcony: '40m2',
-      completion: 'Enero 2027',
-      grill: 'No',
-      mainImage: '/unit-main-image-29f3e6.png',
-      description: `+ Hall de entrada (ideal recibidor).
+  useEffect(() => {
+    async function fetchUnit() {
+      try {
+        setLoading(true);
+        const result = await getUnitByIdAction(unitId);
+        
+        if (result.success && result.data) {
+          setUnit(result.data as UnitData);
+          setError(null);
+        } else {
+          setError(result.error || 'Error cargando unidad');
+        }
+      } catch (err) {
+        setError('Error inesperado cargando unidad');
+        console.error('Error fetching unit:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-+ Living comedor con doble ventanal.
+    fetchUnit();
+  }, [unitId]);
 
-+ Cocina integrada de concepto abierto con bajo mesada de gran calidad y barra desayunadora.
+  // Parse JSON fields using hooks - must be called before any early returns
+  const { images, firstImage } = useImageParser(unit?.images);
+  const { features, hasFeatures } = useFeatureParser(unit?.features);
 
-+ Dormitorio principal con baño en suite.
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <main className="pt-20">
+          <div className="container mx-auto flex items-center justify-center py-20">
+            <p className="text-gray-600">Cargando unidad...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
-+ Segundo dormitorio con nicho para placar.
+  // Error state
+  if (error || !unit) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <main className="pt-20">
+          <div className="container mx-auto flex items-center justify-center py-20">
+            <p className="text-red-600">{error || 'Unidad no encontrada'}</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
-+ Tercer dormitorio con vista a la calle Melchora Cuenca.
+  // Format unit data (unit is guaranteed to exist here)
+  const formattedPrice = `${unit.currency} ${
+    unit.currency === 'USD' ? formatCurrency(unit.price) : formatCurrencyUYU(unit.price)
+  }`;
+  
+  const area = unit.totalArea 
+    ? `${unit.totalArea}m²` 
+    : unit.builtArea 
+    ? `${unit.builtArea}m²` 
+    : unit.dimensions || 'N/A';
 
-+ Baño completo.
+  const completion = unit.project.estimatedCompletion
+    ? new Intl.DateTimeFormat('es-UY', {
+        month: 'long',
+        year: 'numeric',
+      }).format(unit.project.estimatedCompletion)
+    : 'A definir';
 
-+ Terraza de uso exclusivo con acceso desde living comedor y dormitorios.`,
-      gallery: [
-        '/gallery-unit-1-61396b.png',
-        '/gallery-unit-2.png',
-        '/gallery-unit-3.png',
-        '/gallery-unit-4.png',
-        '/gallery-unit-5.png',
-        '/gallery-unit-6.png',
-      ],
-      investment: `Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica las siguientes exoneraciones por 10 años:
+  const mainImage = firstImage || '/placeholder-unit.jpg';
 
-- Exoneración del ITP.
-- Exoneración del I.R.P.F./ I.R.N.R. / I.R.A.E.
-- Exoneración de impuestos de ITP a la primera compra.
-
-- Boleto de reserva: 10%
-- Compromiso de compra/venta: 20%
-- Pagos durante la obra: 60%
-- Salgo de contra entrega: 10%`,
-      reservationInfo: `Al acceder al boleto de reserva, el comprador se compromete formalmente a adquirir la unidad.
-
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim.`,
-      process: [
-        { icon: '🏡', text: 'Seleccioná la propiedad' },
-        { icon: '💰', text: 'Hacé click en comprar' },
-        { icon: '📝', text: 'Completá el boleto de reserva' },
-        { icon: '🏦', text: 'Hacé el deposito a tu escribana' },
-        { icon: '📄', text: 'En 30 días recibirás el boleto de compra' },
-      ],
-    },
-    '608': {
-      title: 'Unidad 608 - Piso 6',
-      price: '$190.000',
-      projectName: 'Winks America',
-      location: 'Contra-Frente',
-      orientation: 'Sur',
-      bathrooms: 2,
-      bedrooms: 2,
-      builtArea: '115m2',
-      balcony: '35m2',
-      completion: 'Enero 2027',
-      grill: 'No',
-      mainImage: '/unit-main-image-29f3e6.png',
-      description: `+ Hall de entrada (ideal recibidor).
-+ Living comedor con doble ventanal.
-+ Cocina integrada de concepto abierto con bajo mesada de gran calidad y barra desayunadora.
-+ Dormitorio principal con baño en suite.
-+ Segundo dormitorio con nicho para placar.
-+ Baño completo.
-+ Terraza de uso exclusivo con acceso desde living comedor y dormitorios.`,
-      gallery: [
-        '/gallery-unit-1-61396b.png',
-        '/gallery-unit-2.png',
-        '/gallery-unit-3.png',
-        '/gallery-unit-4.png',
-        '/gallery-unit-5.png',
-        '/gallery-unit-6.png',
-      ],
-      investment: `Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica las siguientes exoneraciones por 10 años:
-
-- Exoneración del ITP.
-- Exoneración del I.R.P.F./ I.R.N.R. / I.R.A.E.
-- Exoneración de impuestos de ITP a la primera compra.
-
-- Boleto de reserva: 10%
-- Compromiso de compra/venta: 20%
-- Pagos durante la obra: 60%
-- Salgo de contra entrega: 10%`,
-      reservationInfo: `Al acceder al boleto de reserva, el comprador se compromete formalmente a adquirir la unidad.
-
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim.`,
-      process: [
-        { icon: '🏡', text: 'Seleccioná la propiedad' },
-        { icon: '💰', text: 'Hacé click en comprar' },
-        { icon: '📝', text: 'Completá el boleto de reserva' },
-        { icon: '🏦', text: 'Hacé el deposito a tu escribana' },
-        { icon: '📄', text: 'En 30 días recibirás el boleto de compra' },
-      ],
-    },
-    '702': {
-      title: 'Unidad 702 - Piso 7',
-      price: '$190.000',
-      projectName: 'Winks America',
-      location: 'Frente',
-      orientation: 'Norte',
-      bathrooms: 2,
-      bedrooms: 2,
-      builtArea: '120m2',
-      balcony: '40m2',
-      completion: 'Enero 2027',
-      grill: 'Sí',
-      mainImage: '/unit-main-image-29f3e6.png',
-      description: `+ Hall de entrada (ideal recibidor).
-
-+ Living comedor con doble ventanal.
-
-+ Cocina integrada de concepto abierto con bajo mesada de gran calidad y barra desayunadora.
-
-+ Dormitorio principal con baño en suite.
-
-+ Segundo dormitorio con nicho para placar.
-
-+ Tercer dormitorio con vista a la calle Melchora Cuenca.
-
-+ Baño completo.
-
-+ Terraza de uso exclusivo con acceso desde living comedor y dormitorios.`,
-      gallery: [
-        '/gallery-unit-1-61396b.png',
-        '/gallery-unit-2.png',
-        '/gallery-unit-3.png',
-        '/gallery-unit-4.png',
-        '/gallery-unit-5.png',
-        '/gallery-unit-6.png',
-      ],
-      investment: `Proyecto se construye bajo la Ley de Vivienda Promovida N°18.795, que implica las siguientes exoneraciones por 10 años:
-
-- Exoneración del ITP.
-- Exoneración del I.R.P.F./ I.R.N.R. / I.R.A.E.
-- Exoneración de impuestos de ITP a la primera compra.
-
-- Boleto de reserva: 10%
-- Compromiso de compra/venta: 20%
-- Pagos durante la obra: 60%
-- Salgo de contra entrega: 10%`,
-      reservationInfo: `Al acceder al boleto de reserva, el comprador se compromete formalmente a adquirir la unidad.
-
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim.`,
-    },
-  };
-
+  // Process steps
   const steps = [
     {
       icon: Home,
@@ -206,11 +157,9 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
     },
     {
       icon: Wallet,
-      title: 'En 30 días recibirás el boleto de compra ',
+      title: 'En 30 días recibirás el boleto de compra',
     },
   ];
-
-  const unit = unitData[unitId as keyof typeof unitData] || unitData['604'];
 
   return (
     <div className="min-h-screen bg-white">
@@ -221,7 +170,7 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
           {/* Back Button */}
           <div className="container mx-auto w-full py-6">
             <Link
-              href={`/projects/${projectId}`}
+              href={`/projects/${projectSlug}`}
               className="inline-flex items-center gap-2 text-primaryColor hover:text-blue-800"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -234,8 +183,8 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
             {/* Left Column - Main Image */}
             <div>
               <Image
-                src={unit.mainImage}
-                alt={unit.title}
+                src={mainImage}
+                alt={`Unidad ${unit.unitNumber}`}
                 width={640}
                 height={564}
                 className="h-[564px] w-full rounded-3xl border border-gray-300 object-cover"
@@ -249,32 +198,32 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
                   <StarIcon className="h-7 w-7 text-primaryColor" />
                 </div>
-                <h1 className="text-4xl font-bold text-black">{unit.title}</h1>
+                <h1 className="text-4xl font-bold text-black">
+                  Unidad {unit.unitNumber} - Piso {unit.floor || 'N/A'}
+                </h1>
               </div>
 
               {/* Unit Details Grid */}
               <div className="space-y-4">
-                {/* First Row */}
+                {/* Location Row */}
                 <div className="flex gap-4">
                   <div className="flex flex-1 items-center gap-4">
                     <Home className="h-5 w-5 text-black" />
                     <span className="text-xl text-black">Ubicación:</span>
-                    <span className="text-xl text-black">{unit.location}</span>
+                    <span className="text-xl text-black">{unit.facing || unit.orientation || 'N/A'}</span>
                   </div>
                 </div>
 
-                {/* Second Row */}
+                {/* Orientation Row */}
                 <div className="flex gap-4">
                   <div className="flex flex-1 items-center gap-4">
                     <Compass className="h-5 w-5 text-black" />
                     <span className="text-xl text-black">Orientación:</span>
-                    <span className="text-xl text-black">
-                      {unit.orientation}
-                    </span>
+                    <span className="text-xl text-black">{unit.orientation || 'N/A'}</span>
                   </div>
                 </div>
 
-                {/* Third Row */}
+                {/* Bathrooms Row */}
                 <div className="flex gap-4">
                   <div className="flex flex-1 items-center gap-4">
                     <Bath className="h-5 w-5 text-black" />
@@ -283,7 +232,7 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
                   </div>
                 </div>
 
-                {/* Fourth Row */}
+                {/* Bedrooms Row */}
                 <div className="flex gap-4">
                   <div className="flex flex-1 items-center gap-4">
                     <Bed className="h-5 w-5 text-black" />
@@ -292,128 +241,106 @@ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula 
                   </div>
                 </div>
 
-                {/* Fifth Row */}
+                {/* Area Row */}
                 <div className="flex gap-4">
                   <div className="flex flex-1 items-center gap-4">
                     <Square className="h-5 w-5 text-black" />
-                    <span className="text-xl text-black">Edificados:</span>
-                    <span className="text-xl text-black">{unit.builtArea}</span>
+                    <span className="text-xl text-black">Área:</span>
+                    <span className="text-xl text-black">{area}</span>
                   </div>
                 </div>
 
-                {/* Sixth Row */}
-                <div className="flex gap-4">
-                  <div className="flex flex-1 items-center gap-4">
-                    <Square className="h-5 w-5 text-black" />
-                    <span className="text-xl text-black">Balcón:</span>
-                    <span className="text-xl text-black">{unit.balcony}</span>
-                  </div>
-                </div>
-
-                {/* Seventh Row */}
+                {/* Completion Row */}
                 <div className="flex gap-4">
                   <div className="flex flex-1 items-center gap-4">
                     <Calendar className="h-5 w-5 text-black" />
-                    <span className="text-xl text-black">Estreno:</span>
-                    <span className="text-xl text-black">
-                      {unit.completion}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Eighth Row */}
-                <div className="flex gap-4">
-                  <div className="flex flex-1 items-center gap-4">
-                    <ChefHat className="h-5 w-5 text-black" />
-                    <span className="text-xl text-black">Parrillero:</span>
-                    <span className="text-xl text-black">{unit.grill}</span>
+                    <span className="text-xl text-black">Finalización:</span>
+                    <span className="text-xl text-black">{completion}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Price and Buy Button */}
-              <div className="rounded-2xl border border-primaryColor p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-bold text-primaryColor">Precio</p>
-                    <p className="text-3xl font-bold text-primaryColor">
-                      {unit.price}
-                    </p>
-                  </div>
-                  <Link
-                    href="/checkout"
-                    className="flex items-center justify-center rounded-full bg-primaryColor px-8 py-3 text-white transition-colors hover:bg-blue-700"
-                  >
-                    Comprar
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </div>
+              {/* Price */}
+              <div className="mt-8">
+                <h2 className="text-5xl font-bold text-black">{formattedPrice}</h2>
+              </div>
+
+              {/* CTA Button */}
+              <div className="mt-8">
+                <Link
+                  href="/checkout"
+                  className="flex w-full items-center justify-center rounded-full bg-primaryColor px-12 py-4 text-xl font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  Comprar unidad
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </div>
             </div>
           </div>
 
-          {/* Detalles Section */}
-          <div className="mb-16">
-            <div className="rounded-3xl bg-gray-100 p-8">
-              <div className="container mx-auto w-full">
-                <h2 className="mb-8 text-3xl font-bold text-black">Detalles</h2>
-                <div className="text-xl leading-relaxed whitespace-pre-line text-black">
-                  {unit.description}
-                </div>
+          {/* Unit Description */}
+          {unit.description && (
+            <div className="container mx-auto mb-16">
+              <h3 className="mb-6 text-3xl font-bold text-black">Descripción</h3>
+              <div className="whitespace-pre-line text-lg text-gray-700">
+                {unit.description}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Galería Section */}
-          <div className="container mx-auto mb-16 w-full">
-            <h2 className="mb-8 text-3xl font-bold text-black">Galería</h2>
-            <div className="space-y-8">
-              {/* Primera fila de imágenes */}
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                {unit.gallery.slice(0, 3).map((image, index) => (
+          {/* Features */}
+          {hasFeatures && (
+            <div className="container mx-auto mb-16">
+              <h3 className="mb-6 text-3xl font-bold text-black">Características</h3>
+              <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+                {features.map((feature, index) => (
+                  <li key={index} className="text-lg text-gray-700">
+                    • {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Gallery */}
+          {images.length > 1 && (
+            <div className="container mx-auto mb-16">
+              <h3 className="mb-6 text-3xl font-bold text-black">Galería</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {images.slice(1).map((image, index) => (
                   <Image
                     key={index}
                     src={image}
-                    alt={`Galería ${index + 1}`}
-                    width={426}
-                    height={243}
-                    className="h-60 w-full rounded-3xl object-cover"
-                  />
-                ))}
-              </div>
-              {/* Segunda fila de imágenes */}
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                {unit.gallery.slice(3, 6).map((image, index) => (
-                  <Image
-                    key={index + 3}
-                    src={image}
-                    alt={`Galería ${index + 4}`}
-                    width={426}
-                    height={243}
-                    className="h-60 w-full rounded-3xl object-cover"
+                    alt={`Unidad ${unit.unitNumber} - Imagen ${index + 2}`}
+                    width={400}
+                    height={300}
+                    className="h-64 w-full rounded-lg object-cover"
                   />
                 ))}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Inversión Section */}
+          {/* Investment Section - Placeholder */}
           <div className="mb-16">
             <div className="grid grid-cols-1 lg:grid-cols-2">
               <div className="rounded-l-3xl bg-gray-100 p-8 pl-48">
                 <h3 className="mb-6 text-3xl font-bold text-black">
                   Inversión
                 </h3>
-                <div className="text-lg whitespace-pre-line text-gray-700">
-                  {unit.investment}
+                <div className="text-lg text-gray-700">
+                  <p>Información sobre inversión disponible próximamente.</p>
+                  <p>Tipo de unidad: {unit.unitType}</p>
+                  <p>Estado: {unit.status === 'available' ? 'Disponible' : 'No disponible'}</p>
                 </div>
               </div>
               <div className="rounded-r-3xl bg-gray-200 p-8 pr-48">
                 <h3 className="mb-6 text-3xl font-bold text-black">
                   Boleto de reserva
                 </h3>
-                <div className="text-lg whitespace-pre-line text-gray-700">
-                  {unit.reservationInfo}
+                <div className="text-lg text-gray-700">
+                  <p>Al acceder al boleto de reserva, el comprador se compromete formalmente a adquirir la unidad.</p>
+                  <p>Contacta con nuestro equipo de ventas para obtener más información sobre el proceso de reserva.</p>
                 </div>
               </div>
             </div>

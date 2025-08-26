@@ -3,6 +3,7 @@ interface ProjectHeroProps {
   price: string;
   location: string;
   date: string;
+  slug: string;
 }
 
 export default function ProjectHero({
@@ -10,15 +11,16 @@ export default function ProjectHero({
   price,
   location,
   date,
+  slug,
 }: ProjectHeroProps) {
   return (
-    <section className="relative h-[95vh] overflow-hidden">
+    <section className="relative h-[90dvh] overflow-hidden">
       <div>
         <div className="relative h-full overflow-hidden">
           <img
-            src="/pro-hero.png"
+            src={`/images/${slug}-hero.png`}
             alt={title}
-            className="h-[95vh] w-full rounded-b-3xl object-cover"
+            className="h-[90dvh] w-full rounded-b-3xl object-cover"
           />
           <div className="absolute inset-0 z-10 rounded-b-3xl bg-gradient-to-b from-black/10 to-black/50"></div>
 

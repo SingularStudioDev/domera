@@ -146,7 +146,29 @@ export async function getAvailableUnitsAction(
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    // Transform Decimal fields to numbers for client serialization
+    const transformedUnits = result.data.map(unit => {
+      // Cast to any to handle the dynamic include types
+      const unitWithProject = unit as any;
+      
+      return {
+        ...unit,
+        totalArea: unit.totalArea ? Number(unit.totalArea) : null,
+        builtArea: unit.builtArea ? Number(unit.builtArea) : null,
+        price: Number(unit.price),
+        // Transform project data if it exists (due to include)
+        ...(unitWithProject.project && {
+          project: {
+            ...unitWithProject.project,
+            basePrice: unitWithProject.project.basePrice ? Number(unitWithProject.project.basePrice) : null,
+            latitude: unitWithProject.project.latitude ? Number(unitWithProject.project.latitude) : null,
+            longitude: unitWithProject.project.longitude ? Number(unitWithProject.project.longitude) : null,
+          }
+        })
+      };
+    });
+
+    return { success: true, data: transformedUnits };
   } catch (error) {
     console.error('[SERVER_ACTION] Error getting available units:', error);
     return {
@@ -172,7 +194,28 @@ export async function getUnitByIdAction(
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    const unit = result.data;
+    // Cast to any to handle the dynamic include types
+    const unitWithProject = unit as any;
+    
+    // Transform Decimal fields to numbers for client serialization
+    const transformedUnit = {
+      ...unit,
+      totalArea: unit.totalArea ? Number(unit.totalArea) : null,
+      builtArea: unit.builtArea ? Number(unit.builtArea) : null,
+      price: Number(unit.price),
+      // Transform project data if it exists (due to include)
+      ...(unitWithProject.project && {
+        project: {
+          ...unitWithProject.project,
+          basePrice: unitWithProject.project.basePrice ? Number(unitWithProject.project.basePrice) : null,
+          latitude: unitWithProject.project.latitude ? Number(unitWithProject.project.latitude) : null,
+          longitude: unitWithProject.project.longitude ? Number(unitWithProject.project.longitude) : null,
+        }
+      })
+    };
+
+    return { success: true, data: transformedUnit };
   } catch (error) {
     console.error('[SERVER_ACTION] Error getting unit:', error);
     return {
