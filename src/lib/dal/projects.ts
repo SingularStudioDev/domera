@@ -533,6 +533,50 @@ export async function updateProjectUnitCounts(
 }
 
 /**
+ * Get project filter options (cities and neighborhoods)
+ */
+export async function getProjectFilterOptions(): Promise<
+  Result<{
+    cities: string[];
+    neighborhoods: string[];
+  }>
+> {
+  try {
+    const client = getDbClient();
+
+    // Get unique cities and neighborhoods from active projects
+    const projects = await client.project.findMany({
+      where: {
+        status: {
+          in: ['pre_sale', 'construction'],
+        },
+      },
+      select: {
+        city: true,
+        neighborhood: true,
+      },
+      distinct: ['city', 'neighborhood'],
+    });
+
+    const cities = Array.from(
+      new Set(projects.map(p => p.city).filter(Boolean))
+    ).sort();
+
+    const neighborhoods = Array.from(
+      new Set(projects.map(p => p.neighborhood).filter(Boolean) as string[])
+    ).sort();
+
+    return success({ cities, neighborhoods });
+  } catch (error) {
+    return failure(
+      error instanceof Error
+        ? error.message
+        : 'Error obteniendo opciones de filtro'
+    );
+  }
+}
+
+/**
  * Get project statistics for a specific project
  */
 export async function getProjectStats(projectId: string): Promise<
