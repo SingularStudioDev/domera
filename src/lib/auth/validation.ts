@@ -10,7 +10,7 @@ import { authOptions } from '@/lib/auth/config';
 import { prisma } from '@/lib/prisma';
 import { RoleType } from '@prisma/client';
 import { validateSuperAdminSession } from '@/lib/auth/super-admin';
-import { extractRealIP, sanitizeUserAgent } from '@/lib/utils/security';
+import { extractRealIP } from '@/lib/utils/security';
 import { headers } from 'next/headers';
 
 // =============================================================================
@@ -103,21 +103,21 @@ export async function validateSession(): Promise<AuthValidationResult> {
     // If no NextAuth session, try super admin session
     const headersList = await headers();
     const cookieHeader = headersList.get('cookie');
-    console.log('[DEBUG] Cookie header:', cookieHeader);
-    
+
     const sessionCookies = cookieHeader
       ?.split(';')
-      .filter(c => c.trim().startsWith('super-admin-session='))
-      .map(c => c.split('=')[1]);
-    
-    const sessionCookie = sessionCookies?.pop(); // Get the last one
+      .filter((c) => c.trim().startsWith('super-admin-session='))
+      .map((c) => c.split('=')[1]);
 
-    console.log('[DEBUG] Session cookie found:', sessionCookie ? 'Yes' : 'No');
+    const sessionCookie = sessionCookies?.pop(); // Get the last one
 
     if (sessionCookie) {
       const ipAddress = extractRealIP(headersList);
-      const sessionValidation = await validateSuperAdminSession(sessionCookie, ipAddress);
-      
+      const sessionValidation = await validateSuperAdminSession(
+        sessionCookie,
+        ipAddress
+      );
+
       if (sessionValidation.valid && sessionValidation.userId) {
         // Get user with roles for super admin
         const user = await prisma.user.findUnique({

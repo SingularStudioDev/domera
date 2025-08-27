@@ -21,6 +21,9 @@ import {
   getUserOrganizations,
 } from '@/lib/dal/organizations';
 import type { OrganizationStatus } from '@prisma/client';
+import { headers } from 'next/headers';
+import { extractRealIP } from '../utils/security';
+import { validateSuperAdminSession } from '../auth/super-admin';
 
 // Input types (defined in DAL)
 interface OrganizationFiltersInput {
@@ -78,21 +81,54 @@ export async function getOrganizationsAction(
   filters: OrganizationFiltersInput = { page: 1, pageSize: 20 }
 ): Promise<OrganizationActionResult> {
   try {
-    // Validate authentication and authorization
-    const authResult = await requireRole('admin');
-    if (!authResult.success) {
-      return { success: false, error: authResult.error };
+    // Try super admin authentication first (for /super routes)
+    const headersList = await headers();
+    const cookieHeader = headersList.get('cookie');
+
+    let isAuthenticated = false;
+
+    // Check for super admin session
+    const sessionCookies = cookieHeader
+      ?.split(';')
+      .filter((c) => c.trim().startsWith('super-admin-session='))
+      .map((c) => c.split('=')[1]);
+
+    const sessionCookie = sessionCookies?.pop();
+
+    if (sessionCookie) {
+      const ipAddress = extractRealIP(headersList);
+      const sessionValidation = await validateSuperAdminSession(
+        sessionCookie,
+        ipAddress
+      );
+
+      if (sessionValidation.valid && sessionValidation.userId) {
+        isAuthenticated = true;
+      }
     }
 
-    // Get organizations
+    // If super admin auth failed, try regular NextAuth
+    if (!isAuthenticated) {
+      const authResult = await requireRole('admin');
+
+      if (authResult.success) {
+        isAuthenticated = true;
+      } else {
+        return {
+          success: false,
+          error: authResult.error || 'Usuario no autenticado',
+        };
+      }
+    }
+
     const result = await getOrganizations(filters);
+
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting organizations:', error);
     return {
       success: false,
       error:

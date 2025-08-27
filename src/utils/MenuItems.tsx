@@ -43,8 +43,13 @@ export const OrgMenuItems = [
 
 export const SuperAdminMenuItems = [
   {
-    title: 'Organizaciónes',
-    url: '/superDashboard/organizations',
+    title: 'Organizaciones',
+    url: '/super/dashboard/organizations',
+    icon: GridIcon,
+  },
+  {
+    title: 'Proyectos',
+    url: '/super/dashboard/proyects',
     icon: BuildingIcon,
   },
 ];
