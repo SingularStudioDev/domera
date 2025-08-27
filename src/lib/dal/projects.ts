@@ -39,6 +39,7 @@ interface ProjectFiltersInput {
   neighborhood?: string;
   minPrice?: number;
   maxPrice?: number;
+  search?: string;
 }
 
 interface CreateProjectInput {
@@ -113,6 +114,36 @@ export async function getProjects(
       where.basePrice = {};
       if (validFilters.minPrice) where.basePrice.gte = validFilters.minPrice;
       if (validFilters.maxPrice) where.basePrice.lte = validFilters.maxPrice;
+    }
+
+    // Search filter
+    if (validFilters.search) {
+      where.OR = [
+        {
+          name: {
+            contains: validFilters.search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          address: {
+            contains: validFilters.search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          neighborhood: {
+            contains: validFilters.search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          city: {
+            contains: validFilters.search,
+            mode: 'insensitive'
+          }
+        }
+      ];
     }
 
     // Get total count
@@ -321,14 +352,13 @@ export async function createProject(
   userAgent?: string
 ): Promise<Result<Project>> {
   try {
-    const validInput = CreateProjectSchema.parse(input);
     const client = getDbClient();
 
     // Check if slug is unique within organization
     const existingProject = await client.project.findFirst({
       where: {
-        slug: validInput.slug,
-        organizationId: validInput.organizationId,
+        slug: input.slug,
+        organizationId: input.organizationId,
       },
     });
 
@@ -338,10 +368,28 @@ export async function createProject(
       );
     }
 
-    // Create project
+    // Create project with proper type conversions for Prisma schema
     const project = await client.project.create({
       data: {
-        ...validInput,
+        organizationId: input.organizationId,
+        name: input.name,
+        slug: input.slug,
+        description: input.description,
+        shortDescription: input.shortDescription,
+        address: input.address,
+        neighborhood: input.neighborhood,
+        city: input.city,
+        status: input.status,
+        startDate: input.startDate ? new Date(input.startDate.toISOString().split('T')[0]) : null,
+        estimatedCompletion: input.estimatedCompletion ? new Date(input.estimatedCompletion.toISOString().split('T')[0]) : null,
+        basePrice: input.basePrice,
+        currency: input.currency,
+        images: input.images || [],
+        amenities: input.amenities?.map(amenityText => ({
+          icon: '🏢',
+          text: amenityText
+        })) || [],
+        masterPlanFiles: [],
         createdBy: userId,
       },
       include: {

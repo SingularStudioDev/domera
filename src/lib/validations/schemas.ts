@@ -433,12 +433,13 @@ export const PaginationSchema = z.object({
 });
 
 export const ProjectFiltersSchema = z.object({
-  organization_id: UUIDSchema.optional(),
+  organizationId: UUIDSchema.optional(),
   status: ProjectStatusSchema.optional(),
   city: z.string().optional(),
   neighborhood: z.string().optional(),
-  min_price: z.number().positive().optional(),
-  max_price: z.number().positive().optional()
+  minPrice: z.number().positive().optional(),
+  maxPrice: z.number().positive().optional(),
+  search: z.string().optional()
 }).merge(PaginationSchema);
 
 export const UnitFiltersSchema = z.object({

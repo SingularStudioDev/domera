@@ -12,7 +12,7 @@ export interface ProjectFormData {
   basePrice: number | null;
   currency: 'USD' | 'UYU';
   estimatedCompletion: Date | null;
-  organizationId: string;
+  organizationId?: string;
   status: 'planning' | 'pre_sale' | 'construction' | 'completed' | 'delivered';
 
   // Imágenes y archivos - URLs como strings tras ser subidas

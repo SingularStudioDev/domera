@@ -18,13 +18,11 @@ export const projectFormSchema = z.object({
 
   description: z
     .string()
-    .max(5000, 'La descripción no puede exceder 5000 caracteres')
-    .optional(),
+    .max(5000, 'La descripción no puede exceder 5000 caracteres'),
 
   shortDescription: z
     .string()
-    .max(500, 'La descripción corta no puede exceder 500 caracteres')
-    .optional(),
+    .max(500, 'La descripción corta no puede exceder 500 caracteres'),
 
   address: z
     .string()
@@ -33,8 +31,7 @@ export const projectFormSchema = z.object({
 
   neighborhood: z
     .string()
-    .max(100, 'El barrio no puede exceder 100 caracteres')
-    .optional(),
+    .max(100, 'El barrio no puede exceder 100 caracteres'),
 
   city: z
     .string()
@@ -61,9 +58,9 @@ export const projectFormSchema = z.object({
     })
     .default('USD'),
 
-  estimatedCompletion: z.date().optional(),
+  estimatedCompletion: z.date().nullable(),
 
-  organizationId: z.string().uuid('Organization ID debe ser un UUID válido'),
+  organizationId: z.string().uuid('Organization ID debe ser un UUID válido').optional(),
 
   status: z
     .enum(['planning', 'pre_sale', 'construction', 'completed', 'delivered'])
@@ -134,7 +131,7 @@ export const imageArraySchema = z
   .array(z.union([z.string().url('URL de imagen inválida'), imageFileSchema]))
   .max(20, 'No se pueden subir más de 20 imágenes');
 
-export type ProjectFormData = z.infer<typeof projectFormSchema>;
+// Type is defined in /types/project-form.ts to avoid conflicts
 export type HeroFormData = z.infer<typeof heroFormSchema>;
 export type DescriptionFormData = z.infer<typeof descriptionFormSchema>;
 export type DetailsFormData = z.infer<typeof detailsFormSchema>;

@@ -7,4 +7,4 @@ export { ProjectDetailsForm } from './ProjectDetailsForm';
 export { ImageCarouselForm } from './ImageCarouselForm';
 export { LocationFormComponent } from './LocationForm';
 export { ProgressFormComponent } from './ProgressForm';
-export { ProjectFormMain } from './ProjectFormMain';
+export { ProjectFormMain } from '@/components/create-project-form/ProjectFormMain';

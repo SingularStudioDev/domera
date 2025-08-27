@@ -18,6 +18,10 @@ import {
   getProjectStats
 } from '@/lib/dal/projects';
 import type { ProjectStatus } from '@prisma/client';
+import { headers } from 'next/headers';
+import { extractRealIP } from '../utils/security';
+import { validateSuperAdminSession } from '../auth/super-admin';
+import { serializeProject } from '../utils/serialization';
 
 // Input types
 interface ProjectFiltersInput {
@@ -29,6 +33,7 @@ interface ProjectFiltersInput {
   neighborhood?: string;
   minPrice?: number;
   maxPrice?: number;
+  search?: string;
 }
 
 interface CreateProjectInput {
@@ -82,27 +87,62 @@ interface ProjectActionResult {
 
 /**
  * Get projects with filters and pagination
- * Requires authentication for full access, public for limited access
+ * Supports both super admin and regular user authentication
  */
 export async function getProjectsAction(
   filters: ProjectFiltersInput = { page: 1, pageSize: 20 }
 ): Promise<ProjectActionResult> {
   try {
-    // Validate authentication
-    const authResult = await validateSession();
-    if (!authResult.success) {
-      return { success: false, error: authResult.error };
+    // Try super admin authentication first (for /super routes)
+    const headersList = await headers();
+    const cookieHeader = headersList.get('cookie');
+
+    let isAuthenticated = false;
+    let user: any = null;
+
+    // Check for super admin session
+    const sessionCookies = cookieHeader
+      ?.split(';')
+      .filter((c) => c.trim().startsWith('super-admin-session='))
+      .map((c) => c.split('=')[1]);
+
+    const sessionCookie = sessionCookies?.pop();
+
+    if (sessionCookie) {
+      const ipAddress = extractRealIP(headersList);
+      const sessionValidation = await validateSuperAdminSession(
+        sessionCookie,
+        ipAddress
+      );
+
+      if (sessionValidation.valid && sessionValidation.userId) {
+        isAuthenticated = true;
+        // For super admin, we allow access to all projects without filtering
+      }
     }
 
-    const user = authResult.user!;
+    // If super admin auth failed, try regular NextAuth
+    if (!isAuthenticated) {
+      const authResult = await validateSession();
+      
+      if (authResult.success && authResult.user) {
+        isAuthenticated = true;
+        user = authResult.user;
 
-    // Filter by organization if user is not admin
-    const isAdmin = user.userRoles.some(role => role.role === 'admin');
-    if (!isAdmin && !filters.organizationId) {
-      // Get user's organization
-      const userOrg = user.userRoles.find(role => role.organizationId);
-      if (userOrg) {
-        filters.organizationId = userOrg.organizationId!;
+        // Filter by organization if user is not admin
+        const isAdmin = user.userRoles.some(role => role.role === 'admin');
+        if (!isAdmin && !filters.organizationId) {
+          // Get user's organization
+          const userOrg = user.userRoles.find(role => role.organizationId);
+          if (userOrg) {
+            filters.organizationId = userOrg.organizationId!;
+          }
+        }
+      } else {
+        return {
+          success: false,
+          error: authResult.error || 'Usuario no autenticado',
+        };
       }
     }
 
@@ -112,7 +152,13 @@ export async function getProjectsAction(
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    // Serialize the data to handle Decimal fields
+    const serializedData = {
+      ...result.data,
+      data: result.data.data.map(project => serializeProject(project))
+    };
+
+    return { success: true, data: serializedData };
   } catch (error) {
     console.error('[SERVER_ACTION] Error getting projects:', error);
     return { 
@@ -135,7 +181,13 @@ export async function getPublicProjectsAction(
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    // Serialize the data to handle Decimal fields
+    const serializedData = {
+      ...result.data,
+      data: result.data.data.map(project => serializeProject(project))
+    };
+
+    return { success: true, data: serializedData };
   } catch (error) {
     console.error('[SERVER_ACTION] Error getting public projects:', error);
     return { 
@@ -158,7 +210,7 @@ export async function getProjectByIdAction(
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    return { success: true, data: serializeProject(result.data) };
   } catch (error) {
     console.error('[SERVER_ACTION] Error getting project:', error);
     return { 
@@ -182,7 +234,7 @@ export async function getProjectBySlugAction(
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    return { success: true, data: serializeProject(result.data) };
   } catch (error) {
     console.error('[SERVER_ACTION] Error getting project by slug:', error);
     return { 
@@ -236,7 +288,7 @@ export async function createProjectAction(
     revalidatePath('/projects');
     revalidatePath('/dashboard');
 
-    return { success: true, data: result.data };
+    return { success: true, data: serializeProject(result.data) };
   } catch (error) {
     console.error('[SERVER_ACTION] Error creating project:', error);
     return { 
@@ -292,7 +344,7 @@ export async function updateProjectAction(
     revalidatePath(`/projects/${projectId}`);
     revalidatePath('/dashboard');
 
-    return { success: true, data: result.data };
+    return { success: true, data: serializeProject(result.data) };
   } catch (error) {
     console.error('[SERVER_ACTION] Error updating project:', error);
     return { 

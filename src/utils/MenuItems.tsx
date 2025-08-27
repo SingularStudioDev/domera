@@ -6,6 +6,7 @@ import {
   UserIcon,
   MessagesSquareIcon,
   BuildingIcon,
+  Building2Icon,
 } from 'lucide-react';
 
 export const OrgMenuItems = [
@@ -45,11 +46,11 @@ export const SuperAdminMenuItems = [
   {
     title: 'Organizaciones',
     url: '/super/dashboard/organizations',
-    icon: GridIcon,
+    icon: BuildingIcon,
   },
   {
     title: 'Proyectos',
-    url: '/super/dashboard/proyects',
-    icon: BuildingIcon,
+    url: '/super/dashboard/projects',
+    icon: Building2Icon,
   },
 ];

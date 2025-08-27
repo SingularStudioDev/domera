@@ -1,0 +1,60 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSuperAdmin } from '@/hooks/useSuperAdmin';
+import { Button } from '@/components/ui/button';
+import { Plus, X } from 'lucide-react';
+import ProjectsList from './components/ProjectsList';
+
+export default function ProjectsPage() {
+  const router = useRouter();
+  const { isLoading: isSessionLoading, isAuthenticated } = useSuperAdmin();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleCreateProject = () => {
+    router.push('/super/create-project');
+  };
+
+  const handleProjectCreated = () => {
+    // Trigger refresh of the projects list
+    setRefreshKey(prev => prev + 1);
+  };
+
+  if (isSessionLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Cargando...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Redirigiendo al login...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen">
+      <div className="space-y-6">
+        {/* Header with Create Button */}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="dashboard-title">Gestión de Proyectos</h1>
+          <Button
+            onClick={handleCreateProject}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Crear Proyecto Nuevo
+          </Button>
+        </div>
+
+        {/* Projects List */}
+        <ProjectsList key={refreshKey} />
+      </div>
+    </div>
+  );
+}
