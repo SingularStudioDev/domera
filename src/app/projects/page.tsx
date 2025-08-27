@@ -43,6 +43,7 @@ const ProjectsPage = async ({ searchParams }: ProjectsPageProps) => {
   const filterOptionsResult = await getProjectFilterOptions();
   const filterOptions = filterOptionsResult.data || { cities: [], neighborhoods: [] };
 
+  // TODO: Esto lo tengo que revisar para dejar los filtos bien tranquilos todos | Paso a Paso
   return (
     <>
       <Header />
