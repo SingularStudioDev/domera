@@ -36,6 +36,20 @@ export default function ShoppingDashboardPage() {
         <ShoppingSheet
           isSheetOpen={isSheetOpen}
           setIsSheetOpen={setIsSheetOpen}
+          projectName="Winks Americas"
+          projectSubtitle="Torre Residencial Premium"
+          projectAmount="US$ 285.000"
+          progressPercentage={75}
+          payments={[
+            { name: "Reserva", amount: "US$ 5.000", dueDate: "15/01/2025", status: "Pendiente" },
+            { name: "Primera cuota", amount: "US$ 25.000", dueDate: "15/02/2025", status: "Pendiente" },
+            { name: "Segunda cuota", amount: "US$ 25.000", dueDate: "15/03/2025", status: "Pendiente" },
+            { name: "Entrega", amount: "US$ 230.000", dueDate: "15/12/2025", status: "Pendiente" },
+          ]}
+          blueprints={[
+            { name: "Planos unidad 604", url: "#" },
+            { name: "Planos cochera 02", url: "#" },
+          ]}
         />
       )}
     </>
