@@ -439,7 +439,9 @@ export const ProjectFiltersSchema = z.object({
   neighborhood: z.string().optional(),
   minPrice: z.number().positive().optional(),
   maxPrice: z.number().positive().optional(),
-  search: z.string().optional()
+  search: z.string().optional(),
+  rooms: z.string().optional(),
+  amenities: z.string().optional()
 }).merge(PaginationSchema);
 
 export const UnitFiltersSchema = z.object({

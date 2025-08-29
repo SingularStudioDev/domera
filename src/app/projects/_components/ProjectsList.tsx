@@ -1,5 +1,8 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import ProjectCard from '@/components/custom-ui/ProjectCard';
-import { getPublicProjects } from '@/lib/dal/projects';
+import { getPublicProjectsAction } from '@/lib/actions/projects';
 import { formatCurrency } from '@/utils/utils';
 import type { Project } from '@prisma/client';
 
@@ -25,6 +28,10 @@ interface ProjectsListProps {
   city?: string;
   neighborhood?: string;
   status?: 'pre_sale' | 'construction' | 'completed';
+  rooms?: string;
+  amenities?: string;
+  minPrice?: string;
+  maxPrice?: string;
 }
 
 /**
@@ -85,38 +92,90 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   };
 };
 
-export default async function ProjectsList({
+export default function ProjectsList({
   page = 1,
-  pageSize = 50, // Show more projects than the landing page
+  pageSize = 50,
   city,
   neighborhood,
   status,
+  rooms,
+  amenities,
+  minPrice,
+  maxPrice,
 }: ProjectsListProps = {}) {
-  const projectsResult = await getPublicProjects({
-    page,
-    pageSize,
-    city,
-    neighborhood,
-    status,
-  });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!projectsResult.data) {
+  console.log('projec', projects)
+  
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const projectsResult = await getPublicProjectsAction({
+          page,
+          pageSize,
+          city,
+          neighborhood,
+          status,
+          ...(minPrice && { minPrice: parseFloat(minPrice) }),
+          ...(maxPrice && { maxPrice: parseFloat(maxPrice) }),
+        });
+
+        if (projectsResult.success && projectsResult.data) {
+          const data = projectsResult.data as { data: Project[]; count: number };
+          setProjects(data.data);
+          setTotalCount(data.count);
+        } else {
+          setProjects([]);
+          setTotalCount(0);
+          setError(projectsResult.error || 'Error al cargar proyectos');
+        }
+      } catch (err) {
+        setError('Error al cargar los proyectos');
+        console.error('Error fetching projects:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [page, pageSize, city, neighborhood, status, rooms, amenities, minPrice, maxPrice]);
+
+  if (loading) {
     return (
-      <div className="py-16 text-center">
-        <div className="mx-auto max-w-md">
-          <h3 className="mb-4 text-xl font-semibold text-gray-900">
-            No hay proyectos disponibles
-          </h3>
-          <p className="text-gray-600">
-            No encontramos proyectos que coincidan con los filtros seleccionados.
-            Intenta ajustar los criterios de búsqueda.
-          </p>
+      <div className="mb-16">
+        <div className="mb-8">
+          <div className="h-4 w-32 animate-pulse rounded bg-gray-200"></div>
+        </div>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-[567px] rounded-3xl bg-gray-200 md:h-[547px]"></div>
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
-  const projects = projectsResult.data.data;
+  if (error) {
+    return (
+      <div className="py-16 text-center">
+        <div className="mx-auto max-w-md">
+          <h3 className="mb-4 text-xl font-semibold text-red-600">
+            Error al cargar proyectos
+          </h3>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (projects.length === 0) {
     return (
@@ -139,9 +198,9 @@ export default async function ProjectsList({
       {/* Projects Count */}
       <div className="mb-8">
         <p className="text-sm text-gray-600">
-          {projectsResult.data.count === 1
+          {totalCount === 1
             ? '1 proyecto encontrado'
-            : `${projectsResult.data.count} proyectos encontrados`}
+            : `${totalCount} proyectos encontrados`}
         </p>
       </div>
 
@@ -175,11 +234,10 @@ export default async function ProjectsList({
       </div>
 
       {/* Pagination Info */}
-      {projectsResult.data.page < projectsResult.data.totalPages && (
+      {totalCount > projects.length && (
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-600">
-            Mostrando {projects.length} de {projectsResult.data.count}{' '}
-            proyectos
+            Mostrando {projects.length} de {totalCount} proyectos
           </p>
         </div>
       )}

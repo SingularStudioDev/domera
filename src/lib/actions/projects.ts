@@ -34,6 +34,8 @@ interface ProjectFiltersInput {
   minPrice?: number;
   maxPrice?: number;
   search?: string;
+  rooms?: string;
+  amenities?: string;
 }
 
 interface CreateProjectInput {
@@ -176,7 +178,12 @@ export async function getPublicProjectsAction(
   filters: Omit<ProjectFiltersInput, 'organizationId'> = { page: 1, pageSize: 20 }
 ): Promise<ProjectActionResult> {
   try {
-    const result = await getPublicProjects(filters);
+    // Clean undefined values that might cause validation issues
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([, value]) => value !== undefined && value !== null)
+    );
+    
+    const result = await getPublicProjects(cleanFilters as typeof filters);
     if (!result.data) {
       return { success: false, error: result.error };
     }

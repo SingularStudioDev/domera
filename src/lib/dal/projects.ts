@@ -40,6 +40,8 @@ interface ProjectFiltersInput {
   minPrice?: number;
   maxPrice?: number;
   search?: string;
+  rooms?: string;
+  amenities?: string;
 }
 
 interface CreateProjectInput {
@@ -229,6 +231,8 @@ export async function getPublicProjects(
       if (validFilters.minPrice) where.basePrice.gte = validFilters.minPrice;
       if (validFilters.maxPrice) where.basePrice.lte = validFilters.maxPrice;
     }
+
+    // TODO: Add rooms and amenities filters in future update
 
     // Get total count
     const totalCount = await client.project.count({ where });
@@ -461,10 +465,7 @@ export async function updateProject(
     // Update project
     const project = await client.project.update({
       where: { id: projectId },
-      data: {
-        ...validInput,
-        updatedBy: userId,
-      },
+      data: validInput,
       include: {
         organization: true,
       },

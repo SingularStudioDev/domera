@@ -17,7 +17,7 @@ const Hero = () => {
             <img
               src="/image-hero.png"
               alt="Propiedades en pozo"
-              className="absolute inset-0 h-full w-full rounded-2xl object-cover"
+              className="absolute inset-0 h-full w-full rounded-2xl object-cover object-[center_95%] w-full h-64"
             />
             <div className="absolute inset-0 z-10 rounded-2xl bg-gradient-to-r from-black/30 to-black/20"></div>
           </div>

@@ -14,10 +14,14 @@ body {
   overflow-x: hidden;
 }
 
+html,
+body {
+  overscroll-behavior: none;
+}
 
 @theme {
-  --color-primaryColor: #0040FF;
-  --color-primaryColor-hover: #022BA6;
+  --color-primaryColor: #0040ff;
+  --color-primaryColor-hover: #022ba6;
 }
 
 @theme inline {
@@ -140,7 +144,6 @@ body {
   @apply text-3xl font-bold text-black;
 }
 
-
 .dashboard-subtitle {
-  @apply text-2xl font-semibold text-primaryColor;
+  @apply text-primaryColor text-2xl font-semibold;
 }
