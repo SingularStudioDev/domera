@@ -1,11 +1,12 @@
-import ProjectsLayoutClient from './_components/ProjectsLayout';
-import { getProjectFilterOptions } from '@/lib/dal/projects';
+import { getProjectFilterOptions } from "@/lib/dal/projects";
+
+import ProjectsLayoutClient from "./_components/ProjectsLayout";
 
 interface ProjectsPageProps {
   searchParams: {
     neighborhood?: string;
     city?: string;
-    status?: 'pre_sale' | 'construction' | 'completed';
+    status?: "pre_sale" | "construction" | "completed";
     rooms?: string;
     amenities?: string;
     minPrice?: string;
@@ -21,8 +22,6 @@ const ProjectsPage = async ({ searchParams }: ProjectsPageProps) => {
     neighborhoods: [],
     amenities: [],
   };
-
-  // console.log('filteroptions', filterOptionsResult)
 
   return (
     <ProjectsLayoutClient

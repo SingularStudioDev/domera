@@ -1,10 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import ProjectCard from '@/components/custom-ui/ProjectCard';
-import { getPublicProjectsAction } from '@/lib/actions/projects';
-import { formatCurrency } from '@/utils/utils';
-import type { Project } from '@prisma/client';
+import { useEffect, useState } from "react";
+
+import { formatCurrency } from "@/utils/utils";
+import type { Project } from "@prisma/client";
+
+import { getPublicProjectsAction } from "@/lib/actions/projects";
+import ProjectCard from "@/components/custom-ui/ProjectCard";
 
 interface ProjectFeature {
   name: string;
@@ -27,7 +29,7 @@ interface ProjectsListProps {
   pageSize?: number;
   city?: string;
   neighborhood?: string;
-  status?: 'pre_sale' | 'construction' | 'completed';
+  status?: "pre_sale" | "construction" | "completed";
   rooms?: string;
   amenities?: string;
   minPrice?: string;
@@ -41,15 +43,15 @@ interface ProjectsListProps {
 const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   const price = project.basePrice
     ? formatCurrency(parseFloat(project.basePrice.toString()), project.currency)
-    : 'Consultar precio';
+    : "Consultar precio";
 
   const status = project.neighborhood || project.city;
   const date = project.estimatedCompletion
-    ? new Date(project.estimatedCompletion).toLocaleDateString('es-UY', {
-        month: 'short',
-        year: 'numeric',
+    ? new Date(project.estimatedCompletion).toLocaleDateString("es-UY", {
+        month: "short",
+        year: "numeric",
       })
-    : 'Fecha TBD';
+    : "Fecha TBD";
 
   // Use project slug for main image with fallback
   const image = `/images/${project.slug}-main.png`;
@@ -67,15 +69,15 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   };
 
   const features: ProjectFeature[] = [
-    { name: 'parking', hasFeature: projectWithFeatures.hasParking || false },
-    { name: 'studio', hasFeature: projectWithFeatures.hasStudio || false },
-    { name: '1_bedroom', hasFeature: projectWithFeatures.has1Bedroom || false },
-    { name: '2_bedroom', hasFeature: projectWithFeatures.has2Bedroom || false },
-    { name: '3_bedroom', hasFeature: projectWithFeatures.has3Bedroom || false },
-    { name: '4_bedroom', hasFeature: projectWithFeatures.has4Bedroom || false },
-    { name: '5_bedroom', hasFeature: projectWithFeatures.has5Bedroom || false },
+    { name: "parking", hasFeature: projectWithFeatures.hasParking || false },
+    { name: "studio", hasFeature: projectWithFeatures.hasStudio || false },
+    { name: "1_bedroom", hasFeature: projectWithFeatures.has1Bedroom || false },
+    { name: "2_bedroom", hasFeature: projectWithFeatures.has2Bedroom || false },
+    { name: "3_bedroom", hasFeature: projectWithFeatures.has3Bedroom || false },
+    { name: "4_bedroom", hasFeature: projectWithFeatures.has4Bedroom || false },
+    { name: "5_bedroom", hasFeature: projectWithFeatures.has5Bedroom || false },
     {
-      name: 'commercial',
+      name: "commercial",
       hasFeature: projectWithFeatures.hasCommercial || false,
     },
   ];
@@ -108,14 +110,13 @@ export default function ProjectsList({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('projec', projects)
-  
+  console.log("projec", projects);
 
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const projectsResult = await getPublicProjectsAction({
           page,
@@ -128,31 +129,41 @@ export default function ProjectsList({
         });
 
         if (projectsResult.success && projectsResult.data) {
-          const data = projectsResult.data as { data: Project[]; count: number };
+          const data = projectsResult.data as {
+            data: Project[];
+            count: number;
+          };
           setProjects(data.data);
           setTotalCount(data.count);
         } else {
           setProjects([]);
           setTotalCount(0);
-          setError(projectsResult.error || 'Error al cargar proyectos');
+          setError(projectsResult.error || "Error al cargar proyectos");
         }
       } catch (err) {
-        setError('Error al cargar los proyectos');
-        console.error('Error fetching projects:', err);
+        setError("Error al cargar los proyectos");
+        console.error("Error fetching projects:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProjects();
-  }, [page, pageSize, city, neighborhood, status, rooms, amenities, minPrice, maxPrice]);
+  }, [
+    page,
+    pageSize,
+    city,
+    neighborhood,
+    status,
+    rooms,
+    amenities,
+    minPrice,
+    maxPrice,
+  ]);
 
   if (loading) {
     return (
       <div className="mb-16">
-        <div className="mb-8">
-          <div className="h-4 w-32 animate-pulse rounded bg-gray-200"></div>
-        </div>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} className="animate-pulse">
@@ -166,7 +177,7 @@ export default function ProjectsList({
 
   if (error) {
     return (
-      <div className="py-16 text-center">
+      <div className="text-center">
         <div className="mx-auto max-w-md">
           <h3 className="mb-4 text-xl font-semibold text-red-600">
             Error al cargar proyectos
@@ -185,8 +196,8 @@ export default function ProjectsList({
             No hay proyectos disponibles
           </h3>
           <p className="text-gray-600">
-            No encontramos proyectos que coincidan con los filtros seleccionados.
-            Intenta ajustar los criterios de búsqueda.
+            No encontramos proyectos que coincidan con los filtros
+            seleccionados. Intenta ajustar los criterios de búsqueda.
           </p>
         </div>
       </div>
@@ -194,16 +205,7 @@ export default function ProjectsList({
   }
 
   return (
-    <div className="mb-16">
-      {/* Projects Count */}
-      <div className="mb-8">
-        <p className="text-sm text-gray-600">
-          {totalCount === 1
-            ? '1 proyecto encontrado'
-            : `${totalCount} proyectos encontrados`}
-        </p>
-      </div>
-
+    <div className="">
       {/* Projects Grid */}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project, index) => {
@@ -214,8 +216,8 @@ export default function ProjectsList({
               key={project.id}
               className={
                 index === projects.length - 1 && projects.length % 3 === 1
-                  ? 'col-span-full max-w-md mx-auto'
-                  : ''
+                  ? "col-span-full mx-auto max-w-md"
+                  : ""
               }
             >
               <ProjectCard
