@@ -5,7 +5,7 @@ import { useState } from "react";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
-import ProjectsFilter from "./ProjectsFilter";
+import ProjectsFilter from "./projectFilter/ProjectsFilter";
 import ProjectsListView from "./ProjectsListView";
 import ProjectsMapView from "./ProjectsMapView";
 
@@ -51,22 +51,21 @@ export default function ProjectsLayoutClient({
     <>
       <Header />
 
-      <main className="bg-white pt-28">
+      <main className="bg-white pt-24">
         <div className="container mx-auto px-4 md:px-0">
           {/* Page Header */}
-          <div className="mb-8">
+          <div className="flex items-center justify-between">
             <h1 className="dashboard-title mb-4">Proyectos</h1>
+
+            {/* Persistent Filters */}
+            <ProjectsFilter
+              cities={filterOptions.cities}
+              neighborhoods={filterOptions.neighborhoods}
+              amenities={filterOptions.amenities}
+              onViewChange={handleViewChange}
+              currentView={currentView}
+            />
           </div>
-
-          {/* Persistent Filters */}
-          <ProjectsFilter
-            cities={filterOptions.cities}
-            neighborhoods={filterOptions.neighborhoods}
-            amenities={filterOptions.amenities}
-            onViewChange={handleViewChange}
-            currentView={currentView}
-          />
-
           {/* Dynamic Content Area */}
           <div className="min-h-[400px]">{renderContent()}</div>
         </div>
