@@ -83,6 +83,13 @@ export default withAuth(
           '/api/auth',
         ];
 
+        // Routes that require authentication but no specific role
+        const authRequiredRoutes = [
+          '/checkout',
+          '/checkout/additional',
+          '/checkout/confirmation',
+        ];
+
         // Check if route is public
         const isPublicRoute = publicRoutes.some(route => {
           const pattern = route.replace(/\[.*?\]/g, '[^/]+');
@@ -92,6 +99,17 @@ export default withAuth(
 
         if (isPublicRoute) {
           return true;
+        }
+
+        // Check if route requires authentication (checkout routes)
+        const isAuthRequiredRoute = authRequiredRoutes.some(route => {
+          const pattern = route.replace(/\[.*?\]/g, '[^/]+');
+          const regex = new RegExp(`^${pattern}$`);
+          return regex.test(pathname);
+        });
+
+        if (isAuthRequiredRoute) {
+          return !!token;
         }
 
         // All other routes require authentication

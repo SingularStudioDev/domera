@@ -1,12 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { getAvailableUnitsAction } from '@/lib/actions/units';
-import { getMultipleFavoriteStatusAction } from '@/lib/actions/favourites';
-import UnitFilter from './UnitFilter';
-import UnitCard from './UnitCard';
-import { formatCurrency, formatCurrencyUYU } from '@/utils/utils';
-import { useParams } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+
+import { formatCurrency } from "@/utils/utils";
+
+import { getMultipleFavoriteStatusAction } from "@/lib/actions/favourites";
+import { getAvailableUnitsAction } from "@/lib/actions/units";
+
+import UnitCard from "./UnitCard";
+import UnitFilter from "./UnitFilter";
 
 interface Unit {
   id: string;
@@ -35,25 +38,27 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
   const projectSlug = params.slug as string;
 
   const [units, setUnits] = useState<Unit[]>([]);
-  const [favoriteStatuses, setFavoriteStatuses] = useState<Record<string, boolean>>({});
+  const [favoriteStatuses, setFavoriteStatuses] = useState<
+    Record<string, boolean>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [filters, setFilters] = useState({
-    piso: 'Mostrar todo',
-    tipologia: 'Mostrar todo',
-    orientacion: 'Mostrar todo',
+    piso: "Mostrar todo",
+    tipologia: "Mostrar todo",
+    orientacion: "Mostrar todo",
   });
 
   useEffect(() => {
     async function fetchUnitsAndFavorites() {
       try {
         setLoading(true);
-        
+
         // Fetch units
         const unitsResult = await getAvailableUnitsAction(projectId);
         if (!unitsResult.success || !unitsResult.data) {
-          setError(unitsResult.error || 'Error cargando unidades');
+          setError(unitsResult.error || "Error cargando unidades");
           return;
         }
 
@@ -61,22 +66,25 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
         setUnits(fetchedUnits);
 
         // Fetch favorite statuses for all units
-        const unitIds = fetchedUnits.map(unit => unit.id);
+        const unitIds = fetchedUnits.map((unit) => unit.id);
         if (unitIds.length > 0) {
           try {
-            const favoritesResult = await getMultipleFavoriteStatusAction(unitIds);
+            const favoritesResult =
+              await getMultipleFavoriteStatusAction(unitIds);
             setFavoriteStatuses(favoritesResult);
           } catch (favError) {
             // If favorites fail to load, continue without them (user might not be logged in)
-            console.log('Could not load favorite statuses (user might not be authenticated)');
+            console.log(
+              "Could not load favorite statuses (user might not be authenticated)",
+            );
             setFavoriteStatuses({});
           }
         }
 
         setError(null);
       } catch (err) {
-        setError('Error inesperado cargando unidades');
-        console.error('Error fetching units and favorites:', err);
+        setError("Error inesperado cargando unidades");
+        console.error("Error fetching units and favorites:", err);
       } finally {
         setLoading(false);
       }
@@ -111,15 +119,15 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
 
   // Helper function to safely parse images outside of hooks
   const parseUnitImages = (images: string[] | string | null): string => {
-    if (!images) return '/placeholder-unit.jpg';
+    if (!images) return "/placeholder-unit.jpg";
 
     // If already an array, return first image
     if (Array.isArray(images)) {
-      return images.length > 0 ? images[0] : '/placeholder-unit.jpg';
+      return images.length > 0 ? images[0] : "/placeholder-unit.jpg";
     }
 
     // If string, try to parse as JSON
-    if (typeof images === 'string') {
+    if (typeof images === "string") {
       try {
         const parsed = JSON.parse(images);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -133,28 +141,28 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
       }
     }
 
-    return '/placeholder-unit.jpg';
+    return "/placeholder-unit.jpg";
   };
 
   // Map real unit data to the format expected by UnitCard
   const mappedUnits = units.map((unit) => ({
     id: unit.id,
     title: `Unidad ${unit.unitNumber}`,
-    description: unit.description || '',
+    description: unit.description || "",
     bedrooms: unit.bedrooms,
     bathrooms: unit.bathrooms,
     area: unit.totalArea
       ? `${unit.totalArea} m²`
       : unit.builtArea
         ? `${unit.builtArea} m²`
-        : 'N/A',
-    orientation: unit.orientation || 'N/A',
-    price: `${unit.currency} ${unit.currency === 'USD' ? formatCurrency(unit.price) : formatCurrencyUYU(unit.price)}`,
+        : "N/A",
+    orientation: unit.orientation || "N/A",
+    price: `${unit.currency} ${formatCurrency(unit.price)}`,
     type: unit.unitType,
     image: parseUnitImages(unit.images),
     unitNumber: unit.unitNumber,
-    available: unit.status === 'available',
-    statusIcon: unit.status === 'available',
+    available: unit.status === "available",
+    statusIcon: unit.status === "available",
     isFavorite: favoriteStatuses[unit.id] || false,
   }));
 
@@ -165,10 +173,10 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
           Unidades disponibles
         </h2>
         <p className="mb-8 text-gray-600">
-          {mappedUnits.length}{' '}
+          {mappedUnits.length}{" "}
           {mappedUnits.length === 1
-            ? 'Unidad disponible'
-            : 'Unidades disponibles'}
+            ? "Unidad disponible"
+            : "Unidades disponibles"}
         </p>
 
         <UnitFilter filters={filters} setFilters={setFilters} />

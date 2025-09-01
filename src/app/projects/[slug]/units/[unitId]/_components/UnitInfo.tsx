@@ -18,6 +18,8 @@ import {
 
 import { toggleFavoriteAction } from "@/lib/actions/favourites";
 import MainButton from "@/components/custom-ui/MainButton";
+import { useCheckoutStore } from "@/stores/checkoutStore";
+import { MaxUnitsModal } from "@/components/MaxUnitsModal";
 
 interface UnitInfoProps {
   unitId: string;
@@ -31,6 +33,9 @@ interface UnitInfoProps {
   completion: string;
   formattedPrice: string;
   isFavorite?: boolean;
+  projectId?: string;
+  projectName?: string;
+  projectSlug?: string;
 }
 
 const UnitInfo = ({
@@ -45,11 +50,16 @@ const UnitInfo = ({
   completion,
   formattedPrice,
   isFavorite,
+  projectId,
+  projectName,
+  projectSlug,
 }: UnitInfoProps) => {
   const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(
     isFavorite || false,
   );
+  const [isMaxUnitsModalOpen, setIsMaxUnitsModalOpen] = useState(false);
   const router = useRouter();
+  const { addItem } = useCheckoutStore();
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -84,6 +94,47 @@ const UnitInfo = ({
       console.log(`[FAVORITE] Network error: reverting to ${previousState}`);
       setIsCurrentlyFavorite(previousState);
       console.error("Error toggling favorite:", error);
+    }
+  };
+
+  const handleAddToCheckout = () => {
+    if (!projectId || !projectName) {
+      alert('Información del proyecto no disponible');
+      return;
+    }
+
+    // Extraer el precio numérico del string formateado
+    const numericPrice = parseInt(formattedPrice.replace(/[^\d]/g, ''));
+
+    const checkoutItem = {
+      id: unitId,
+      projectId: projectId,
+      projectName: projectName,
+      unitId: unitId,
+      unitTitle: `Unidad ${unitNumber} - Piso ${floor || 'N/A'}`,
+      image: `/images/unit-${unitNumber}-main.png`,
+      bathrooms: bathrooms,
+      bedrooms: bedrooms,
+      builtArea: area,
+      completion: completion,
+      price: numericPrice,
+    };
+
+    const result = addItem(checkoutItem);
+    
+    switch (result) {
+      case 'success':
+        router.push('/checkout');
+        break;
+      case 'already_exists':
+        alert('Esta unidad ya está en tu carrito de compras.');
+        break;
+      case 'different_project':
+        alert('Solo puedes agregar unidades del mismo proyecto al checkout.');
+        break;
+      case 'max_units_reached':
+        setIsMaxUnitsModalOpen(true);
+        break;
     }
   };
   return (
@@ -179,11 +230,16 @@ const UnitInfo = ({
             </h2>
           </div>
 
-          <MainButton variant="fill" showArrow href="/checkout">
+          <MainButton variant="fill" showArrow onClick={handleAddToCheckout}>
             Comprar
           </MainButton>
         </div>
       </div>
+      
+      <MaxUnitsModal 
+        isOpen={isMaxUnitsModalOpen} 
+        onClose={() => setIsMaxUnitsModalOpen(false)} 
+      />
     </div>
   );
 };

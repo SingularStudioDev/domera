@@ -1,29 +1,32 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from "react";
+
+import { formatCurrency } from "@/utils/utils";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { getProjectsAction } from '@/lib/actions/projects';
-import { getOrganizationsAction } from '@/lib/actions/organizations';
-import {
-  Search,
   Building2,
+  Calendar,
+  DollarSign,
+  Edit,
   Mail,
   MapPin,
-  DollarSign,
-  Calendar,
-  Users,
-  Edit,
+  Search,
   Trash2,
-} from 'lucide-react';
+  Users,
+} from "lucide-react";
+
+import { getOrganizationsAction } from "@/lib/actions/organizations";
+import { getProjectsAction } from "@/lib/actions/projects";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 interface Project {
   id: string;
@@ -37,7 +40,7 @@ interface Project {
   soldUnits: number;
   availableUnits: number;
   basePrice: number;
-  status: 'planning' | 'pre_sale' | 'construction' | 'completed' | 'delivered';
+  status: "planning" | "pre_sale" | "construction" | "completed" | "delivered";
   organizationId: string;
   organization: {
     id: string;
@@ -64,11 +67,11 @@ export default function ProjectsList() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    'all' | 'planning' | 'pre_sale' | 'construction' | 'completed' | 'delivered'
-  >('all');
-  const [organizationFilter, setOrganizationFilter] = useState<string>('all');
+    "all" | "planning" | "pre_sale" | "construction" | "completed" | "delivered"
+  >("all");
+  const [organizationFilter, setOrganizationFilter] = useState<string>("all");
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -97,7 +100,7 @@ export default function ProjectsList() {
         setOrganizations(data.data || []);
       }
     } catch (err) {
-      console.error('Error fetching organizations:', err);
+      console.error("Error fetching organizations:", err);
     }
   }, []);
 
@@ -110,31 +113,38 @@ export default function ProjectsList() {
         page: pagination?.page || 1,
         pageSize: pagination?.pageSize || 10,
         search: searchTerm || undefined,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        organizationId: organizationFilter === 'all' ? undefined : organizationFilter,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        organizationId:
+          organizationFilter === "all" ? undefined : organizationFilter,
       });
 
       if (result.success && result.data) {
         const data = result.data as ProjectsData;
         setProjects(data.data);
-        
+
         // Calculate pagination
         const totalPages = Math.ceil(data.count / (pagination?.pageSize || 10));
-        setPagination(prev => ({
+        setPagination((prev) => ({
           ...prev,
           totalCount: data.count,
           totalPages,
         }));
       } else {
-        setError(result.error || 'Error cargando proyectos');
+        setError(result.error || "Error cargando proyectos");
       }
     } catch (err) {
-      console.error('Error fetching projects:', err);
-      setError('Error inesperado cargando proyectos');
+      console.error("Error fetching projects:", err);
+      setError("Error inesperado cargando proyectos");
     } finally {
       setIsLoading(false);
     }
-  }, [pagination?.page, pagination?.pageSize, searchTerm, statusFilter, organizationFilter]);
+  }, [
+    pagination?.page,
+    pagination?.pageSize,
+    searchTerm,
+    statusFilter,
+    organizationFilter,
+  ]);
 
   useEffect(() => {
     fetchOrganizations();
@@ -158,13 +168,13 @@ export default function ProjectsList() {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  const getStatusBadge = (status: Project['status']) => {
+  const getStatusBadge = (status: Project["status"]) => {
     const statusConfig = {
-      planning: { label: 'Planificación', variant: 'secondary' as const },
-      pre_sale: { label: 'Pre-venta', variant: 'default' as const },
-      construction: { label: 'En Construcción', variant: 'default' as const },
-      completed: { label: 'Completado', variant: 'outline' as const },
-      delivered: { label: 'Entregado', variant: 'outline' as const },
+      planning: { label: "Planificación", variant: "secondary" as const },
+      pre_sale: { label: "Pre-venta", variant: "default" as const },
+      construction: { label: "En Construcción", variant: "default" as const },
+      completed: { label: "Completado", variant: "outline" as const },
+      delivered: { label: "Entregado", variant: "outline" as const },
     };
 
     const config = statusConfig[status];
@@ -172,14 +182,6 @@ export default function ProjectsList() {
       return <Badge variant="secondary">Desconocido</Badge>;
     }
     return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-UY', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   const calculateProgress = (project: Project) => {
@@ -213,8 +215,8 @@ export default function ProjectsList() {
           Proyectos Existentes
         </CardTitle>
         <CardDescription>
-          Lista de todos los proyectos registrados (
-          {safePagination.totalCount} total)
+          Lista de todos los proyectos registrados ({safePagination.totalCount}{" "}
+          total)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -232,7 +234,7 @@ export default function ProjectsList() {
                   placeholder="Buscar por nombre o ubicación..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 />
                 <Button onClick={handleSearch} size="sm">
                   <Search className="h-4 w-4" />
@@ -294,7 +296,9 @@ export default function ProjectsList() {
           <div className="py-8 text-center text-gray-500">
             <Building2 className="mx-auto mb-4 h-12 w-12 text-gray-400" />
             <p>No se encontraron proyectos</p>
-            {(searchTerm || statusFilter !== 'all' || organizationFilter !== 'all') && (
+            {(searchTerm ||
+              statusFilter !== "all" ||
+              organizationFilter !== "all") && (
               <p className="text-sm">
                 Intenta modificar los filtros de búsqueda
               </p>
@@ -312,7 +316,9 @@ export default function ProjectsList() {
                     {/* Header */}
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold">{project.name}</h3>
+                        <h3 className="text-lg font-semibold">
+                          {project.name}
+                        </h3>
                         <p className="text-muted-foreground text-sm">
                           @{project.slug} • {project.organization.name}
                         </p>
@@ -324,7 +330,9 @@ export default function ProjectsList() {
 
                     {/* Description */}
                     {project.description && (
-                      <p className="text-sm text-gray-600">{project.description}</p>
+                      <p className="text-sm text-gray-600">
+                        {project.description}
+                      </p>
                     )}
 
                     {/* Project Info */}
@@ -347,7 +355,10 @@ export default function ProjectsList() {
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar className="h-4 w-4 text-gray-400" />
                         <span>
-                          Inicio: {new Date(project.startDate).toLocaleDateString('es-UY')}
+                          Inicio:{" "}
+                          {new Date(project.startDate).toLocaleDateString(
+                            "es-UY",
+                          )}
                         </span>
                       </div>
                     </div>
@@ -373,13 +384,17 @@ export default function ProjectsList() {
                     {/* Metadata */}
                     <div className="text-muted-foreground flex items-center gap-4 text-xs">
                       <span>
-                        Creado:{' '}
-                        {new Date(project.createdAt).toLocaleDateString('es-UY')}
+                        Creado:{" "}
+                        {new Date(project.createdAt).toLocaleDateString(
+                          "es-UY",
+                        )}
                       </span>
                       {project.estimatedEndDate && (
                         <span>
-                          Finalización estimada:{' '}
-                          {new Date(project.estimatedEndDate).toLocaleDateString('es-UY')}
+                          Finalización estimada:{" "}
+                          {new Date(
+                            project.estimatedEndDate,
+                          ).toLocaleDateString("es-UY")}
                         </span>
                       )}
                     </div>

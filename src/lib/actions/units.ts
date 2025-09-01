@@ -182,6 +182,58 @@ export async function getAvailableUnitsAction(
 }
 
 /**
+ * Get available units for a project excluding units already in checkout
+ * Public access for checkout process
+ */
+export async function getAvailableUnitsForCheckoutAction(
+  projectId: string,
+  excludeUnitIds: string[] = []
+): Promise<UnitActionResult> {
+  try {
+    const result = await getAvailableUnits(projectId);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    // Filter out units already in checkout
+    const filteredUnits = result.data.filter(unit => !excludeUnitIds.includes(unit.id));
+
+    // Transform Decimal fields to numbers for client serialization
+    const transformedUnits = filteredUnits.map(unit => {
+      // Cast to any to handle the dynamic include types
+      const unitWithProject = unit as any;
+      
+      return {
+        ...unit,
+        totalArea: unit.totalArea ? Number(unit.totalArea) : null,
+        builtArea: unit.builtArea ? Number(unit.builtArea) : null,
+        price: Number(unit.price),
+        // Transform project data if it exists (due to include)
+        ...(unitWithProject.project && {
+          project: {
+            ...unitWithProject.project,
+            basePrice: unitWithProject.project.basePrice ? Number(unitWithProject.project.basePrice) : null,
+            latitude: unitWithProject.project.latitude ? Number(unitWithProject.project.latitude) : null,
+            longitude: unitWithProject.project.longitude ? Number(unitWithProject.project.longitude) : null,
+          }
+        })
+      };
+    });
+
+    return { success: true, data: transformedUnits };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error getting available units for checkout:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Error obteniendo unidades disponibles para checkout',
+    };
+  }
+}
+
+/**
  * Get unit by ID
  * Public access for browsing
  */

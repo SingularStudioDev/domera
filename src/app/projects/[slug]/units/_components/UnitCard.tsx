@@ -148,7 +148,7 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
             href={`/projects/${projectSlug}/units/${unit.id}`}
             className="border-primaryColor text-primaryColor hover:bg-primaryColor flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition-colors hover:text-white"
           >
-            Comprar
+            Ver mas 
             <ArrowLeft className="h-4 w-4 rotate-180" />
           </Link>
         </div>

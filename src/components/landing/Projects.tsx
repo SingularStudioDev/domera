@@ -1,8 +1,10 @@
-import ProjectCard from '../custom-ui/ProjectCard';
-import MainButton from '../custom-ui/MainButton';
-import { getPublicProjects } from '@/lib/dal/projects';
-import { formatCurrency } from '@/utils/utils';
-import type { Project } from '@prisma/client';
+import { formatCurrency } from "@/utils/utils";
+import type { Project } from "@prisma/client";
+
+import { getPublicProjects } from "@/lib/dal/projects";
+
+import MainButton from "../custom-ui/MainButton";
+import ProjectCard from "../custom-ui/ProjectCard";
 
 interface ProjectsProps {
   limit?: number;
@@ -28,16 +30,17 @@ interface ProjectDisplayData {
 // TODO: Revisar esta funcion al detalle para que devuelva todo lo que se necesita
 const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   const price = project.basePrice
-    ? formatCurrency(parseFloat(project.basePrice.toString()), project.currency)
-    : 'Consultar precio';
+    ? formatCurrency(Number(project.basePrice))
+    : "Consultar precio";
 
-  const status = project.neighborhood || project.city;
+  const status =
+    project.neighborhood || project.city || "Ubicación desconocida";
   const date = project.estimatedCompletion
-    ? new Date(project.estimatedCompletion).toLocaleDateString('es-UY', {
-        month: 'short',
-        year: 'numeric',
+    ? new Date(project.estimatedCompletion).toLocaleDateString("es-UY", {
+        month: "short",
+        year: "numeric",
       })
-    : 'Fecha TBD';
+    : "Fecha TBD";
 
   // Use project slug for main image with fallback
   const image = `/images/${project.slug}-main.png`;
@@ -55,15 +58,15 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   };
 
   const features: ProjectFeature[] = [
-    { name: 'parking', hasFeature: projectWithFeatures.hasParking || false },
-    { name: 'studio', hasFeature: projectWithFeatures.hasStudio || false },
-    { name: '1_bedroom', hasFeature: projectWithFeatures.has1Bedroom || false },
-    { name: '2_bedroom', hasFeature: projectWithFeatures.has2Bedroom || false },
-    { name: '3_bedroom', hasFeature: projectWithFeatures.has3Bedroom || false },
-    { name: '4_bedroom', hasFeature: projectWithFeatures.has4Bedroom || false },
-    { name: '5_bedroom', hasFeature: projectWithFeatures.has5Bedroom || false },
+    { name: "parking", hasFeature: projectWithFeatures.hasParking || false },
+    { name: "studio", hasFeature: projectWithFeatures.hasStudio || false },
+    { name: "1_bedroom", hasFeature: projectWithFeatures.has1Bedroom || false },
+    { name: "2_bedroom", hasFeature: projectWithFeatures.has2Bedroom || false },
+    { name: "3_bedroom", hasFeature: projectWithFeatures.has3Bedroom || false },
+    { name: "4_bedroom", hasFeature: projectWithFeatures.has4Bedroom || false },
+    { name: "5_bedroom", hasFeature: projectWithFeatures.has5Bedroom || false },
     {
-      name: 'commercial',
+      name: "commercial",
       hasFeature: projectWithFeatures.hasCommercial || false,
     },
   ];
@@ -116,15 +119,15 @@ export default async function Projects({
           {projects.map((project, index) => {
             const projectData = formatProjectForDisplay(project);
 
-            console.log('projectData', projectData.features);
+            console.log("projectData", projectData.features);
 
             return (
               <div
                 key={project.id}
                 className={
                   index === projects.length - 1 && projects.length % 3 === 1
-                    ? 'col-span-full'
-                    : ''
+                    ? "col-span-full"
+                    : ""
                 }
               >
                 <ProjectCard

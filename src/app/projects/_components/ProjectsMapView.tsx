@@ -72,7 +72,7 @@ function MapLoading() {
  */
 const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   const price = project.basePrice
-    ? formatCurrency(parseFloat(project.basePrice.toString()), project.currency)
+    ? formatCurrency(parseFloat(project.basePrice.toString()))
     : "Consultar precio";
 
   const status = project.neighborhood || project.city;

@@ -24,7 +24,8 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const callbackUrl = searchParams.get('callbackUrl') || '/userDashboard';
+  const redirect = searchParams.get('redirect');
+  const callbackUrl = searchParams.get('callbackUrl') || redirect || '/userDashboard';
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -60,6 +61,12 @@ export default function LoginPage() {
         // Get updated session to determine redirect
         const session = await getSession();
         if (session?.user) {
+          // If there's a redirect parameter, use it
+          if (redirect) {
+            router.push(redirect);
+            return;
+          }
+          
           // Determine redirect based on user role and rememberMe preference
           const userRoles = session.user.roles || [];
           const hasAdminRole = userRoles.some(role => 

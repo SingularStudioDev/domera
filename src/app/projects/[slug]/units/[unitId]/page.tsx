@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
-import { formatCurrency, formatCurrencyUYU } from "@/utils/utils";
+import { formatCurrency } from "@/utils/utils";
 
 import { checkIsFavoriteAction } from "@/lib/actions/favourites";
 import { getUnitByIdAction } from "@/lib/actions/units";
@@ -40,6 +40,7 @@ interface UnitData {
   dimensions: string | null;
   floorPlanUrl: string | null;
   project: {
+    id?: string;
     name: string;
     slug: string;
     estimatedCompletion: Date | null;
@@ -129,11 +130,7 @@ const UnitDetailPage = () => {
   }
 
   // Format unit data (unit is guaranteed to exist here)
-  const formattedPrice = `${unit.currency} ${
-    unit.currency === "USD"
-      ? formatCurrency(unit.price)
-      : formatCurrencyUYU(unit.price)
-  }`;
+  const formattedPrice = `${unit.currency} ${formatCurrency(unit.price)}`;
 
   const area = unit.totalArea
     ? `${unit.totalArea}m²`
@@ -176,6 +173,9 @@ const UnitDetailPage = () => {
               completion={completion}
               formattedPrice={formattedPrice}
               isFavorite={isFavorite}
+              projectId={unit.project.id || unit.project.slug}
+              projectName={unit.project.name}
+              projectSlug={unit.project.slug}
             />
           </div>
 

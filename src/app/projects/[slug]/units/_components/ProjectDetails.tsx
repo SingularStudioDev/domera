@@ -2,95 +2,100 @@ interface ProjectDetailsProps {
   amenities: string | object | null;
 }
 
-export default function ProjectDetails({
-  amenities,
-}: ProjectDetailsProps) {
+export default function ProjectDetails({ amenities }: ProjectDetailsProps) {
   const parseAmenityData = (amenitiesData: string | object | null) => {
     // Si es null o undefined, retornar estructura vacía
     if (!amenitiesData) {
       return {
         detalles: [],
-        amenities: []
+        amenities: [],
       };
     }
-    
+
     // Si ya es un objeto, usarlo directamente
-    if (typeof amenitiesData === 'object' && !Array.isArray(amenitiesData)) {
+    if (typeof amenitiesData === "object" && !Array.isArray(amenitiesData)) {
       const data = amenitiesData as any;
       if (data.detalles || data.amenities) {
         return {
           detalles: data.detalles || [],
-          amenities: data.amenities || []
+          amenities: data.amenities || [],
         };
       }
     }
-    
+
     // Si es un array, tratarlo como amenities
     if (Array.isArray(amenitiesData)) {
       return {
         detalles: [],
-        amenities: amenitiesData
+        amenities: amenitiesData,
       };
     }
-    
+
     // Si no es string, convertirlo
-    const stringData = typeof amenitiesData === 'string' ? amenitiesData : JSON.stringify(amenitiesData);
+    const stringData =
+      typeof amenitiesData === "string"
+        ? amenitiesData
+        : JSON.stringify(amenitiesData);
     try {
       // Si es un JSON string válido, parsearlo
       const parsed = JSON.parse(stringData);
-      
+
       // Verificar si tiene la nueva estructura con detalles y amenities
-      if (parsed && typeof parsed === 'object' && (parsed.detalles || parsed.amenities)) {
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        (parsed.detalles || parsed.amenities)
+      ) {
         return {
           detalles: parsed.detalles || [],
-          amenities: parsed.amenities || []
+          amenities: parsed.amenities || [],
         };
       }
-      
+
       // Si es un array simple (formato anterior), tratarlo como amenities
       if (Array.isArray(parsed)) {
         return {
           detalles: [],
-          amenities: parsed
+          amenities: parsed,
         };
       }
-      
+
       // Si no es array ni objeto, retornar como amenity único
       return {
         detalles: [],
-        amenities: [parsed.toString()]
+        amenities: [parsed.toString()],
       };
     } catch {
       // Si no es JSON válido, tratarlo como texto plano
       if (
         !stringData ||
-        stringData.trim() === '' ||
-        stringData === 'Amenidades a confirmar'
+        stringData.trim() === "" ||
+        stringData === "Amenidades a confirmar"
       ) {
         return {
           detalles: [],
-          amenities: []
+          amenities: [],
         };
       }
-      
+
       // Si contiene saltos de línea, dividir por líneas y filtrar
-      if (stringData.includes('\n')) {
+      if (stringData.includes("\n")) {
         const items = stringData
-          .split('\n')
+          .split("\n")
           .map((line) => line.trim())
-          .filter((line) => line && !line.toLowerCase().includes('amenidades'))
-          .map((line) => line.replace(/^-\s*/, ''));
-        
+          .filter((line) => line && !line.toLowerCase().includes("amenidades"))
+          .map((line) => line.replace(/^-\s*/, ""));
+
         return {
           detalles: [],
-          amenities: items
+          amenities: items,
         };
       }
-      
+
       // Retornar como amenity único
       return {
         detalles: [],
-        amenities: [stringData]
+        amenities: [stringData],
       };
     }
   };

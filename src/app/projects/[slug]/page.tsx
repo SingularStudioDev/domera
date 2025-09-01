@@ -31,7 +31,7 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
 
   // Format project data
   const basePrice = project.basePrice
-    ? formatCurrency(Number(project.basePrice), project.currency)
+    ? formatCurrency(Number(project.basePrice))
     : 'Consultar';
   const estimatedDate = project.estimatedCompletion
     ? new Intl.DateTimeFormat('es-UY', {
