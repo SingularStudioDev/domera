@@ -1,21 +1,24 @@
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { getUnitByIdAction } from '@/lib/actions/units';
-import { formatCurrency, formatCurrencyUYU } from '@/utils/utils';
-import { useImageParser, useFeatureParser } from '@/hooks/useJsonArrayParser';
-import Header from '@/components/header/Header';
-import Footer from '@/components/Footer';
-import UnitHeader from './_components/UnitHeader';
-import UnitImageDisplay from './_components/UnitImageDisplay';
-import UnitInfo from './_components/UnitInfo';
-import UnitDescription from './_components/UnitDescription';
-import UnitFeatures from './_components/UnitFeatures';
-import UnitGallery from './_components/UnitGallery';
-import InvestmentSection from './_components/InvestmentSection';
-import ProcessSection from './_components/ProcessSection';
-import BottomCTA from './_components/BottomCTA';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+
+import { formatCurrency, formatCurrencyUYU } from "@/utils/utils";
+
+import { checkIsFavoriteAction } from "@/lib/actions/favourites";
+import { getUnitByIdAction } from "@/lib/actions/units";
+import { useFeatureParser, useImageParser } from "@/hooks/useJsonArrayParser";
+import Footer from "@/components/Footer";
+import Header from "@/components/header/Header";
+
+import BottomCTA from "./_components/BottomCTA";
+import InvestmentSection from "./_components/InvestmentSection";
+import ProcessSection from "./_components/ProcessSection";
+import UnitDescription from "./_components/UnitDescription";
+import UnitGallery from "./_components/UnitGallery";
+import UnitHeader from "./_components/UnitHeader";
+import UnitImageDisplay from "./_components/UnitImageDisplay";
+import UnitInfo from "./_components/UnitInfo";
 
 interface UnitData {
   id: string;
@@ -47,32 +50,48 @@ const UnitDetailPage = () => {
   const params = useParams();
   const projectSlug = params.slug as string;
   const unitId = params.unitId as string;
-  
+
   const [unit, setUnit] = useState<UnitData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
-    async function fetchUnit() {
+    async function fetchUnitAndFavoriteStatus() {
       try {
         setLoading(true);
-        const result = await getUnitByIdAction(unitId);
-        
-        if (result.success && result.data) {
-          setUnit(result.data as UnitData);
+
+        // Fetch unit data
+        const unitResult = await getUnitByIdAction(unitId);
+
+        if (unitResult.success && unitResult.data) {
+          setUnit(unitResult.data as UnitData);
           setError(null);
         } else {
-          setError(result.error || 'Error cargando unidad');
+          setError(unitResult.error || "Error cargando unidad");
+          return;
+        }
+
+        // Fetch favorite status (don't block if this fails - user might not be authenticated)
+        try {
+          const favoriteStatus = await checkIsFavoriteAction(unitId);
+          setIsFavorite(favoriteStatus);
+        } catch (favoriteError) {
+          // If favorites fail to load, continue without them (user might not be logged in)
+          console.log(
+            "Could not load favorite status (user might not be authenticated)",
+          );
+          setIsFavorite(false);
         }
       } catch (err) {
-        setError('Error inesperado cargando unidad');
-        console.error('Error fetching unit:', err);
+        setError("Error inesperado cargando unidad");
+        console.error("Error fetching unit:", err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchUnit();
+    fetchUnitAndFavoriteStatus();
   }, [unitId]);
 
   // Parse JSON fields using hooks - must be called before any early returns
@@ -101,7 +120,7 @@ const UnitDetailPage = () => {
         <Header />
         <main className="pt-20">
           <div className="container mx-auto flex items-center justify-center py-20">
-            <p className="text-red-600">{error || 'Unidad no encontrada'}</p>
+            <p className="text-red-600">{error || "Unidad no encontrada"}</p>
           </div>
         </main>
         <Footer />
@@ -111,39 +130,42 @@ const UnitDetailPage = () => {
 
   // Format unit data (unit is guaranteed to exist here)
   const formattedPrice = `${unit.currency} ${
-    unit.currency === 'USD' ? formatCurrency(unit.price) : formatCurrencyUYU(unit.price)
+    unit.currency === "USD"
+      ? formatCurrency(unit.price)
+      : formatCurrencyUYU(unit.price)
   }`;
-  
-  const area = unit.totalArea 
-    ? `${unit.totalArea}m²` 
-    : unit.builtArea 
-    ? `${unit.builtArea}m²` 
-    : unit.dimensions || 'N/A';
+
+  const area = unit.totalArea
+    ? `${unit.totalArea}m²`
+    : unit.builtArea
+      ? `${unit.builtArea}m²`
+      : unit.dimensions || "N/A";
 
   const completion = unit.project.estimatedCompletion
-    ? new Intl.DateTimeFormat('es-UY', {
-        month: 'long',
-        year: 'numeric',
+    ? new Intl.DateTimeFormat("es-UY", {
+        month: "long",
+        year: "numeric",
       }).format(unit.project.estimatedCompletion)
-    : 'A definir';
+    : "A definir";
 
-  const mainImage = firstImage || '/placeholder-unit.jpg';
+  const mainImage = firstImage || "/placeholder-unit.jpg";
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
-      <main className="pt-20">
+      <main className="pt-24">
         <div>
           <UnitHeader projectSlug={projectSlug} />
 
           {/* Main Content Grid */}
-          <div className="container mx-auto mb-16 grid w-full grid-cols-1 gap-8 lg:grid-cols-2">
-            <UnitImageDisplay 
-              mainImage={mainImage} 
-              unitNumber={unit.unitNumber} 
+          <div className="container mx-auto grid w-full grid-cols-1 gap-10 lg:grid-cols-2 lg:items-stretch">
+            <UnitImageDisplay
+              mainImage={mainImage}
+              unitNumber={unit.unitNumber}
             />
             <UnitInfo
+              unitId={unit.id}
               unitNumber={unit.unitNumber}
               floor={unit.floor}
               facing={unit.facing}
@@ -153,25 +175,22 @@ const UnitDetailPage = () => {
               area={area}
               completion={completion}
               formattedPrice={formattedPrice}
+              isFavorite={isFavorite}
             />
           </div>
 
           {unit.description && (
-            <UnitDescription description={unit.description} />
-          )}
-
-          {hasFeatures && (
-            <UnitFeatures features={features} />
+            <UnitDescription
+              description={unit.description}
+              features={features}
+            />
           )}
 
           {images.length > 1 && (
             <UnitGallery images={images} unitNumber={unit.unitNumber} />
           )}
 
-          <InvestmentSection 
-            unitType={unit.unitType} 
-            status={unit.status} 
-          />
+          <InvestmentSection unitType={unit.unitType} status={unit.status} />
 
           <ProcessSection />
 

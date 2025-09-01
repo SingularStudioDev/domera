@@ -232,10 +232,10 @@ export default function ProjectsFilter({
         <Button
           variant="ghost"
           onClick={() => onViewChange?.("list")}
-          className={`flex h-10 w-10 cursor-pointer items-center gap-2 rounded-full ${
+          className={`flex h-10 w-10 cursor-pointer items-center gap-2 rounded-full transition-all duration-300 ${
             currentView === "list"
               ? "bg-primaryColor hover:bg-primaryColor-hover text-white hover:text-white"
-              : ""
+              : "text-primaryColor hover:border-primaryColor-hover hover:text-primaryColor-hover border-primaryColor border hover:bg-white"
           }`}
         >
           <Grid3X3Icon className="h-5 w-5" />
@@ -243,10 +243,10 @@ export default function ProjectsFilter({
         <Button
           variant="ghost"
           onClick={() => onViewChange?.("map")}
-          className={`flex h-10 w-10 cursor-pointer items-center gap-2 rounded-full ${
+          className={`flex h-10 w-10 cursor-pointer items-center gap-2 rounded-full transition-all duration-300 ${
             currentView === "map"
               ? "bg-primaryColor hover:bg-primaryColor-hover text-white hover:text-white"
-              : ""
+              : "text-primaryColor hover:border-primaryColor-hover hover:text-primaryColor-hover border-primaryColor border hover:bg-white"
           }`}
         >
           <MapIcon className="h-5 w-5" />

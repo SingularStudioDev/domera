@@ -1,13 +1,23 @@
 interface UnitDescriptionProps {
   description: string;
+  features: string[];
 }
 
-const UnitDescription = ({ description }: UnitDescriptionProps) => {
+const UnitDescription = ({ description, features }: UnitDescriptionProps) => {
   return (
-    <div className="container mx-auto mb-16">
-      <h3 className="mb-6 text-3xl font-bold text-black">Descripción</h3>
-      <div className="whitespace-pre-line text-lg text-gray-700">
-        {description}
+    <div className="my-16 min-h-[40dvh] rounded-3xl bg-[#F5F5F5] py-10">
+      <div className="container mx-auto">
+        <h3 className="mb-6 text-3xl font-bold text-black">Detalles</h3>
+        <div className="text-lg whitespace-pre-line text-black">
+          {description}
+        </div>
+        <ul className="mt-3">
+          {features.map((feature, index) => (
+            <li key={index} className="text-lg text-black">
+              + {feature}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
