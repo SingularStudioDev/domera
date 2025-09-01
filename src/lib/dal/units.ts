@@ -362,7 +362,24 @@ export async function getUnitById(unitId: string): Promise<Result<Unit>> {
       throw new NotFoundError('Unidad', unitId);
     }
 
-    return success(unit);
+    // Serialize Decimal fields to numbers for client compatibility
+    const serializedUnit = {
+      ...unit,
+      totalArea: unit.totalArea ? unit.totalArea.toNumber() : null,
+      builtArea: unit.builtArea ? unit.builtArea.toNumber() : null,
+      price: unit.price.toNumber(),
+      // Serialize project decimals if project is included
+      ...(unit.project && {
+        project: {
+          ...unit.project,
+          latitude: unit.project.latitude ? unit.project.latitude.toNumber() : null,
+          longitude: unit.project.longitude ? unit.project.longitude.toNumber() : null,
+          basePrice: unit.project.basePrice ? unit.project.basePrice.toNumber() : null,
+        }
+      })
+    } as any; // Cast to any since we're transforming the type
+
+    return success(serializedUnit);
   } catch (error) {
     return failure(error instanceof Error ? error.message : 'Error desconocido');
   }

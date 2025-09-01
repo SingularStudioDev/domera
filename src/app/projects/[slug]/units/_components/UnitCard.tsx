@@ -1,17 +1,19 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import {
   ArrowLeft,
   BedIcon,
-  ShowerHeadIcon,
-  RulerIcon,
   CompassIcon,
   Heart,
-} from 'lucide-react';
-import { toggleFavoriteAction } from '@/lib/actions/favourites';
+  RulerIcon,
+  ShowerHeadIcon,
+} from "lucide-react";
+
+import { toggleFavoriteAction } from "@/lib/actions/favourites";
 
 interface Unit {
   id: string;
@@ -37,7 +39,7 @@ interface UnitCardProps {
 
 export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
   const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(
-    unit.isFavorite || false
+    unit.isFavorite || false,
   );
   const router = useRouter();
 
@@ -63,10 +65,10 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
 
         // Si es error de autenticación, redirigir al login
         if (
-          result.error?.includes('autenticado') ||
-          result.error?.includes('sesión')
+          result.error?.includes("autenticado") ||
+          result.error?.includes("sesión")
         ) {
-          router.push('/login');
+          router.push("/login");
           return;
         }
       }
@@ -74,7 +76,7 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
       // Error de red - revertir
       console.log(`[FAVORITE] Network error: reverting to ${previousState}`);
       setIsCurrentlyFavorite(previousState);
-      console.error('Error toggling favorite:', error);
+      console.error("Error toggling favorite:", error);
     }
   };
 

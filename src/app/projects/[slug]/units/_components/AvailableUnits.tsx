@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getAvailableUnitsAction } from '@/lib/actions/units';
+import { getMultipleFavoriteStatusAction } from '@/lib/actions/favourites';
 import UnitFilter from './UnitFilter';
 import UnitCard from './UnitCard';
 import { formatCurrency, formatCurrencyUYU } from '@/utils/utils';
@@ -34,6 +35,7 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
   const projectSlug = params.slug as string;
 
   const [units, setUnits] = useState<Unit[]>([]);
+  const [favoriteStatuses, setFavoriteStatuses] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,26 +46,43 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
   });
 
   useEffect(() => {
-    async function fetchUnits() {
+    async function fetchUnitsAndFavorites() {
       try {
         setLoading(true);
-        const result = await getAvailableUnitsAction(projectId);
-
-        if (result.success && result.data) {
-          setUnits(result.data as Unit[]);
-          setError(null);
-        } else {
-          setError(result.error || 'Error cargando unidades');
+        
+        // Fetch units
+        const unitsResult = await getAvailableUnitsAction(projectId);
+        if (!unitsResult.success || !unitsResult.data) {
+          setError(unitsResult.error || 'Error cargando unidades');
+          return;
         }
+
+        const fetchedUnits = unitsResult.data as Unit[];
+        setUnits(fetchedUnits);
+
+        // Fetch favorite statuses for all units
+        const unitIds = fetchedUnits.map(unit => unit.id);
+        if (unitIds.length > 0) {
+          try {
+            const favoritesResult = await getMultipleFavoriteStatusAction(unitIds);
+            setFavoriteStatuses(favoritesResult);
+          } catch (favError) {
+            // If favorites fail to load, continue without them (user might not be logged in)
+            console.log('Could not load favorite statuses (user might not be authenticated)');
+            setFavoriteStatuses({});
+          }
+        }
+
+        setError(null);
       } catch (err) {
         setError('Error inesperado cargando unidades');
-        console.error('Error fetching units:', err);
+        console.error('Error fetching units and favorites:', err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchUnits();
+    fetchUnitsAndFavorites();
   }, [projectId]);
 
   if (loading) {
@@ -136,6 +155,7 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
     unitNumber: unit.unitNumber,
     available: unit.status === 'available',
     statusIcon: unit.status === 'available',
+    isFavorite: favoriteStatuses[unit.id] || false,
   }));
 
   return (
