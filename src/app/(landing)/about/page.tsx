@@ -98,8 +98,8 @@ export default function AboutPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="container mx-auto my-10 rounded-2xl bg-[#0040FF] p-6 text-white md:my-20">
-          <div className="container mx-auto text-center">
+        <section className="mx-6 md:px-0">
+          <div className="container my-10 rounded-2xl bg-[#0040FF] p-6 text-start text-white md:mx-auto md:my-20 md:text-center">
             <p className="mx-auto mb-2 max-w-4xl text-xl leading-relaxed md:text-2xl">
               Te ofrecemos la tranquilidad de saber que tu inversion este
               gestionada con
