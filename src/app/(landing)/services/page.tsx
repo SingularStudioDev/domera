@@ -62,9 +62,9 @@ export default function ServicesPage() {
     <>
       <Header />
 
-      <main className="mt-28 min-h-screen">
+      <main className="mt-24 min-h-screen md:mt-28">
         {/* Header Section */}
-        <section className="container mx-auto flex w-full flex-col gap-6 rounded-3xl bg-[#F5F5F5] p-10 md:gap-12">
+        <section className="container mx-auto flex w-full flex-col gap-6 rounded-3xl bg-[#F5F5F5] p-6 md:gap-12 md:p-10">
           <div className="flex w-full flex-col gap-6 md:flex-row md:items-center md:justify-between">
             {/* Title */}
 
@@ -94,17 +94,17 @@ export default function ServicesPage() {
           <div className="container mx-auto flex flex-col gap-10">
             <h2 className="dashboard-title">¿Por qué Domera?</h2>
 
-            <div className="flex flex-col gap-10">
+            <div className="grid flex-col gap-10">
               {/* Investors Section */}
               <div>
                 <h3 className="mb-8 text-2xl font-semibold text-black">
                   Inversores
                 </h3>
-                <div className="grid grid-cols-4">
+                <div className="gird-cols-1 grid gap-5 md:gap-0 lg:grid-cols-4">
                   {investorBenefits.map((benefit) => (
                     <div key={benefit.number} className="flex flex-col gap-4">
                       <div className="flex-shrink-0">
-                        <span className="text-3xl text-[#0040FF] md:text-6xl">
+                        <span className="text-5xl text-[#0040FF] md:text-6xl">
                           {benefit.number}
                         </span>
                       </div>
@@ -126,11 +126,11 @@ export default function ServicesPage() {
                 <h3 className="mb-8 text-2xl font-semibold text-black">
                   Desarrolladoras
                 </h3>
-                <div className="grid grid-cols-4">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-4 md:gap-0">
                   {developerBenefits.map((benefit) => (
                     <div key={benefit.number} className="flex flex-col gap-4">
                       <div className="flex-shrink-0">
-                        <span className="text-3xl text-[#0040FF] md:text-6xl">
+                        <span className="text-5xl text-[#0040FF] md:text-6xl">
                           {benefit.number}
                         </span>
                       </div>

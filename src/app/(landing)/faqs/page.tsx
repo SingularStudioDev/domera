@@ -56,9 +56,9 @@ export default function FaqsPage() {
     <>
       <Header />
 
-      <main className="mt-36 min-h-screen">
+      <main className="mt-24 min-h-screen md:mt-36">
         {/* Hero Section */}
-        <section className="gap- container mx-auto flex w-full flex-col">
+        <section className="container mx-auto flex w-full flex-col px-6 md:px-0">
           <div className="flex w-full flex-col gap-4 text-start">
             <h1 className="landing-title">Preguntas frecuentes</h1>
 
@@ -69,18 +69,18 @@ export default function FaqsPage() {
         </section>
 
         {/* FAQ Section */}
-        <section className="my-18 w-full rounded-t-3xl">
+        <section className="w-full rounded-t-3xl px-6 py-6 md:my-18">
           <div className="container mx-auto">
             <div className="space-y-0">
               {faqItems.map((item, index) => (
                 <div key={index} className="border-b border-gray-300">
                   <div
                     onClick={() => toggleItem(index)}
-                    className="hover:text-primaryColor flex cursor-pointer items-center justify-between py-6 text-black transition duration-300"
+                    className="hover:text-primaryColor flex cursor-pointer items-center justify-between gap-10 py-6 text-black transition duration-300"
                   >
                     <span className="text-lg font-bold">{item.question}</span>
                     <ChevronDownIcon
-                      className={`h-5 w-5 transition-transform duration-300 ${
+                      className={`h-h min-h-5 w-5 min-w-5 transition-transform duration-300 ${
                         openItems.includes(index) ? "rotate-180" : ""
                       }`}
                     />
@@ -100,9 +100,7 @@ export default function FaqsPage() {
         {/* Contact Section */}
         <section className="bg-gray-100 p-6 py-12">
           <div className="container mx-auto text-start">
-            <h3 className="dashboard-title mb-4">
-              ¿Aun tienes dudas?
-            </h3>
+            <h3 className="dashboard-title mb-4">¿Aun tienes dudas?</h3>
             <p className="text-lg">
               Envianos un mail a{" "}
               <a

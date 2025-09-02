@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { Filter, Grid3X3Icon, MapIcon, X } from "lucide-react";
+import { Grid3X3Icon, MapIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
@@ -111,12 +111,12 @@ export default function ProjectsFilter({
     currentMaxPrice;
 
   return (
-    <div className="my-10 flex items-center justify-end gap-4">
+    <div className="flex items-center justify-between gap-4 md:justify-end">
       <div className="flex items-center gap-4">
         {/* Filter Button */}
         <Sheet>
           <SheetTrigger asChild>
-            <MainButton>Filtros</MainButton>
+            <MainButton className="px-4 py-1">Filtros</MainButton>
             {/* <Button
               variant="outline"
               className="flex items-center gap-2 relative"
@@ -165,11 +165,11 @@ export default function ProjectsFilter({
       </div>
 
       {/* View Toggle Buttons */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           onClick={() => onViewChange?.("list")}
-          className={`flex h-13 w-13 cursor-pointer items-center gap-2 rounded-full transition-all duration-300 ${
+          className={`flex h-9 w-9 cursor-pointer items-center gap-2 rounded-full transition-all duration-300 ${
             currentView === "list"
               ? "bg-primaryColor hover:bg-primaryColor-hover text-white hover:text-white"
               : "text-primaryColor hover:border-primaryColor-hover hover:text-primaryColor-hover border-primaryColor border hover:bg-white"
@@ -180,7 +180,7 @@ export default function ProjectsFilter({
         <Button
           variant="ghost"
           onClick={() => onViewChange?.("map")}
-          className={`flex h-13 w-13 cursor-pointer items-center gap-2 rounded-full transition-all duration-300 ${
+          className={`flex h-9 w-9 cursor-pointer items-center gap-2 rounded-full transition-all duration-300 ${
             currentView === "map"
               ? "bg-primaryColor hover:bg-primaryColor-hover text-white hover:text-white"
               : "text-primaryColor hover:border-primaryColor-hover hover:text-primaryColor-hover border-primaryColor border hover:bg-white"

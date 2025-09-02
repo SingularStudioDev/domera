@@ -10,7 +10,7 @@ const Hero = () => {
 
   return (
     <>
-      <section className="relative mx-4 mt-10 h-[70vh] overflow-hidden md:mx-0 md:mt-30">
+      <section className="relative mx-4 mt-24 h-[70vh] overflow-hidden md:mx-0 md:mt-30">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 container mx-auto">
           <div className="relative h-full overflow-hidden">
@@ -31,7 +31,7 @@ const Hero = () => {
               <br />
               <span>en pozo</span>
             </h1>
-            <p className="text-3xl font-normal md:font-[200] lg:text-4xl">
+            <p className="text-3xl font-[300] md:font-[200] lg:text-4xl">
               Sin comisiones inmobiliarias
             </p>
           </div>

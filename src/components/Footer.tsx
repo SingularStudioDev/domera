@@ -14,16 +14,16 @@ export default function Footer() {
 
       <div className="flex h-full flex-col justify-between">
         {/* Contact Info */}
-        <div className="container mx-auto flex h-full flex-col justify-between gap-6 px-4 py-12 md:flex-row md:gap-1 md:px-0 md:pt-28 md:pb-22">
+        <div className="container mx-auto flex h-full flex-col justify-between gap-6 px-6 py-12 md:flex-row md:gap-1 md:px-0 md:pt-28 md:pb-22">
           <div className="flex flex-col items-start">
             <p className="mb-1 text-xl font-semibold">Contacto</p>
             <a
               href="mailto:inversiones@domera.com"
               className="font-light text-white"
             >
-              Mail: contacto@domera.com.uy
+              Mail: contacto@domera.uy
             </a>
-            <a
+            {/* <a
               href="mailto:inversiones@domera.com"
               className="font-light text-white"
             >
@@ -34,7 +34,7 @@ export default function Footer() {
               className="font-light text-white"
             >
               Teléfono: 094123123
-            </a>
+            </a> */}
 
             <nav
               className="mt-4 hidden items-center gap-3 text-3xl md:flex"

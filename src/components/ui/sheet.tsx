@@ -48,9 +48,13 @@ function SheetContent({
   className,
   children,
   side = "right",
+  closePosition = "left",
+  closeColor = "text-foreground",
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
+  closePosition?: "left" | "right"
+  closeColor?: string
 }) {
   return (
     <SheetPortal>
@@ -72,8 +76,11 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-black absolute top-4 left-4 rounded-xs cursor-pointer transition-opacity  focus:outline-hidden disabled:pointer-events-none">
-          <XIcon className="size-6" />
+        <SheetPrimitive.Close className={cn(
+          "ring-offset-background focus:ring-ring data-[state=open]:bg-black absolute top-5.5 rounded-xs cursor-pointer transition-opacity focus:outline-hidden disabled:pointer-events-none",
+          closePosition === "left" ? "left-4" : "right-4"
+        )}>
+          <XIcon className={cn("size-6", closeColor)} />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>

@@ -10,14 +10,14 @@ export default function AboutPage() {
     <>
       <Header />
 
-      <main className="mt-28 min-h-screen">
+      <main className="mt-24 min-h-screen md:mt-28">
         {/* Hero Section */}
-        <section className="container mx-auto flex w-full flex-col gap-6 md:gap-12">
+        <section className="container mx-auto flex w-full flex-col gap-6 p-6 md:gap-12 md:p-0">
           <div className="flex w-full flex-col gap-6 md:h-[70dvh] md:flex-row md:items-center md:justify-between">
             <div className="flex-1">
               <h1 className="landing-title">Nosotros</h1>
 
-              <p className="mb-16 max-w-[600px] text-lg leading-relaxed text-black md:text-xl">
+              <p className="mb-10 max-w-[600px] text-lg leading-relaxed text-black md:mb-16 md:text-xl">
                 Somos el puente que conecta a inversores como tu con las
                 oportunidades inmobiliarias mas solidas y rentables
               </p>
@@ -47,7 +47,7 @@ export default function AboutPage() {
         </section>
 
         {/* Purpose Section */}
-        <section className="bg-[#F5F5F5] px-4 py-16 md:my-20">
+        <section className="bg-[#F5F5F5] px-4 py-12 md:my-20">
           <div className="container mx-auto">
             <div className="mb-12 text-start">
               <h2 className="dashboard-title mb-4">Nuestro proposito</h2>
@@ -98,7 +98,7 @@ export default function AboutPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="container mx-auto rounded-2xl bg-[#0040FF] p-6 text-white md:my-20">
+        <section className="container mx-auto my-10 rounded-2xl bg-[#0040FF] p-6 text-white md:my-20">
           <div className="container mx-auto text-center">
             <p className="mx-auto mb-2 max-w-4xl text-xl leading-relaxed md:text-2xl">
               Te ofrecemos la tranquilidad de saber que tu inversion este

@@ -51,11 +51,11 @@ export default function ProjectsLayoutClient({
     <>
       <Header />
 
-      <main className="mt-24 bg-white">
-        <div className="container mx-auto px-4 md:px-0">
+      <main className="mt-24 bg-white md:mt-30">
+        <div className="container mx-auto mt-7 px-4 md:px-0">
           {/* Page Header */}
-          <div className="flex items-center justify-between">
-            <h1 className="dashboard-title mb-4">Proyectos</h1>
+          <div className="itmes-start mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+            <h1 className="dashboard-title">Proyectos</h1>
 
             {/* Persistent Filters */}
             <ProjectsFilter
