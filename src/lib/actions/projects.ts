@@ -17,6 +17,7 @@ import {
   updateProject,
   getProjectStats
 } from '@/lib/dal/projects';
+import { getDbClient } from '@/lib/dal/base';
 import type { ProjectStatus } from '@prisma/client';
 import { headers } from 'next/headers';
 import { extractRealIP } from '../utils/security';

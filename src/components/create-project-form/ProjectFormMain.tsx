@@ -515,6 +515,14 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                     maxLength={255}
                     className="focus:ring-primaryColor flex-1 rounded-lg border border-gray-300 p-3 outline-none focus:border-transparent focus:ring-2 disabled:opacity-50"
                   />
+                  <button
+                    type="button"
+                    onClick={handleCheckSlugAvailability}
+                    disabled={isSubmitting || slugCheckResult.checking || !watchedValues.slug?.trim()}
+                    className="rounded-lg bg-blue-500 px-3 py-2 text-sm text-white hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    {slugCheckResult.checking ? 'Verificando...' : 'Verificar'}
+                  </button>
                   {watchedValues.name && (
                     <button
                       type="button"
@@ -522,6 +530,8 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                         const generatedSlug = generateSlug(watchedValues.name);
                         setValue('slug', generatedSlug);
                         setSlugManuallyEdited(true);
+                        // Clear check result when regenerating
+                        setSlugCheckResult({});
                       }}
                       disabled={isSubmitting}
                       className="rounded-lg bg-gray-500 px-3 py-2 text-sm text-white hover:bg-gray-600 disabled:opacity-50"
@@ -530,6 +540,19 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                     </button>
                   )}
                 </div>
+                {/* Result of slug availability check */}
+                {(slugCheckResult.available !== undefined || slugCheckResult.error) && (
+                  <div className={`mt-2 text-sm ${
+                    slugCheckResult.error 
+                      ? 'text-red-600' 
+                      : slugCheckResult.available 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                  }`}>
+                    {slugCheckResult.error || 
+                     (slugCheckResult.available ? '✓ Slug disponible' : '✗ Slug ya está en uso')}
+                  </div>
+                )}
                 {errors.slug && (
                   <p className="mt-1 text-sm text-red-600">
                     {errors.slug.message}
