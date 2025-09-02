@@ -7,7 +7,7 @@ import { formatCurrency} from "@/utils/utils";
 import { ChevronDownIcon } from "lucide-react";
 
 import { getAvailableUnitsForCheckoutAction } from "@/lib/actions/units";
-import UnitCard from "@/app/projects/[slug]/units/_components/UnitCard";
+import UnitCard from "@/app/(landing)/projects/[slug]/units/_components/UnitCard";
 
 interface DatabaseUnit {
   id: string;

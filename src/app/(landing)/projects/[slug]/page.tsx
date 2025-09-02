@@ -1,16 +1,19 @@
-import { notFound } from 'next/navigation';
-import Header from '@/components/header/Header';
-import Footer from '@/components/Footer';
-import ProjectHero from './units/_components/ProjectHero';
-import ProjectInfo from './units/_components/ProjectInfo';
-import ProjectDescription from './units/_components/ProjectDescription';
-import ProjectDetails from './units/_components/ProjectDetails';
-import ProjectLocation from './units/_components/ProjectLocation';
-import ProjectProgress from './units/_components/ProjectProgress';
-import AvailableUnits from './units/_components/AvailableUnits';
-import ProjectImageCarousel from '@/components/custom-ui/ProjectImageCarousel';
-import { getProjectBySlug } from '@/lib/dal/projects';
-import { formatCurrency } from '@/utils/utils';
+import { notFound } from "next/navigation";
+
+import { formatCurrency } from "@/utils/utils";
+
+import { getProjectBySlug } from "@/lib/dal/projects";
+import ProjectImageCarousel from "@/components/custom-ui/ProjectImageCarousel";
+import Footer from "@/components/Footer";
+import Header from "@/components/header/Header";
+
+import AvailableUnits from "./units/_components/AvailableUnits";
+import ProjectDescription from "./units/_components/ProjectDescription";
+import ProjectDetails from "./units/_components/ProjectDetails";
+import ProjectHero from "./units/_components/ProjectHero";
+import ProjectInfo from "./units/_components/ProjectInfo";
+import ProjectLocation from "./units/_components/ProjectLocation";
+import ProjectProgress from "./units/_components/ProjectProgress";
 
 interface ProjectPageProps {
   params: {
@@ -19,7 +22,8 @@ interface ProjectPageProps {
 }
 
 const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
-  const projectSlug = params.slug;
+  const { slug } = await params;
+  const projectSlug = slug;
 
   // Fetch project data by slug
   const projectResult = await getProjectBySlug(projectSlug);
@@ -32,21 +36,21 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
   // Format project data
   const basePrice = project.basePrice
     ? formatCurrency(Number(project.basePrice))
-    : 'Consultar';
+    : "Consultar";
   const estimatedDate = project.estimatedCompletion
-    ? new Intl.DateTimeFormat('es-UY', {
-        month: 'short',
-        year: 'numeric',
+    ? new Intl.DateTimeFormat("es-UY", {
+        month: "short",
+        year: "numeric",
       }).format(project.estimatedCompletion)
-    : 'A definir';
+    : "A definir";
 
   // Pass amenities data directly without converting to string
-  const amenitiesData = project.amenities || 'Amenidades a confirmar';
+  const amenitiesData = project.amenities || "Amenidades a confirmar";
   const planFiles: string[] = project.masterPlanFiles;
   // Parse and filter images following project patterns
   const allImages = Array.isArray(project.images)
     ? (project.images as string[])
-    : typeof project.images === 'string'
+    : typeof project.images === "string"
       ? (() => {
           try {
             const parsed = JSON.parse(project.images as string);
@@ -57,24 +61,35 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
         })()
       : [];
 
-  // Filter images that match the pattern ${slug}-${number}
-  const carouselImages = allImages.filter((imagePath) => {
-    const imageName = imagePath.split('/').pop()?.split('.')[0];
+  // Use first image for hero, rest for carousel
+  const heroImage =
+    allImages.length > 0 ? allImages[0] : `/images/${projectSlug}-hero.png`;
+  const carouselImages = allImages.length > 0 ? allImages : [];
+
+  // Filter images that match the pattern ${slug}-progress-${number}
+  const progressImages = allImages.filter((imagePath) => {
+    const imageName = imagePath.split("/").pop()?.split(".")[0];
     if (!imageName) return false;
     const regex = new RegExp(
-      `^${projectSlug.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}-\\d+$`
+      `^${projectSlug.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")}-progress-\\d+$`,
     );
     return regex.test(imageName);
   });
 
-  // Filter images that match the pattern ${slug}-progress-${number}
-  const progressImages = allImages.filter((imagePath) => {
-    const imageName = imagePath.split('/').pop()?.split('.')[0];
-    if (!imageName) return false;
-    const regex = new RegExp(
-      `^${projectSlug.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}-progress-\\d+$`
-    );
-    return regex.test(imageName);
+  console.log("Project images debug:", {
+    projectSlug,
+    allImages,
+    heroImage,
+    carouselImages,
+    progressImages,
+  });
+
+  console.log("Project location debug:", {
+    projectSlug,
+    latitude: project.latitude,
+    longitude: project.longitude,
+    latitudeNumber: project.latitude ? Number(project.latitude) : null,
+    longitudeNumber: project.longitude ? Number(project.longitude) : null,
   });
 
   return (
@@ -88,6 +103,7 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
           location={`${project.neighborhood || project.city}`}
           date={estimatedDate}
           slug={projectSlug}
+          heroImage={heroImage}
         />
         <div>
           <ProjectInfo />
@@ -95,8 +111,9 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
           <div className="container mx-auto flex flex-col gap-10 px-4 md:flex-row md:px-0">
             <div className="flex flex-col gap-5">
               <ProjectDescription
-                description={project.description || 'Descripción próximamente'}
-                adress={project.address || 'Direccion próximamente'}
+                description={project.description || "Descripción próximamente"}
+                adress={project.address || "Direccion próximamente"}
+                organization={project.organization}
               />
 
               <ProjectDetails amenities={amenitiesData} />

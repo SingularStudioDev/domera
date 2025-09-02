@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getOrganizationsAction } from '@/lib/actions/organizations';
+import { checkSlugAvailabilityAction } from '@/lib/actions/projects';
 import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
 import { ProjectHeroForm } from '@/components/create-project-form/ProjectHeroForm';
@@ -16,6 +17,7 @@ import { ProgressFormComponent } from '@/components/create-project-form/Progress
 import { MapSelector } from '@/components/create-project-form/MapSelector';
 import { ProjectFormData } from '@/types/project-form';
 import { projectFormSchema } from '@/lib/validations/project-form';
+import { generateSlug } from '@/lib/utils/slug';
 
 interface ProjectFormMainProps {
   initialData?: Partial<ProjectFormData>;
@@ -45,6 +47,16 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrganizations, setLoadingOrganizations] = useState(true);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [slugCheckResult, setSlugCheckResult] = useState<{ available?: boolean; error?: string; checking?: boolean }>({});
+  
+  // Generate temporary project ID for new projects
+  const tempProjectId = useMemo(() => {
+    if (!isEditing) {
+      return crypto.randomUUID();
+    }
+    return undefined;
+  }, [isEditing]);
 
   const defaultValues: ProjectFormData = {
     name: '',
@@ -94,7 +106,8 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
           });
           if (result.success && result.data) {
             const data = result.data as any;
-            setOrganizations(data.data || []);
+            const orgs = data.data || [];
+            setOrganizations(orgs);
           }
         } catch (error) {
           console.error('Error loading organizations:', error);
@@ -108,21 +121,129 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
     }
   }, [organizationId]);
 
+  // Auto-generate slug from project name
+  useEffect(() => {
+    if (!slugManuallyEdited && watchedValues.name && !isEditing) {
+      const generatedSlug = generateSlug(watchedValues.name);
+      if (generatedSlug !== watchedValues.slug) {
+        setValue('slug', generatedSlug);
+      }
+    }
+  }, [watchedValues.name, slugManuallyEdited, isEditing, setValue, watchedValues.slug]);
+
+  // Function to check slug availability
+  const handleCheckSlugAvailability = async () => {
+    if (!watchedValues.slug?.trim()) {
+      setSlugCheckResult({ error: 'Ingresa un slug para verificar' });
+      return;
+    }
+
+    setSlugCheckResult({ checking: true });
+    
+    try {
+      const result = await checkSlugAvailabilityAction(
+        watchedValues.slug,
+        organizationId || watchedValues.organizationId
+      );
+      
+      if (result.success) {
+        setSlugCheckResult({ 
+          available: result.available,
+          error: result.error
+        });
+      } else {
+        setSlugCheckResult({ error: result.error || 'Error al verificar slug' });
+      }
+    } catch (error) {
+      setSlugCheckResult({ error: 'Error de conexión al verificar slug' });
+    }
+  };
+
   const handleFormSubmit = async (data: ProjectFormData) => {
     setIsSubmitting(true);
     try {
-      await onSubmit(data);
+      // Validate data before sending
+      const validation = validateFormData(data);
+      if (!validation.isValid) {
+        alert(`Error en el formulario: ${validation.errors.join('\n')}`);
+        return;
+      }
+
+      await onSubmit(validation.cleanedData);
     } catch (error) {
       // Don't log Next.js redirect "errors" - they are expected behavior
       if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
         // Let the redirect happen, don't show as error
         return;
       }
-      console.error('Error submitting form:', error);
-      // Here you could show a toast notification or error message to user
+      // Show user-friendly error message
+      alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const validateFormData = (data: ProjectFormData) => {
+    const errors: string[] = [];
+    
+    // Check required fields
+    if (!data.name?.trim()) errors.push('Nombre del proyecto es requerido');
+    if (!data.slug?.trim()) errors.push('Slug es requerido');
+    if (!data.address?.trim()) errors.push('Dirección es requerida');
+    if (!data.city?.trim()) errors.push('Ciudad es requerida');
+    if (!data.organizationId?.trim()) errors.push('Organización es requerida');
+
+    // Validate field lengths
+    if (data.name && data.name.length > 255) errors.push('Nombre no puede exceder 255 caracteres');
+    if (data.slug && data.slug.length > 255) errors.push('Slug no puede exceder 255 caracteres');
+    if (data.description && data.description.length > 5000) errors.push('Descripción no puede exceder 5000 caracteres');
+    if (data.shortDescription && data.shortDescription.length > 500) errors.push('Descripción corta no puede exceder 500 caracteres');
+    if (data.address && data.address.length > 500) errors.push('Dirección no puede exceder 500 caracteres');
+    if (data.neighborhood && data.neighborhood.length > 100) errors.push('Barrio no puede exceder 100 caracteres');
+    if (data.city && data.city.length > 100) errors.push('Ciudad no puede exceder 100 caracteres');
+
+    // Check for blob URLs
+    const hasInvalidImages = data.images?.some(img => img.startsWith('blob:'));
+    if (hasInvalidImages) {
+      errors.push('Las imágenes deben ser subidas antes de crear el proyecto');
+    }
+
+    // Validate amenities format
+    const validAmenities = data.amenities?.every(amenity => 
+      typeof amenity === 'object' && 
+      amenity.icon && amenity.text &&
+      amenity.icon.length <= 100 && 
+      amenity.text.length <= 255
+    );
+    
+    if (data.amenities?.length > 0 && !validAmenities) {
+      errors.push('Las amenidades tienen un formato incorrecto o exceden los límites');
+    }
+
+    // Clean and format data
+    const cleanedData: ProjectFormData = {
+      ...data,
+      name: data.name?.trim() || '',
+      slug: data.slug?.trim() || '',
+      description: data.description?.substring(0, 5000)?.trim() || '',
+      shortDescription: data.shortDescription?.substring(0, 500)?.trim() || '',
+      address: data.address?.substring(0, 500)?.trim() || '',
+      neighborhood: data.neighborhood?.substring(0, 100)?.trim() || '',
+      city: data.city?.trim() || '',
+      latitude: data.latitude,
+      longitude: data.longitude,
+      images: data.images?.filter(img => !img.startsWith('blob:')) || [],
+      amenities: data.amenities?.map(amenity => ({
+        icon: typeof amenity === 'object' ? amenity.icon?.substring(0, 100) || '' : '',
+        text: typeof amenity === 'object' ? amenity.text?.substring(0, 255) || '' : amenity?.substring(0, 255) || ''
+      })) || []
+    };
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      cleanedData
+    };
   };
 
   // Formatear datos hero
@@ -181,6 +302,7 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
           currency={watchedValues.currency}
           disabled={isSubmitting}
           error={errors.name?.message || errors.basePrice?.message}
+          projectId={tempProjectId}
         />
 
         {/* PROJECT INFO - Botón de volver para dashboard */}
@@ -264,6 +386,7 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
               disabled={isSubmitting}
               error={errors.images?.message}
               className="py-5 md:py-10"
+              projectId={tempProjectId}
             />
 
             {/* LOCATION FORM - Mapa para dashboard */}
@@ -308,6 +431,7 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
               progressImages={[]}
               onProgressImagesChange={() => {}}
               disabled={isSubmitting}
+              projectId={tempProjectId}
             />
           </div>
         </div>
@@ -375,19 +499,68 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Slug del proyecto
                 </label>
-                <input
-                  type="text"
-                  value={watchedValues.slug}
-                  onChange={(e) => setValue('slug', e.target.value)}
-                  placeholder="slug-del-proyecto"
-                  disabled={isSubmitting}
-                  className="focus:ring-primaryColor w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-transparent focus:ring-2 disabled:opacity-50"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={watchedValues.slug}
+                    onChange={(e) => {
+                      const newValue = e.target.value.substring(0, 255);
+                      setValue('slug', newValue);
+                      setSlugManuallyEdited(true);
+                      // Clear previous check result when slug changes
+                      setSlugCheckResult({});
+                    }}
+                    placeholder="slug-del-proyecto"
+                    disabled={isSubmitting}
+                    maxLength={255}
+                    className="focus:ring-primaryColor flex-1 rounded-lg border border-gray-300 p-3 outline-none focus:border-transparent focus:ring-2 disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCheckSlugAvailability}
+                    disabled={isSubmitting || slugCheckResult.checking || !watchedValues.slug?.trim()}
+                    className="rounded-lg bg-blue-500 px-3 py-2 text-sm text-white hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    {slugCheckResult.checking ? 'Verificando...' : 'Verificar'}
+                  </button>
+                  {watchedValues.name && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const generatedSlug = generateSlug(watchedValues.name);
+                        setValue('slug', generatedSlug);
+                        setSlugManuallyEdited(true);
+                        // Clear check result when regenerating
+                        setSlugCheckResult({});
+                      }}
+                      disabled={isSubmitting}
+                      className="rounded-lg bg-gray-500 px-3 py-2 text-sm text-white hover:bg-gray-600 disabled:opacity-50"
+                    >
+                      Regenerar
+                    </button>
+                  )}
+                </div>
+                {/* Result of slug availability check */}
+                {(slugCheckResult.available !== undefined || slugCheckResult.error) && (
+                  <div className={`mt-2 text-sm ${
+                    slugCheckResult.error 
+                      ? 'text-red-600' 
+                      : slugCheckResult.available 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                  }`}>
+                    {slugCheckResult.error || 
+                     (slugCheckResult.available ? '✓ Slug disponible' : '✗ Slug ya está en uso')}
+                  </div>
+                )}
                 {errors.slug && (
                   <p className="mt-1 text-sm text-red-600">
                     {errors.slug.message}
                   </p>
                 )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Se genera automáticamente desde el nombre del proyecto
+                </p>
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">

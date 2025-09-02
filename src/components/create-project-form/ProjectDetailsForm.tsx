@@ -32,8 +32,13 @@ export const ProjectDetailsForm: React.FC<DetailsFormProps> = ({
   };
 
   const updateAmenity = (index: number, field: 'icon' | 'text', newValue: string) => {
+    // Apply character limits
+    const limitedValue = field === 'icon' 
+      ? newValue.substring(0, 100) 
+      : newValue.substring(0, 255);
+      
     const updatedAmenities = value.amenities.map((amenity, i) => 
-      i === index ? { ...amenity, [field]: newValue } : amenity
+      i === index ? { ...amenity, [field]: limitedValue } : amenity
     );
     handleAmenitiesChange(updatedAmenities);
   };
@@ -53,17 +58,25 @@ export const ProjectDetailsForm: React.FC<DetailsFormProps> = ({
                 <input
                   type="text"
                   value={newAmenity.icon}
-                  onChange={(e) => setNewAmenity(prev => ({ ...prev, icon: e.target.value }))}
+                  onChange={(e) => {
+                    const newValue = e.target.value.substring(0, 100);
+                    setNewAmenity(prev => ({ ...prev, icon: newValue }));
+                  }}
                   placeholder="Emoji o ícono (ej: 🏊‍♀️)"
                   disabled={disabled}
+                  maxLength={100}
                   className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-primaryColor focus:border-transparent outline-none disabled:opacity-50"
                 />
                 <input
                   type="text"
                   value={newAmenity.text}
-                  onChange={(e) => setNewAmenity(prev => ({ ...prev, text: e.target.value }))}
+                  onChange={(e) => {
+                    const newValue = e.target.value.substring(0, 255);
+                    setNewAmenity(prev => ({ ...prev, text: newValue }));
+                  }}
                   placeholder="Descripción (ej: Piscina)"
                   disabled={disabled}
+                  maxLength={255}
                   className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-primaryColor focus:border-transparent outline-none disabled:opacity-50"
                 />
                 <button
@@ -87,6 +100,7 @@ export const ProjectDetailsForm: React.FC<DetailsFormProps> = ({
                     value={amenity.icon}
                     onChange={(e) => updateAmenity(index, 'icon', e.target.value)}
                     disabled={disabled}
+                    maxLength={100}
                     className="w-10 text-center border-none bg-transparent outline-none disabled:opacity-50"
                   />
                   <input
@@ -94,6 +108,7 @@ export const ProjectDetailsForm: React.FC<DetailsFormProps> = ({
                     value={amenity.text}
                     onChange={(e) => updateAmenity(index, 'text', e.target.value)}
                     disabled={disabled}
+                    maxLength={255}
                     className="flex-1 border-none bg-transparent outline-none disabled:opacity-50"
                   />
                   <button

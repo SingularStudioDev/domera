@@ -2,28 +2,23 @@
 
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ImageArrayUpload } from './ImageArrayUpload';
+import { OptimizedImageUpload } from './OptimizedImageUpload';
 import { ImageCarouselFormProps } from '@/types/project-form';
 import { cn } from '@/utils/utils';
 
-export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: string }> = ({
+export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: string; projectId?: string }> = ({
   value,
   onChange,
   projectName,
   disabled,
   error,
   className,
+  projectId,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleImagesChange = (images: (string | File)[]) => {
-    // Convertir File objects a URLs temporales para preview
-    const imageUrls = images.map(img => {
-      if (typeof img === 'string') return img;
-      return URL.createObjectURL(img);
-    });
-    
+  const handleImagesChange = (imageUrls: string[]) => {
     onChange({
       images: imageUrls
     });
@@ -58,13 +53,16 @@ export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: 
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">Editar Carrusel de Imágenes</h3>
-            <ImageArrayUpload
-              value={value.images}
+            <OptimizedImageUpload
+              value={value.images || []}
               onChange={handleImagesChange}
+              entityType="project"
+              entityId={projectId}
               maxImages={20}
               placeholder="Seleccionar imágenes para el carrusel"
               aspectRatio="aspect-[16/10]"
               disabled={disabled}
+              showUploadButton={true}
             />
             <div className="flex gap-2 mt-4">
               <button

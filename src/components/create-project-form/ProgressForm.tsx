@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ImageArrayUpload } from './ImageArrayUpload';
+import { OptimizedImageUpload } from './OptimizedImageUpload';
 
 interface ProgressFormProps {
-  progressImages: (string | File)[];
-  onProgressImagesChange: (images: (string | File)[]) => void;
+  progressImages: string[];
+  onProgressImagesChange: (images: string[]) => void;
   disabled?: boolean;
   error?: string;
+  projectId?: string;
 }
 
 export const ProgressFormComponent: React.FC<ProgressFormProps> = ({
@@ -16,17 +17,12 @@ export const ProgressFormComponent: React.FC<ProgressFormProps> = ({
   onProgressImagesChange,
   disabled,
   error,
+  projectId,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleImagesChange = (images: (string | File)[]) => {
-    // Convertir File objects a URLs temporales para preview
-    const imageUrls = images.map((img) => {
-      if (typeof img === 'string') return img;
-      return URL.createObjectURL(img);
-    });
-
+  const handleImagesChange = (imageUrls: string[]) => {
     onProgressImagesChange(imageUrls);
 
     // Resetear índice si no hay imágenes
@@ -62,12 +58,15 @@ export const ProgressFormComponent: React.FC<ProgressFormProps> = ({
             <h3 className="mb-4 text-lg font-semibold">
               Editar Avances de Obra
             </h3>
-            <ImageArrayUpload
-              value={progressImages}
+            <OptimizedImageUpload
+              value={progressImages || []}
               onChange={handleImagesChange}
+              entityType="project"
+              entityId={projectId}
               maxImages={20}
               placeholder="Seleccionar imágenes de avance de obra"
               disabled={disabled}
+              showUploadButton={true}
             />
             <div className="mt-4 flex gap-2">
               <button

@@ -42,8 +42,29 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
       })
     : "Fecha TBD";
 
-  // Use project slug for main image with fallback
-  const image = `/images/${project.slug}-main.png`;
+  // Use first available image from project.images array or fallback
+  const getProjectImage = (project: Project): string => {
+    if (Array.isArray(project.images) && project.images.length > 0) {
+      return project.images[0];
+    }
+    
+    if (typeof project.images === 'string') {
+      try {
+        const parsed = JSON.parse(project.images);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed[0];
+        }
+        return project.images; // If it's a single URL string
+      } catch {
+        return project.images; // If it's not JSON, treat as URL
+      }
+    }
+    
+    // Fallback to hardcoded image
+    return `/images/${project.slug}-main.png`;
+  };
+
+  const image = getProjectImage(project);
 
   // Create features array from boolean fields
   const projectWithFeatures = project as Project & {

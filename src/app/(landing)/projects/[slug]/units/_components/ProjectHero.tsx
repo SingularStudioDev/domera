@@ -1,9 +1,12 @@
+'use client';
+
 interface ProjectHeroProps {
   title: string;
   price: string;
   location: string;
   date: string;
   slug: string;
+  heroImage: string;
 }
 
 export default function ProjectHero({
@@ -12,15 +15,20 @@ export default function ProjectHero({
   location,
   date,
   slug,
+  heroImage,
 }: ProjectHeroProps) {
   return (
     <section className="relative h-[90dvh] overflow-hidden">
       <div>
         <div className="relative h-full overflow-hidden">
           <img
-            src={`/images/${slug}-hero.png`}
+            src={heroImage}
             alt={title}
             className="h-[90dvh] w-full rounded-b-3xl object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = `/images/${slug}-hero.png`;
+            }}
           />
           <div className="absolute inset-0 z-10 rounded-b-3xl bg-gradient-to-b from-black/10 to-black/50"></div>
 
