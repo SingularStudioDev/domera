@@ -34,12 +34,19 @@ export const ProjectDescriptionForm: React.FC<DescriptionFormProps> = ({
                 </label>
                 <textarea
                   value={value.description}
-                  onChange={(e) => handleFieldChange('description', e.target.value)}
+                  onChange={(e) => {
+                    const newValue = e.target.value.substring(0, 5000);
+                    handleFieldChange('description', newValue);
+                  }}
                   placeholder="Descripción detallada del proyecto..."
                   disabled={disabled}
                   rows={8}
+                  maxLength={5000}
                   className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primaryColor focus:border-transparent outline-none"
                 />
+                <div className="text-right text-xs text-gray-500 mt-1">
+                  {value.description.length}/5000 caracteres
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -47,12 +54,19 @@ export const ProjectDescriptionForm: React.FC<DescriptionFormProps> = ({
                 </label>
                 <textarea
                   value={value.shortDescription}
-                  onChange={(e) => handleFieldChange('shortDescription', e.target.value)}
+                  onChange={(e) => {
+                    const newValue = e.target.value.substring(0, 500);
+                    handleFieldChange('shortDescription', newValue);
+                  }}
                   placeholder="Resumen breve del proyecto..."
                   disabled={disabled}
                   rows={3}
+                  maxLength={500}
                   className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primaryColor focus:border-transparent outline-none"
                 />
+                <div className="text-right text-xs text-gray-500 mt-1">
+                  {value.shortDescription.length}/500 caracteres
+                </div>
               </div>
             </div>
             <div className="flex gap-2 mt-4">
@@ -81,11 +95,18 @@ export const ProjectDescriptionForm: React.FC<DescriptionFormProps> = ({
             <input
               type="text"
               value={value.address}
-              onChange={(e) => handleFieldChange('address', e.target.value)}
+              onChange={(e) => {
+                const newValue = e.target.value.substring(0, 500);
+                handleFieldChange('address', newValue);
+              }}
               placeholder="Dirección completa del proyecto"
               disabled={disabled}
+              maxLength={500}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primaryColor focus:border-transparent outline-none"
             />
+            <div className="text-right text-xs text-gray-500 mt-1">
+              {value.address.length}/500 caracteres
+            </div>
             <div className="flex gap-2 mt-4">
               <button
                 onClick={() => setIsEditingAddress(false)}

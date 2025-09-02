@@ -1,13 +1,21 @@
-import Image from 'next/image';
+import OrganizationDisplay from '@/components/custom-ui/OrganizationDisplay';
+
+interface Organization {
+  id: string;
+  name: string;
+  logoUrl?: string | null;
+}
 
 interface ProjectDescriptionProps {
   description: string;
   adress: string;
+  organization: Organization;
 }
 
 export default function ProjectDescription({
   description,
   adress,
+  organization,
 }: ProjectDescriptionProps) {
   return (
     <div className="flex flex-col gap-5">
@@ -33,26 +41,14 @@ export default function ProjectDescription({
             <div>
               <p className="mb-2 font-semibold text-black">Desarrolla:</p>
               <div className="flex gap-4">
-                <Image
-                  src="/developer-logo-7b3d8c.png"
-                  alt="Developer"
-                  width={154}
-                  height={30}
-                  className="h-7 w-auto md:h-8"
-                />
+                <OrganizationDisplay organization={organization} />
               </div>
             </div>
 
             <div>
               <p className="mb-2 font-semibold text-black">Construye:</p>
               <div className="flex gap-4">
-                <Image
-                  src="/constructor-logo-7b3d8c.png"
-                  alt="Constructor"
-                  width={154}
-                  height={30}
-                  className="h-7 w-auto md:h-8"
-                />
+                <OrganizationDisplay organization={organization} />
               </div>
             </div>
           </div>

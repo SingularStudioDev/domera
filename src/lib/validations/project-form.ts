@@ -18,11 +18,17 @@ export const projectFormSchema = z.object({
 
   description: z
     .string()
-    .max(5000, 'La descripción no puede exceder 5000 caracteres'),
+    .default('')
+    .optional()
+    .or(z.literal(''))
+    .transform(val => val || ''),
 
   shortDescription: z
     .string()
-    .max(500, 'La descripción corta no puede exceder 500 caracteres'),
+    .default('')
+    .optional()
+    .or(z.literal(''))
+    .transform(val => val || ''),
 
   address: z
     .string()
@@ -31,7 +37,10 @@ export const projectFormSchema = z.object({
 
   neighborhood: z
     .string()
-    .max(100, 'El barrio no puede exceder 100 caracteres'),
+    .default('')
+    .optional()
+    .or(z.literal(''))
+    .transform(val => val || ''),
 
   city: z
     .string()
@@ -42,15 +51,21 @@ export const projectFormSchema = z.object({
     .number()
     .min(-90, 'Latitud inválida')
     .max(90, 'Latitud inválida')
-    .nullable(),
+    .nullable()
+    .default(null),
 
   longitude: z
     .number()
     .min(-180, 'Longitud inválida')
     .max(180, 'Longitud inválida')
-    .nullable(),
+    .nullable()
+    .default(null),
 
-  basePrice: z.number().positive('El precio base debe ser positivo').nullable(),
+  basePrice: z
+    .number()
+    .positive('El precio base debe ser positivo')
+    .nullable()
+    .default(null),
 
   currency: z
     .enum(['USD', 'UYU'], {
@@ -58,9 +73,13 @@ export const projectFormSchema = z.object({
     })
     .default('USD'),
 
-  estimatedCompletion: z.date().nullable(),
+  estimatedCompletion: z.date().nullable().default(null),
 
-  organizationId: z.string().uuid('Organization ID debe ser un UUID válido').optional(),
+  // IMPORTANTE: organizationId es requerido para la creación
+  organizationId: z
+    .string()
+    .min(1, 'Organización es requerida')
+    .uuid('Organization ID debe ser un UUID válido'),
 
   status: z
     .enum(['planning', 'pre_sale', 'construction', 'completed', 'delivered'])
@@ -78,8 +97,12 @@ export const projectFormSchema = z.object({
 
   masterPlanFiles: z.array(z.string()).default([]),
 
-  // Imágenes - URLs como strings
-  images: z.array(z.string().url('URL de imagen inválida')).default([]),
+  // Imágenes - URLs como strings (pueden estar vacías al principio)
+  images: z.array(z.string()).default([]),
+
+  // Estados del formulario - opcional para no interferir con validación
+  isEditing: z.boolean().optional().default(false),
+  originalSlug: z.string().optional(),
 });
 
 export const heroFormSchema = z.object({

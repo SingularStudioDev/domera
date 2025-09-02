@@ -6,14 +6,15 @@ import { formatCurrency } from "@/utils/utils";
 
 import { HeroFormProps } from "@/types/project-form";
 
-import { ImageArrayUpload } from "./ImageArrayUpload";
+import { OptimizedImageUpload } from "./OptimizedImageUpload";
 
-export const ProjectHeroForm: React.FC<HeroFormProps> = ({
+export const ProjectHeroForm: React.FC<HeroFormProps & { projectId?: string }> = ({
   value,
   onChange,
   error,
   disabled,
   currency,
+  projectId,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -25,13 +26,8 @@ export const ProjectHeroForm: React.FC<HeroFormProps> = ({
     });
   };
 
-  const handleImagesChange = (images: (string | File)[]) => {
-    // Convertir File objects a URLs temporales para preview
-    const imageUrls = images.map((img) => {
-      if (typeof img === "string") return img;
-      return URL.createObjectURL(img);
-    });
-
+  const handleImagesChange = (imageUrls: string[]) => {
+    // Las URLs ya están procesadas por OptimizedImageUpload
     // Actualizar el preview si hay una imagen nueva
     if (imageUrls.length > 0) {
       setPreviewImage(imageUrls[0]);
@@ -79,13 +75,16 @@ export const ProjectHeroForm: React.FC<HeroFormProps> = ({
                 <h4 className="text-md mb-3 font-medium">
                   Seleccionar Imágenes
                 </h4>
-                <ImageArrayUpload
-                  value={value.images}
+                <OptimizedImageUpload
+                  value={value.images || []}
                   onChange={handleImagesChange}
+                  entityType="project"
+                  entityId={projectId}
                   maxImages={5}
                   placeholder="Seleccionar imágenes del proyecto"
                   aspectRatio="aspect-video"
                   disabled={disabled}
+                  showUploadButton={true}
                 />
               </div>
 
@@ -220,20 +219,24 @@ export const ProjectHeroForm: React.FC<HeroFormProps> = ({
                         <input
                           type="text"
                           value={value.neighborhood || ""}
-                          onChange={(e) =>
-                            handleFieldChange("neighborhood", e.target.value)
-                          }
+                          onChange={(e) => {
+                            const newValue = e.target.value.substring(0, 100);
+                            handleFieldChange("neighborhood", newValue);
+                          }}
                           placeholder="Barrio"
+                          maxLength={100}
                           className="w-20 min-w-0 border-none bg-transparent text-lg font-medium outline-none"
                         />
                         <span>, </span>
                         <input
                           type="text"
                           value={value.city}
-                          onChange={(e) =>
-                            handleFieldChange("city", e.target.value)
-                          }
+                          onChange={(e) => {
+                            const newValue = e.target.value.substring(0, 100);
+                            handleFieldChange("city", newValue);
+                          }}
                           placeholder="Ciudad"
+                          maxLength={100}
                           className="w-16 min-w-0 border-none bg-transparent text-lg font-medium outline-none"
                         />
                       </div>
@@ -271,10 +274,12 @@ export const ProjectHeroForm: React.FC<HeroFormProps> = ({
                       <input
                         type="text"
                         value={value.name}
-                        onChange={(e) =>
-                          handleFieldChange("name", e.target.value)
-                        }
+                        onChange={(e) => {
+                          const newValue = e.target.value.substring(0, 255);
+                          handleFieldChange("name", newValue);
+                        }}
                         placeholder="Nombre del proyecto"
+                        maxLength={255}
                         className="border-none bg-transparent text-3xl font-semibold placeholder-gray-400 outline-none md:text-6xl"
                       />
                     )}

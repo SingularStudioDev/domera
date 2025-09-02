@@ -1,5 +1,5 @@
 import { SquareArrowOutUpRightIcon } from 'lucide-react';
-import InteractiveMap from '@/components/custom-ui/InteractiveMap';
+import StaticMap from '@/components/custom-ui/StaticMap';
 
 interface ProjectLocationProps {
   planFiles: string[];
@@ -20,17 +20,19 @@ export default function ProjectLocation({
         <h3 className="mb-6 text-3xl font-semibold text-black">Ubicación</h3>
         <div className="mb-8">
           {latitude !== null && longitude !== null && latitude && longitude ? (
-            <InteractiveMap
+            <StaticMap
               latitude={Number(latitude)}
               longitude={Number(longitude)}
-              height="200px"
+              height="400px"
               markerPopup={`Ubicación de ${projectName}`}
+              className="md:h-[400px]"
             />
           ) : (
-            <div className="flex h-[200px] items-center justify-center rounded-2xl border border-gray-300 bg-gray-50 md:h-[500px]">
+            <div className="flex h-[200px] items-center justify-center rounded-2xl border border-gray-300 bg-gray-50 md:h-[400px]">
               <div className="text-center text-gray-500">
                 <p className="text-sm">Ubicación no disponible</p>
                 <p className="text-xs">Coordenadas no especificadas</p>
+                <p className="text-xs mt-2">lat: {latitude}, lng: {longitude}</p>
               </div>
             </div>
           )}

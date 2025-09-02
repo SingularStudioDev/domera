@@ -73,6 +73,8 @@ export default async function CreateProjectPage() {
         address: data.address,
         neighborhood: data.neighborhood || undefined,
         city: data.city,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
         status: data.status,
         basePrice: data.basePrice || undefined,
         currency: data.currency,
