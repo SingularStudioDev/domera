@@ -1,13 +1,20 @@
-'use client';
-import { FaFacebookSquare } from 'react-icons/fa';
-import { FaSquareXTwitter, FaSquareInstagram } from 'react-icons/fa6';
+"use client";
+
+import { CircleQuestionMark } from "lucide-react";
+import { FaFacebookSquare } from "react-icons/fa";
+import { FaSquareInstagram, FaSquareXTwitter } from "react-icons/fa6";
 
 export default function Footer() {
   return (
     <footer className="relative z-50 rounded-t-3xl bg-[#011D6F] text-white">
+      <button className="absolute top-5 right-5 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-white">
+        <CircleQuestionMark className="z-10 h-7 w-7 text-black" />
+        <div className="absolute right-0 bottom-0 h-7 w-7 bg-white"></div>
+      </button>
+
       <div className="flex h-full flex-col justify-between">
         {/* Contact Info */}
-        <div className="container mx-auto flex h-full flex-col justify-between gap-6 px-4 py-12 md:flex-row md:gap-1 md:px-0 md:py-22">
+        <div className="container mx-auto flex h-full flex-col justify-between gap-6 px-4 py-12 md:flex-row md:gap-1 md:px-0 md:pt-28 md:pb-22">
           <div className="flex flex-col items-start">
             <p className="mb-1 text-xl font-semibold">Contacto</p>
             <a
@@ -84,13 +91,13 @@ export default function Footer() {
               href="mailto:inversiones@domera.com"
               className="font-light text-white"
             >
-              Política de privacidad{' '}
+              Política de privacidad{" "}
             </a>
             <a
               href="mailto:inversiones@domera.com"
               className="font-light text-white"
             >
-              Política de cookies{' '}
+              Política de cookies{" "}
             </a>
           </div>
 

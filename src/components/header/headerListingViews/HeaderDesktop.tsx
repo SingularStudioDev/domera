@@ -1,36 +1,34 @@
-'use client';
+"use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import { syne } from "@/utils/Fonts";
+import { ChevronDown, ChevronDownIcon, DoorOpenIcon } from "lucide-react";
+import { signOut } from "next-auth/react";
+
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { syne } from '@/utils/Fonts';
-import Link from 'next/link';
-import { useAuth, useIsAdmin } from '@/hooks/useAuth';
-import { signOut } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
+} from "@/components/ui/dropdown-menu";
 
-import { ChevronDown, ChevronDownIcon, DoorOpenIcon } from 'lucide-react';
-import {
-  adminMenuItems,
-  HeaderMenuItems,
-  menuItems,
-} from '../headerItems';
+import { adminMenuItems, HeaderMenuItems, menuItems } from "../headerItems";
 
-const HeaderDesktop = () => {
+export default function HeaderDesktop() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const isAdmin = useIsAdmin();
   const pathname = usePathname();
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ callbackUrl: "/" });
   };
 
   return (
     <header
-      className={`${pathname.startsWith('/userDashboard') ? 'absolute' : 'fixed'} top-0 right-0 left-0 z-[2000] p-5`}
+      className={`${pathname.startsWith("/userDashboard") ? "absolute" : "fixed"} top-0 right-0 left-0 z-[2000] p-5`}
     >
       <div className="container mx-auto flex items-center justify-between gap-5 overflow-hidden">
         <div className="w-full rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5]">
@@ -49,15 +47,22 @@ const HeaderDesktop = () => {
             {/* Desktop Navigation */}
             <div className="flex flex-1 justify-end">
               <div className="flex items-center gap-6">
-                {menuItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="hover:text-primaryColor inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent py-0 text-base font-normal text-black transition-colors duration-200 hover:bg-gray-100"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+                {menuItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent py-0 text-base transition-colors duration-200 hover:bg-gray-100 ${
+                        isActive
+                          ? "text-primaryColor hover:text-primaryColor-hover font-medium"
+                          : "hover:text-primaryColor font-normal text-black"
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -100,7 +105,7 @@ const HeaderDesktop = () => {
                       >
                         <Link
                           href={item.href}
-                          className={`pr-5 ${isActive ? 'bg-primaryColor hover:bg-primaryColor-hover text-[#dcdcdc]' : 'hover:text-primaryColor text-black'} flex items-center space-x-2 transition-colors duration-200`}
+                          className={`pr-5 ${isActive ? "bg-primaryColor hover:bg-primaryColor-hover text-[#dcdcdc]" : "hover:text-primaryColor text-black"} flex items-center space-x-2 transition-colors duration-200`}
                         >
                           <item.icon className="h-4 w-4" />
                           <span className="text-base font-normal">
@@ -162,6 +167,4 @@ const HeaderDesktop = () => {
       </div>
     </header>
   );
-};
-
-export default HeaderDesktop;
+}

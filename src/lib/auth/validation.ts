@@ -21,6 +21,7 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   firstName?: string;
+  phone?: string;
   lastName?: string;
   avatarUrl?: string;
   userRoles: {
@@ -72,6 +73,7 @@ export async function validateSession(): Promise<AuthValidationResult> {
           id: true,
           email: true,
           firstName: true,
+          phone: true,
           lastName: true,
           avatarUrl: true,
           userRoles: {

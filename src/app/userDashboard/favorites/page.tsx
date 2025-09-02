@@ -3,7 +3,6 @@
 import { Heart, Grid3X3, Filter } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import UnitCard from '@/app/projects/[slug]/units/_components/UnitCard';
 import { Separator } from '@/components/ui/separator';
 import {
   Select,
@@ -13,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getUserFavoritesAction } from '@/lib/actions/favourites';
+import UnitCard from '@/app/(landing)/projects/[slug]/units/_components/UnitCard';
 
 // Unit type for UnitCard component
 interface FavoriteUnit {
