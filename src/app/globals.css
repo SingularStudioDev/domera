@@ -147,3 +147,7 @@ body {
 .dashboard-subtitle {
   @apply text-primaryColor text-2xl font-semibold;
 }
+
+.landing-title {
+  @apply mb-2 text-4xl font-light text-black md:text-6xl;
+}
