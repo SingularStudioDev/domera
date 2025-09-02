@@ -47,6 +47,8 @@ interface CreateProjectInput {
   address: string;
   neighborhood?: string;
   city: string;
+  latitude?: number | null;
+  longitude?: number | null;
   status: ProjectStatus;
   basePrice?: number;
   currency: string;
@@ -64,6 +66,8 @@ interface UpdateProjectInput {
   address?: string;
   neighborhood?: string;
   city?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   status?: ProjectStatus;
   basePrice?: number;
   currency?: string;
@@ -91,6 +95,43 @@ interface ProjectActionResult {
  * Get projects with filters and pagination
  * Supports both super admin and regular user authentication
  */
+export async function checkSlugAvailabilityAction(
+  slug: string,
+  organizationId?: string
+): Promise<{ success: boolean; available: boolean; error?: string }> {
+  try {
+    if (!slug?.trim()) {
+      return { success: false, available: false, error: 'Slug es requerido' };
+    }
+
+    const client = getDbClient();
+    
+    // Check if slug exists in the same organization (if specified)
+    const whereClause: any = { slug: slug.trim() };
+    if (organizationId) {
+      whereClause.organizationId = organizationId;
+    }
+
+    const existingProject = await client.project.findFirst({
+      where: whereClause,
+      select: { id: true, name: true }
+    });
+
+    return { 
+      success: true, 
+      available: !existingProject,
+      error: existingProject ? `Slug ya está en uso por el proyecto "${existingProject.name}"` : undefined
+    };
+  } catch (error) {
+    console.error('Error checking slug availability:', error);
+    return { 
+      success: false, 
+      available: false, 
+      error: 'Error al verificar disponibilidad del slug' 
+    };
+  }
+}
+
 export async function getProjectsAction(
   filters: ProjectFiltersInput = { page: 1, pageSize: 20 }
 ): Promise<ProjectActionResult> {

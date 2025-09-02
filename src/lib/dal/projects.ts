@@ -53,6 +53,8 @@ interface CreateProjectInput {
   address: string;
   neighborhood?: string;
   city: string;
+  latitude?: number | null;
+  longitude?: number | null;
   status: ProjectStatus;
   basePrice?: number;
   currency: string;
@@ -70,6 +72,8 @@ interface UpdateProjectInput {
   address?: string;
   neighborhood?: string;
   city?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   status?: ProjectStatus;
   basePrice?: number;
   currency?: string;
@@ -383,6 +387,8 @@ export async function createProject(
         address: input.address,
         neighborhood: input.neighborhood,
         city: input.city,
+        latitude: input.latitude,
+        longitude: input.longitude,
         status: input.status,
         startDate: input.startDate ? new Date(input.startDate.toISOString().split('T')[0]) : null,
         estimatedCompletion: input.estimatedCompletion ? new Date(input.estimatedCompletion.toISOString().split('T')[0]) : null,
