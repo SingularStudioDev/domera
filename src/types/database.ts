@@ -8,60 +8,79 @@
 // ENUMS
 // =============================================================================
 
-export type UserRole = 
-  | 'admin'
-  | 'organization_owner' 
-  | 'sales_manager'
-  | 'finance_manager'
-  | 'site_manager'
-  | 'professional'
-  | 'user';
+export type UserRole =
+  | "admin"
+  | "organization_owner"
+  | "sales_manager"
+  | "finance_manager"
+  | "site_manager"
+  | "professional"
+  | "user";
 
-export type OrganizationStatus = 'active' | 'inactive' | 'pending_approval' | 'suspended';
+export type OrganizationStatus =
+  | "active"
+  | "inactive"
+  | "pending_approval"
+  | "suspended";
 
-export type ProjectStatus = 'planning' | 'pre_sale' | 'construction' | 'completed' | 'delivered';
+export type ProjectStatus =
+  | "planning"
+  | "pre_sale"
+  | "construction"
+  | "completed"
+  | "delivered";
 
-export type UnitType = 'apartment' | 'commercial_space' | 'garage' | 'storage' | 'office';
+export type UnitType =
+  | "apartment"
+  | "commercial_space"
+  | "garage"
+  | "storage"
+  | "office";
 
-export type UnitStatus = 'available' | 'reserved' | 'sold' | 'in_process';
+export type UnitStatus = "available" | "reserved" | "sold" | "in_process";
 
-export type OperationStatus = 
-  | 'initiated'
-  | 'documents_pending' 
-  | 'documents_uploaded'
-  | 'under_validation'
-  | 'professional_assigned'
-  | 'waiting_signature'
-  | 'signature_completed'
-  | 'payment_pending'
-  | 'payment_confirmed'
-  | 'completed'
-  | 'cancelled';
+export type OperationStatus =
+  | "initiated"
+  | "documents_pending"
+  | "documents_uploaded"
+  | "under_validation"
+  | "professional_assigned"
+  | "waiting_signature"
+  | "signature_completed"
+  | "payment_pending"
+  | "payment_confirmed"
+  | "completed"
+  | "cancelled";
 
-export type StepStatus = 'pending' | 'in_progress' | 'completed' | 'skipped';
+export type StepStatus = "pending" | "in_progress" | "completed" | "skipped";
 
-export type DocumentType = 
-  | 'boleto_reserva'
-  | 'compromiso_compraventa' 
-  | 'comprobante_pago'
-  | 'cedula_identidad'
-  | 'certificado_ingresos'
-  | 'escritura'
-  | 'plano_unidad'
-  | 'reglamento_copropiedad'
-  | 'otros';
+export type DocumentType =
+  | "boleto_reserva"
+  | "compromiso_compraventa"
+  | "comprobante_pago"
+  | "cedula_identidad"
+  | "certificado_ingresos"
+  | "escritura"
+  | "plano_unidad"
+  | "reglamento_copropiedad"
+  | "otros";
 
-export type DocumentStatus = 'pending' | 'uploaded' | 'validated' | 'rejected' | 'expired';
+export type DocumentStatus =
+  | "pending"
+  | "uploaded"
+  | "validated"
+  | "rejected"
+  | "expired";
 
-export type ProfessionalType = 'escribania' | 'contaduria' | 'legal' | 'otros';
+export type ProfessionalType = "escribania" | "contaduria" | "legal" | "otros";
 
-export type NotificationType = 
-  | 'operation_update'
-  | 'document_upload'
-  | 'validation_required'
-  | 'payment_reminder'
-  | 'system_announcement'
-  | 'professional_assignment';
+export type NotificationType =
+  | "operation_update"
+  | "document_upload"
+  | "validation_required"
+  | "payment_reminder"
+  | "system_announcement"
+  | "professional_assignment";
 
 // =============================================================================
 // BASE TYPES
@@ -148,7 +167,7 @@ export interface Project extends BaseRecord {
   master_plan_files: string[];
   progress_updates: ProjectProgressUpdate[];
   created_by: string | null;
-  
+
   // Relations
   organization?: Organization;
   units?: Unit[];
@@ -470,78 +489,102 @@ export interface Database {
     Tables: {
       organizations: {
         Row: Organization;
-        Insert: Omit<Organization, 'id' | 'created_at' | 'updated_at' | 'is_corrected' | 'correction_of'>;
-        Update: Partial<Omit<Organization, 'id' | 'created_at'>>;
+        Insert: Omit<
+          Organization,
+          "id" | "created_at" | "updated_at" | "is_corrected" | "correction_of"
+        >;
+        Update: Partial<Omit<Organization, "id" | "created_at">>;
       };
       users: {
         Row: User;
-        Insert: Omit<User, 'id' | 'created_at' | 'updated_at' | 'is_corrected' | 'correction_of'>;
-        Update: Partial<Omit<User, 'id' | 'created_at'>>;
+        Insert: Omit<
+          User,
+          "id" | "created_at" | "updated_at" | "is_corrected" | "correction_of"
+        >;
+        Update: Partial<Omit<User, "id" | "created_at">>;
       };
       user_roles: {
         Row: UserRole;
-        Insert: Omit<UserRole, 'id' | 'assigned_at' | 'is_corrected' | 'correction_of'>;
-        Update: Partial<Omit<UserRole, 'id'>>;
+        Insert: Omit<
+          UserRole,
+          "id" | "assigned_at" | "is_corrected" | "correction_of"
+        >;
+        Update: Partial<Omit<UserRole, "id">>;
       };
       projects: {
         Row: Project;
-        Insert: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'is_corrected' | 'correction_of'>;
-        Update: Partial<Omit<Project, 'id' | 'created_at'>>;
+        Insert: Omit<
+          Project,
+          "id" | "created_at" | "updated_at" | "is_corrected" | "correction_of"
+        >;
+        Update: Partial<Omit<Project, "id" | "created_at">>;
       };
       units: {
         Row: Unit;
-        Insert: Omit<Unit, 'id' | 'created_at' | 'updated_at' | 'is_corrected' | 'correction_of'>;
-        Update: Partial<Omit<Unit, 'id' | 'created_at'>>;
+        Insert: Omit<
+          Unit,
+          "id" | "created_at" | "updated_at" | "is_corrected" | "correction_of"
+        >;
+        Update: Partial<Omit<Unit, "id" | "created_at">>;
       };
       operations: {
         Row: Operation;
-        Insert: Omit<Operation, 'id' | 'started_at' | 'is_corrected' | 'correction_of'>;
-        Update: Partial<Omit<Operation, 'id'>>;
+        Insert: Omit<
+          Operation,
+          "id" | "started_at" | "is_corrected" | "correction_of"
+        >;
+        Update: Partial<Omit<Operation, "id">>;
       };
       operation_units: {
         Row: OperationUnit;
-        Insert: Omit<OperationUnit, 'id' | 'created_at'>;
-        Update: Partial<Omit<OperationUnit, 'id' | 'created_at'>>;
+        Insert: Omit<OperationUnit, "id" | "created_at">;
+        Update: Partial<Omit<OperationUnit, "id" | "created_at">>;
       };
       operation_steps: {
         Row: OperationStep;
-        Insert: Omit<OperationStep, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<OperationStep, 'id' | 'created_at'>>;
+        Insert: Omit<OperationStep, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<OperationStep, "id" | "created_at">>;
       };
       documents: {
         Row: Document;
-        Insert: Omit<Document, 'id' | 'created_at' | 'updated_at' | 'is_corrected' | 'correction_of'>;
-        Update: Partial<Omit<Document, 'id' | 'created_at'>>;
+        Insert: Omit<
+          Document,
+          "id" | "created_at" | "updated_at" | "is_corrected" | "correction_of"
+        >;
+        Update: Partial<Omit<Document, "id" | "created_at">>;
       };
       document_templates: {
         Row: DocumentTemplate;
-        Insert: Omit<DocumentTemplate, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<DocumentTemplate, 'id' | 'created_at'>>;
+        Insert: Omit<DocumentTemplate, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<DocumentTemplate, "id" | "created_at">>;
       };
       professionals: {
         Row: Professional;
-        Insert: Omit<Professional, 'id' | 'created_at' | 'updated_at' | 'is_corrected' | 'correction_of'>;
-        Update: Partial<Omit<Professional, 'id' | 'created_at'>>;
+        Insert: Omit<
+          Professional,
+          "id" | "created_at" | "updated_at" | "is_corrected" | "correction_of"
+        >;
+        Update: Partial<Omit<Professional, "id" | "created_at">>;
       };
       professional_assignments: {
         Row: ProfessionalAssignment;
-        Insert: Omit<ProfessionalAssignment, 'id' | 'assigned_at'>;
-        Update: Partial<Omit<ProfessionalAssignment, 'id' | 'assigned_at'>>;
+        Insert: Omit<ProfessionalAssignment, "id" | "assigned_at">;
+        Update: Partial<Omit<ProfessionalAssignment, "id" | "assigned_at">>;
       };
       notifications: {
         Row: Notification;
-        Insert: Omit<Notification, 'id' | 'created_at'>;
-        Update: Partial<Omit<Notification, 'id' | 'created_at'>>;
+        Insert: Omit<Notification, "id" | "created_at">;
+        Update: Partial<Omit<Notification, "id" | "created_at">>;
       };
       audit_logs: {
         Row: AuditLog;
-        Insert: Omit<AuditLog, 'id' | 'created_at'>;
+        Insert: Omit<AuditLog, "id" | "created_at">;
         Update: never;
       };
       data_corrections: {
         Row: DataCorrection;
-        Insert: Omit<DataCorrection, 'id' | 'requested_at'>;
-        Update: Partial<Omit<DataCorrection, 'id' | 'requested_at'>>;
+        Insert: Omit<DataCorrection, "id" | "requested_at">;
+        Update: Partial<Omit<DataCorrection, "id" | "requested_at">>;
       };
     };
     Views: {

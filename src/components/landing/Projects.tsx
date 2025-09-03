@@ -47,8 +47,8 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
     if (Array.isArray(project.images) && project.images.length > 0) {
       return project.images[0];
     }
-    
-    if (typeof project.images === 'string') {
+
+    if (typeof project.images === "string") {
       try {
         const parsed = JSON.parse(project.images);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -59,7 +59,7 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
         return project.images; // If it's not JSON, treat as URL
       }
     }
-    
+
     // Fallback to hardcoded image
     return `/images/${project.slug}-main.png`;
   };
@@ -139,8 +139,6 @@ export default async function Projects({
         <div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project, index) => {
             const projectData = formatProjectForDisplay(project);
-
-            console.log("projectData", projectData.features);
 
             return (
               <div

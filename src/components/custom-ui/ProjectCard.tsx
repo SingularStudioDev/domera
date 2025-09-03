@@ -1,20 +1,14 @@
-'use client';
+"use client";
+
+import { useMemo } from "react";
+import Link from "next/link";
 
 import {
-  Heart,
-  Car,
-  Home,
-  Bed,
-  Building2,
-  Store,
   BedDoubleIcon,
+  Building2,
   CarFrontIcon,
   ShoppingCartIcon,
-} from 'lucide-react';
-import { useMemo, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { toggleFavoriteAction } from '@/lib/actions/favourites';
+} from "lucide-react";
 
 interface ProjectFeature {
   name: string;
@@ -22,34 +16,32 @@ interface ProjectFeature {
 }
 
 interface ProjectCardProps {
-  id: string;
   slug: string;
   title: string;
   price: string;
   image: string;
   status: string;
   date: string;
-  isFavorite?: boolean;
   features?: ProjectFeature[];
 }
 
 const sortFeatures = (features: ProjectFeature[]) => {
   return features.sort((a, b) => {
     // Studio always first
-    if (a.name === 'studio') return -1;
-    if (b.name === 'studio') return 1;
+    if (a.name === "studio") return -1;
+    if (b.name === "studio") return 1;
 
     // Bedrooms in middle
-    const aIsBedroom = a.name.includes('bedroom');
-    const bIsBedroom = b.name.includes('bedroom');
+    const aIsBedroom = a.name.includes("bedroom");
+    const bIsBedroom = b.name.includes("bedroom");
 
     if (aIsBedroom && !bIsBedroom) return -1;
     if (!aIsBedroom && bIsBedroom) return 1;
 
     // Sort bedrooms by number (1_bedroom, 2_bedroom, etc.)
     if (aIsBedroom && bIsBedroom) {
-      const aNum = parseInt(a.name.match(/(\d+)_bedroom/)?.[1] || '0');
-      const bNum = parseInt(b.name.match(/(\d+)_bedroom/)?.[1] || '0');
+      const aNum = parseInt(a.name.match(/(\d+)_bedroom/)?.[1] || "0");
+      const bNum = parseInt(b.name.match(/(\d+)_bedroom/)?.[1] || "0");
       return aNum - bNum;
     }
 
@@ -59,64 +51,40 @@ const sortFeatures = (features: ProjectFeature[]) => {
 };
 
 const ProjectCard = ({
-  id,
   slug,
   title,
   price,
   image,
   status,
   date,
-  isFavorite = false,
   features = [],
 }: ProjectCardProps) => {
-  const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(isFavorite);
-  const [isLoading, setIsLoading] = useState(false);
-
   const projectFeatures = useMemo(() => {
     const featuresWithTrue = features.filter(
-      (feature) => feature.hasFeature === true
+      (feature) => feature.hasFeature === true,
     );
     return sortFeatures(featuresWithTrue);
   }, [features]);
 
-  const handleFavoriteClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    setIsLoading(true);
-    try {
-      const result = await toggleFavoriteAction(id);
-      if (result.success) {
-        setIsCurrentlyFavorite(!isCurrentlyFavorite);
-      } else {
-        console.error('Error toggling favorite:', result.error);
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const getFeatureIcon = (featureName: string) => {
     const isBedroomFeature =
-      featureName.includes('bedroom') || featureName === 'studio';
+      featureName.includes("bedroom") || featureName === "studio";
     const iconProps = {
       size: 19,
-      className: ` ${isBedroomFeature ? 'mr-2' : ''}`,
+      className: ` ${isBedroomFeature ? "mr-2" : ""}`,
     };
 
     switch (featureName) {
-      case 'parking':
+      case "parking":
         return <CarFrontIcon {...iconProps} />;
-      case 'studio':
-      case '1_bedroom':
-      case '2_bedroom':
-      case '3_bedroom':
-      case '4_bedroom':
-      case '5_bedroom':
+      case "studio":
+      case "1_bedroom":
+      case "2_bedroom":
+      case "3_bedroom":
+      case "4_bedroom":
+      case "5_bedroom":
         return <BedDoubleIcon {...iconProps} />;
-      case 'commercial':
+      case "commercial":
         return <ShoppingCartIcon {...iconProps} />;
       default:
         return <Building2 {...iconProps} />;
@@ -124,8 +92,8 @@ const ProjectCard = ({
   };
 
   const getBedroomNumber = (featureName: string) => {
-    if (featureName === 'studio') {
-      return '0';
+    if (featureName === "studio") {
+      return "0";
     }
     const match = featureName.match(/(\d+)_bedroom/);
     return match ? match[1] : null;
@@ -144,7 +112,7 @@ const ProjectCard = ({
           className="h-full w-full object-cover"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = '/project-placeholder.png';
+            target.src = "/project-placeholder.png";
           }}
         />
 
@@ -203,23 +171,11 @@ const ProjectCard = ({
               </svg>
             </span>
 
-            {/* Bloque inferior */}
+            {/* Bloque inferior  TODO: Revisar este precio se guarda ya formateado o se trae normal y yo lo formateo*/}
             <span className="group-hover:text-primaryColor w-fit min-w-[280px] rounded-tr-2xl rounded-b-2xl bg-white px-3 py-2 text-xl text-black transition duration-300">
               Desde: {price}
             </span>
           </div>
-
-          {/* <button 
-            onClick={handleFavoriteClick}
-            disabled={isLoading}
-            className="flex cursor-pointer h-14 w-14 items-center justify-center rounded-2xl bg-white hover:bg-gray-50 transition-colors duration-300 disabled:opacity-50"
-          >
-            {isCurrentlyFavorite ? (
-              <Heart fill='#0040ff' className="group-hover:text-primaryColor h-7 w-7 text-blue-600 transition duration-300" />
-            ) : (
-              <Heart className="group-hover:text-primaryColor h-7 w-7 text-black transition duration-300" />
-            )}
-          </button> */}
         </div>
       </div>
     </Link>

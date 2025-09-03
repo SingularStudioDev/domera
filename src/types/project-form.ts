@@ -10,17 +10,17 @@ export interface ProjectFormData {
   latitude: number | null;
   longitude: number | null;
   basePrice: number | null;
-  currency: 'USD' | 'UYU';
+  currency: "USD" | "UYU";
   estimatedCompletion: Date | null;
   organizationId?: string;
-  status: 'planning' | 'pre_sale' | 'construction' | 'completed' | 'delivered';
+  status: "planning" | "pre_sale" | "construction" | "completed" | "delivered";
 
   // Imágenes y archivos - URLs como strings tras ser subidas
   images: string[];
   masterPlanFiles: string[];
 
   // Contenido detallado - respetando el schema del DAL
-  amenities: Array<{icon: string; text: string}>;
+  amenities: Array<{ icon: string; text: string }>;
 
   // Estados del formulario
   isEditing?: boolean;
@@ -62,37 +62,42 @@ export interface FormFieldProps<T = any> {
   required?: boolean;
 }
 
-export interface HeroFormProps extends FormFieldProps<{
-  name: string;
-  basePrice: number | null;
-  neighborhood: string;
-  city: string;
-  estimatedCompletion: Date | null;
-  images: string[];
-}> {
+export interface HeroFormProps
+  extends FormFieldProps<{
+    name: string;
+    basePrice: number | null;
+    neighborhood: string;
+    city: string;
+    estimatedCompletion: Date | null;
+    images: string[];
+  }> {
   currency: string;
 }
 
-export interface DescriptionFormProps extends FormFieldProps<{
-  description: string;
-  shortDescription: string;
-  address: string;
-}> {}
+export interface DescriptionFormProps
+  extends FormFieldProps<{
+    description: string;
+    shortDescription: string;
+    address: string;
+  }> {}
 
-export interface DetailsFormProps extends FormFieldProps<{
-  amenities: Array<{icon: string; text: string}>;
-}> {}
+export interface DetailsFormProps
+  extends FormFieldProps<{
+    amenities: Array<{ icon: string; text: string }>;
+  }> {}
 
-export interface LocationFormProps extends FormFieldProps<{
-  latitude: number | null;
-  longitude: number | null;
-  masterPlanFiles: string[];
-}> {
+export interface LocationFormProps
+  extends FormFieldProps<{
+    latitude: number | null;
+    longitude: number | null;
+    masterPlanFiles: string[];
+  }> {
   projectName: string;
 }
 
-export interface ImageCarouselFormProps extends FormFieldProps<{
-  images: string[];
-}> {
+export interface ImageCarouselFormProps
+  extends FormFieldProps<{
+    images: string[];
+  }> {
   projectName: string;
 }

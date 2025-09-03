@@ -19,6 +19,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        rememberMe: { label: 'Remember Me', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -91,6 +92,7 @@ export const authOptions: NextAuthOptions = {
             lastName: user.lastName,
             roles: user.userRoles || [],
             isActive: user.isActive,
+            rememberMe: credentials.rememberMe === 'true',
           };
         } catch (error) {
           console.error('Auth error:', error);
@@ -116,11 +118,11 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60, // 30 days (will be adjusted dynamically)
   },
 
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60, // 30 days (will be adjusted dynamically)
   },
 
   // TODO: PABLO -> Revisar la seguridad de esto, mas que nada el password esta raro
@@ -220,6 +222,15 @@ export const authOptions: NextAuthOptions = {
         token.lastName = (user as any).lastName;
         token.roles = (user as any).roles || [];
         token.isActive = (user as any).isActive;
+        
+        // Set session duration based on remember me preference
+        // Check if remember me was set (this would be passed from the client)
+        const rememberMe = (user as any).rememberMe;
+        if (rememberMe) {
+          token.exp = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days
+        } else {
+          token.exp = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 1 day
+        }
       }
 
       // Refresh user roles on each token refresh (every request)

@@ -4,11 +4,12 @@
 // Created: August 2025
 // =============================================================================
 
-import 'next-auth';
-import 'next-auth/jwt';
-import type { UserRole } from './database';
+import "next-auth";
+import "next-auth/jwt";
 
-declare module 'next-auth' {
+import type { UserRole } from "./database";
+
+declare module "next-auth" {
   interface Session {
     user: {
       id: string;
@@ -34,7 +35,7 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
+declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     firstName: string;

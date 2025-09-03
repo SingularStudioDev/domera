@@ -1,38 +1,51 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn, getSession } from 'next-auth/react';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import Footer from '@/components/Footer';
-import { Separator } from '@/components/ui/separator';
-import Logo from '@/assets/Domera.svg';
+import Logo from "@/assets/Domera.svg";
+import { signIn } from "next-auth/react";
+
+import { useAuth } from "@/hooks/useAuth";
+import { Separator } from "@/components/ui/separator";
+import Footer from "@/components/Footer";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const redirect = searchParams.get('redirect');
-  const callbackUrl = searchParams.get('callbackUrl') || redirect || '/userDashboard';
+  const redirect = searchParams.get("redirect");
 
-  // Redirect if already authenticated
+  // Load remember me preference and redirect if authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push(callbackUrl);
+    // Load remember me preference from localStorage
+    const rememberedEmail = localStorage.getItem("domera-user-email");
+    const isRemembered = localStorage.getItem("domera-remember-me") === "true";
+
+    if (isRemembered && rememberedEmail) {
+      setRememberMe(true);
+      setFormData((prev) => ({
+        ...prev,
+        email: rememberedEmail,
+      }));
     }
-  }, [isAuthenticated, router, callbackUrl]);
+
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      router.push("/");
+    }
+  }, [isAuthenticated, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -40,51 +53,41 @@ export default function LoginPage() {
       ...prev,
       [name]: value,
     }));
-    if (error) setError(''); // Clear error when user types
+    if (error) setError(""); // Clear error when user types
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsSubmitting(true);
 
     try {
-      const result = await signIn('credentials', {
+      // Store remember me preference in localStorage before sign in
+      if (rememberMe) {
+        localStorage.setItem("domera-remember-me", "true");
+        localStorage.setItem("domera-user-email", formData.email);
+      } else {
+        localStorage.removeItem("domera-remember-me");
+        localStorage.removeItem("domera-user-email");
+      }
+
+      const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
+        rememberMe: rememberMe,
         redirect: false,
       });
 
       if (result?.error) {
-        setError('Credenciales incorrectas');
+        setError("Credenciales incorrectas");
       } else if (result?.ok) {
-        // Get updated session to determine redirect
-        const session = await getSession();
-        if (session?.user) {
-          // If there's a redirect parameter, use it
-          if (redirect) {
-            router.push(redirect);
-            return;
-          }
-          
-          // Determine redirect based on user role and rememberMe preference
-          const userRoles = session.user.roles || [];
-          const hasAdminRole = userRoles.some(role => 
-            ['admin', 'organization_owner', 'sales_manager', 'finance_manager', 'site_manager'].includes(role.role)
-          );
-          
-          if (rememberMe && hasAdminRole) {
-            router.push('/dashboard');
-          } else if (userRoles.some(role => role.role === 'professional')) {
-            router.push('/professionals/dashboard');
-          } else {
-            router.push('/userDashboard');
-          }
-        }
+        // Redirect to specified redirect parameter or home page as default
+        const redirectUrl = searchParams.get("redirect") || "/";
+        router.push(redirectUrl);
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError('Error al iniciar sesión. Intenta nuevamente.');
+      console.error("Login error:", error);
+      setError("Error al iniciar sesión. Intenta nuevamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -92,16 +95,16 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
-      await signIn('google', { callbackUrl });
+      await signIn("google", { callbackUrl: "/" });
     } catch (error) {
-      console.error('Google login error:', error);
-      setError('Error al iniciar sesión con Google');
+      console.error("Google login error:", error);
+      setError("Error al iniciar sesión con Google");
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center">
           <Logo width={213} height={56} className="mx-auto mb-4" />
           <p className="text-gray-600">Cargando...</p>
@@ -120,7 +123,7 @@ export default function LoginPage() {
       {/* Main Login Section */}
       <div className="grid items-center lg:grid-cols-2">
         {/* Left Side - Form */}
-        <div className="mx-auto items-center mt-12 flex w-full max-w-xl flex-col justify-center">
+        <div className="mx-auto mt-12 flex w-full max-w-xl flex-col items-center justify-center">
           <div className="mx-auto flex w-full max-w-md flex-col items-center justify-center">
             {/* Form Title */}
             <div className="mb-8 text-center">
@@ -160,13 +163,13 @@ export default function LoginPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="mb-4 rounded-md bg-red-50 border border-red-200 p-3">
+              <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3">
                 <p className="text-sm text-red-600">{error}</p>
               </div>
             )}
 
             {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-2 w-full">
+            <form onSubmit={handleSubmit} className="w-full space-y-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Correo electrónico
@@ -176,7 +179,7 @@ export default function LoginPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-primaryColor"
+                  className="focus:ring-primaryColor w-full rounded-md border border-gray-300 px-4 py-3 transition-all outline-none focus:border-transparent focus:ring-2"
                   placeholder="tu@email.com"
                   required
                   disabled={isSubmitting}
@@ -193,7 +196,7 @@ export default function LoginPage() {
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full rounded-md border border-gray-300 px-4 py-3 pr-12 transition-all outline-none focus:border-transparent focus:ring-2 focus:ring-primaryColor"
+                    className="focus:ring-primaryColor w-full rounded-md border border-gray-300 px-4 py-3 pr-12 transition-all outline-none focus:border-transparent focus:ring-2"
                     placeholder="Tu contraseña"
                     required
                     disabled={isSubmitting}
@@ -201,17 +204,42 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
                     disabled={isSubmitting}
                   >
                     {showPassword ? (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                        />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
                       </svg>
                     )}
                   </button>
@@ -219,21 +247,21 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="flex mt-1 items-center">
+                <div className="mt-1 flex items-center">
                   <input
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 cursor-pointer rounded border-gray-300 text-primaryColor focus:ring-blue-500"
+                    className="text-primaryColor h-4 w-4 cursor-pointer rounded border-gray-300 focus:ring-blue-500"
                     disabled={isSubmitting}
                   />
                   <label
                     htmlFor="remember-me"
-                    className="ml-2 block cursor-pointer select-none text-sm text-gray-700"
+                    className="ml-2 block cursor-pointer text-sm text-gray-700 select-none"
                   >
-                    Recordarme (Dashboard)
+                    Recordarme
                   </label>
                 </div>
 
@@ -247,19 +275,19 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="mt-2 w-full cursor-pointer rounded-md bg-primaryColor px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="bg-primaryColor mt-2 w-full cursor-pointer rounded-md px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
-                {isSubmitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
+                {isSubmitting ? "Iniciando sesión..." : "Iniciar sesión"}
               </button>
             </form>
 
             {/* Register Link */}
             <div className="mt-6 text-center">
               <p className="text-gray-600">
-                ¿No tienes cuenta?{' '}
+                ¿No tienes cuenta?{" "}
                 <Link
                   href="/register"
-                  className="font-medium text-primaryColor hover:text-blue-700"
+                  className="text-primaryColor font-medium hover:text-blue-700"
                 >
                   Crear cuenta
                 </Link>

@@ -6,8 +6,6 @@ import { Separator } from "@/components/ui/separator";
 export default async function ProfilePage() {
   const user = await getCurrentUserWithRoles();
 
-  console.log('user', user)
-
   if (!user) {
     redirect("/login");
   }
