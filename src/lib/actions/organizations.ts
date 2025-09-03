@@ -3,27 +3,30 @@
 // Server actions for organization management
 // =============================================================================
 
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+
+import type { OrganizationStatus } from "@prisma/client";
+
 import {
-  validateSession,
-  requireRole,
   requireOrganizationAccess,
-} from '@/lib/auth/validation';
+  requireRole,
+  validateSession,
+} from "@/lib/auth/validation";
 import {
-  getOrganizations,
+  createOrganization,
   getOrganizationById,
   getOrganizationBySlug,
-  createOrganization,
-  updateOrganization,
+  getOrganizations,
   getOrganizationStats,
   getUserOrganizations,
-} from '@/lib/dal/organizations';
-import type { OrganizationStatus } from '@prisma/client';
-import { headers } from 'next/headers';
-import { extractRealIP } from '../utils/security';
-import { validateSuperAdminSession } from '../auth/super-admin';
+  updateOrganization,
+} from "@/lib/dal/organizations";
+
+import { validateSuperAdminSession } from "../auth/super-admin";
+import { extractRealIP } from "../utils/security";
 
 // Input types (defined in DAL)
 interface OrganizationFiltersInput {
@@ -78,20 +81,20 @@ interface OrganizationActionResult {
  * Requires admin role
  */
 export async function getOrganizationsAction(
-  filters: OrganizationFiltersInput = { page: 1, pageSize: 20 }
+  filters: OrganizationFiltersInput = { page: 1, pageSize: 20 },
 ): Promise<OrganizationActionResult> {
   try {
     // Try super admin authentication first (for /super routes)
     const headersList = await headers();
-    const cookieHeader = headersList.get('cookie');
+    const cookieHeader = headersList.get("cookie");
 
     let isAuthenticated = false;
 
     // Check for super admin session
     const sessionCookies = cookieHeader
-      ?.split(';')
-      .filter((c) => c.trim().startsWith('super-admin-session='))
-      .map((c) => c.split('=')[1]);
+      ?.split(";")
+      .filter((c) => c.trim().startsWith("super-admin-session="))
+      .map((c) => c.split("=")[1]);
 
     const sessionCookie = sessionCookies?.pop();
 
@@ -99,7 +102,7 @@ export async function getOrganizationsAction(
       const ipAddress = extractRealIP(headersList);
       const sessionValidation = await validateSuperAdminSession(
         sessionCookie,
-        ipAddress
+        ipAddress,
       );
 
       if (sessionValidation.valid && sessionValidation.userId) {
@@ -109,14 +112,14 @@ export async function getOrganizationsAction(
 
     // If super admin auth failed, try regular NextAuth
     if (!isAuthenticated) {
-      const authResult = await requireRole('admin');
+      const authResult = await requireRole("admin");
 
       if (authResult.success) {
         isAuthenticated = true;
       } else {
         return {
           success: false,
-          error: authResult.error || 'Usuario no autenticado',
+          error: authResult.error || "Usuario no autenticado",
         };
       }
     }
@@ -134,7 +137,7 @@ export async function getOrganizationsAction(
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo organizaciones',
+          : "Error obteniendo organizaciones",
     };
   }
 }
@@ -144,7 +147,7 @@ export async function getOrganizationsAction(
  * Requires organization access
  */
 export async function getOrganizationByIdAction(
-  organizationId: string
+  organizationId: string,
 ): Promise<OrganizationActionResult> {
   try {
     // Validate authentication and organization access
@@ -161,13 +164,13 @@ export async function getOrganizationByIdAction(
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting organization:', error);
+    console.error("[SERVER_ACTION] Error getting organization:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo organización',
+          : "Error obteniendo organización",
     };
   }
 }
@@ -177,7 +180,7 @@ export async function getOrganizationByIdAction(
  * Public access - no auth required
  */
 export async function getOrganizationBySlugAction(
-  slug: string
+  slug: string,
 ): Promise<OrganizationActionResult> {
   try {
     const result = await getOrganizationBySlug(slug);
@@ -187,13 +190,13 @@ export async function getOrganizationBySlugAction(
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting organization by slug:', error);
+    console.error("[SERVER_ACTION] Error getting organization by slug:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo organización',
+          : "Error obteniendo organización",
     };
   }
 }
@@ -205,11 +208,11 @@ export async function getOrganizationBySlugAction(
 export async function createOrganizationAction(
   input: CreateOrganizationInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<OrganizationActionResult> {
   try {
     // Validate authentication and authorization
-    const authResult = await requireRole('admin');
+    const authResult = await requireRole("admin");
     if (!authResult.success) {
       return { success: false, error: authResult.error };
     }
@@ -221,23 +224,23 @@ export async function createOrganizationAction(
       input,
       userId,
       ipAddress,
-      userAgent
+      userAgent,
     );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // Revalidate relevant paths
-    revalidatePath('/dashboard');
-    revalidatePath('/organizations');
+    revalidatePath("/dashboard");
+    revalidatePath("/organizations");
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error creating organization:', error);
+    console.error("[SERVER_ACTION] Error creating organization:", error);
     return {
       success: false,
       error:
-        error instanceof Error ? error.message : 'Error creando organización',
+        error instanceof Error ? error.message : "Error creando organización",
     };
   }
 }
@@ -250,7 +253,7 @@ export async function updateOrganizationAction(
   organizationId: string,
   input: UpdateOrganizationInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<OrganizationActionResult> {
   try {
     // Validate authentication and check if user is admin or organization owner
@@ -260,18 +263,18 @@ export async function updateOrganizationAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === 'admin');
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
     const isOrgOwner = user.userRoles.some(
       (role) =>
-        role.role === 'organization_owner' &&
-        role.organizationId === organizationId
+        role.role === "organization_owner" &&
+        role.organizationId === organizationId,
     );
 
     if (!isAdmin && !isOrgOwner) {
       return {
         success: false,
         error:
-          'Solo administradores o propietarios de organización pueden actualizar esta información',
+          "Solo administradores o propietarios de organización pueden actualizar esta información",
       };
     }
 
@@ -281,26 +284,26 @@ export async function updateOrganizationAction(
       input,
       user.id,
       ipAddress,
-      userAgent
+      userAgent,
     );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // Revalidate relevant paths
-    revalidatePath('/dashboard');
-    revalidatePath('/organizations');
+    revalidatePath("/dashboard");
+    revalidatePath("/organizations");
     revalidatePath(`/organizations/${organizationId}`);
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error updating organization:', error);
+    console.error("[SERVER_ACTION] Error updating organization:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error actualizando organización',
+          : "Error actualizando organización",
     };
   }
 }
@@ -310,7 +313,7 @@ export async function updateOrganizationAction(
  * Requires organization access
  */
 export async function getOrganizationStatsAction(
-  organizationId: string
+  organizationId: string,
 ): Promise<OrganizationActionResult> {
   try {
     // Validate authentication and organization access
@@ -327,13 +330,13 @@ export async function getOrganizationStatsAction(
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting organization stats:', error);
+    console.error("[SERVER_ACTION] Error getting organization stats:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo estadísticas',
+          : "Error obteniendo estadísticas",
     };
   }
 }
@@ -360,13 +363,13 @@ export async function getUserOrganizationsAction(): Promise<OrganizationActionRe
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting user organizations:', error);
+    console.error("[SERVER_ACTION] Error getting user organizations:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo organizaciones del usuario',
+          : "Error obteniendo organizaciones del usuario",
     };
   }
 }
@@ -390,13 +393,13 @@ export async function getCurrentUserPrimaryOrganization(): Promise<OrganizationA
 
     // Find the first active organization role
     const primaryOrgRole = user.userRoles.find(
-      (role) => role.organizationId && role.isActive
+      (role) => role.organizationId && role.isActive,
     );
 
     if (!primaryOrgRole || !primaryOrgRole.organizationId) {
       return {
         success: false,
-        error: 'Usuario no pertenece a ninguna organización',
+        error: "Usuario no pertenece a ninguna organización",
       };
     }
 
@@ -408,13 +411,13 @@ export async function getCurrentUserPrimaryOrganization(): Promise<OrganizationA
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting primary organization:', error);
+    console.error("[SERVER_ACTION] Error getting primary organization:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo organización principal',
+          : "Error obteniendo organización principal",
     };
   }
 }

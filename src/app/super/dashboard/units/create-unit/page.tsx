@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { OptimizedImageUpload } from "@/components/create-project-form/OptimizedImageUpload";
 import {
   Select,
   SelectContent,
@@ -24,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { OptimizedImageUpload } from "@/components/create-project-form/OptimizedImageUpload";
 
 type CreateUnitForm = z.infer<typeof CreateUnitSchema>;
 

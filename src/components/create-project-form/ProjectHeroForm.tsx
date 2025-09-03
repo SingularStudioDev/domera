@@ -8,14 +8,13 @@ import { HeroFormProps } from "@/types/project-form";
 
 import { OptimizedImageUpload } from "./OptimizedImageUpload";
 
-export const ProjectHeroForm: React.FC<HeroFormProps & { projectId?: string }> = ({
+export function ProjectHeroForm({
   value,
   onChange,
   error,
   disabled,
   currency,
-  projectId,
-}) => {
+}: HeroFormProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -355,4 +354,4 @@ export const ProjectHeroForm: React.FC<HeroFormProps & { projectId?: string }> =
       )}
     </>
   );
-};
+}

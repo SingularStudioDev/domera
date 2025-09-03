@@ -99,5 +99,7 @@ export interface ImageCarouselFormProps
   extends FormFieldProps<{
     images: string[];
   }> {
+  projectId: string;
+  className: string;
   projectName: string;
 }

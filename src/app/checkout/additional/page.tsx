@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { useCheckoutStore } from "@/stores/checkoutStore";
-import { formatCurrency} from "@/utils/utils";
+import { formatCurrency } from "@/utils/utils";
 import { ChevronDownIcon } from "lucide-react";
 
 import { getAvailableUnitsForCheckoutAction } from "@/lib/actions/units";

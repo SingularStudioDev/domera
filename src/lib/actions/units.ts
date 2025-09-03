@@ -3,31 +3,34 @@
 // Server actions for unit management
 // =============================================================================
 
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath } from "next/cache";
+
+import type { UnitStatus } from "@prisma/client";
+
 import {
-  validateSession,
   requireRole,
   validateProjectAccess,
-} from '@/lib/auth/validation';
+  validateSession,
+} from "@/lib/auth/validation";
 import {
-  getUnits,
+  createUnit,
   getAvailableUnits,
   getUnitById,
-  createUnit,
+  getUnits,
+  getUnitsCountByStatus,
+  getUnitsWithOrganization,
   updateUnit,
   updateUnitsStatus,
-  validateUnitsExist,
   validateUnitsAvailability,
-  getUnitsWithOrganization,
-  getUnitsCountByStatus,
-} from '@/lib/dal/units';
+  validateUnitsExist,
+} from "@/lib/dal/units";
 import {
   bulkCreateUnitsWithValidation,
-  validateUnitNumbersAvailable,
   getBulkCreationSummary,
-} from '@/lib/services/units';
+  validateUnitNumbersAvailable,
+} from "@/lib/services/units";
 
 // Input types (defined in DAL)
 interface UnitFiltersInput {
@@ -76,7 +79,6 @@ interface UpdateUnitInput {
   features?: any;
   images?: string[];
 }
-import type { UnitStatus } from '@prisma/client';
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -97,7 +99,7 @@ interface UnitActionResult {
  * Requires organization access for the project
  */
 export async function getUnitsAction(
-  filters: UnitFiltersInput = { page: 1, pageSize: 20 }
+  filters: UnitFiltersInput = { page: 1, pageSize: 20 },
 ): Promise<UnitActionResult> {
   try {
     // Validate authentication
@@ -109,7 +111,7 @@ export async function getUnitsAction(
     // If filtering by project, validate project access
     if (filters.projectId) {
       const projectAccessResult = await validateProjectAccess(
-        filters.projectId
+        filters.projectId,
       );
       if (!projectAccessResult.success) {
         return { success: false, error: projectAccessResult.error };
@@ -125,10 +127,10 @@ export async function getUnitsAction(
     // Transform Decimal fields to numbers for client serialization
     const transformedData = {
       ...result.data,
-      data: result.data.data.map(unit => {
+      data: result.data.data.map((unit) => {
         // Cast to any to handle the dynamic include types
         const unitWithProject = unit as any;
-        
+
         return {
           ...unit,
           totalArea: unit.totalArea ? Number(unit.totalArea) : null,
@@ -138,22 +140,28 @@ export async function getUnitsAction(
           ...(unitWithProject.project && {
             project: {
               ...unitWithProject.project,
-              basePrice: unitWithProject.project.basePrice ? Number(unitWithProject.project.basePrice) : null,
-              latitude: unitWithProject.project.latitude ? Number(unitWithProject.project.latitude) : null,
-              longitude: unitWithProject.project.longitude ? Number(unitWithProject.project.longitude) : null,
-            }
-          })
+              basePrice: unitWithProject.project.basePrice
+                ? Number(unitWithProject.project.basePrice)
+                : null,
+              latitude: unitWithProject.project.latitude
+                ? Number(unitWithProject.project.latitude)
+                : null,
+              longitude: unitWithProject.project.longitude
+                ? Number(unitWithProject.project.longitude)
+                : null,
+            },
+          }),
         };
-      })
+      }),
     };
 
     return { success: true, data: transformedData };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting units:', error);
+    console.error("[SERVER_ACTION] Error getting units:", error);
     return {
       success: false,
       error:
-        error instanceof Error ? error.message : 'Error obteniendo unidades',
+        error instanceof Error ? error.message : "Error obteniendo unidades",
     };
   }
 }
@@ -163,7 +171,7 @@ export async function getUnitsAction(
  * Public access for browsing
  */
 export async function getAvailableUnitsAction(
-  projectId: string
+  projectId: string,
 ): Promise<UnitActionResult> {
   try {
     const result = await getAvailableUnits(projectId);
@@ -172,10 +180,10 @@ export async function getAvailableUnitsAction(
     }
 
     // Transform Decimal fields to numbers for client serialization
-    const transformedUnits = result.data.map(unit => {
+    const transformedUnits = result.data.map((unit) => {
       // Cast to any to handle the dynamic include types
       const unitWithProject = unit as any;
-      
+
       return {
         ...unit,
         totalArea: unit.totalArea ? Number(unit.totalArea) : null,
@@ -185,23 +193,29 @@ export async function getAvailableUnitsAction(
         ...(unitWithProject.project && {
           project: {
             ...unitWithProject.project,
-            basePrice: unitWithProject.project.basePrice ? Number(unitWithProject.project.basePrice) : null,
-            latitude: unitWithProject.project.latitude ? Number(unitWithProject.project.latitude) : null,
-            longitude: unitWithProject.project.longitude ? Number(unitWithProject.project.longitude) : null,
-          }
-        })
+            basePrice: unitWithProject.project.basePrice
+              ? Number(unitWithProject.project.basePrice)
+              : null,
+            latitude: unitWithProject.project.latitude
+              ? Number(unitWithProject.project.latitude)
+              : null,
+            longitude: unitWithProject.project.longitude
+              ? Number(unitWithProject.project.longitude)
+              : null,
+          },
+        }),
       };
     });
 
     return { success: true, data: transformedUnits };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting available units:', error);
+    console.error("[SERVER_ACTION] Error getting available units:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo unidades disponibles',
+          : "Error obteniendo unidades disponibles",
     };
   }
 }
@@ -212,7 +226,7 @@ export async function getAvailableUnitsAction(
  */
 export async function getAvailableUnitsForCheckoutAction(
   projectId: string,
-  excludeUnitIds: string[] = []
+  excludeUnitIds: string[] = [],
 ): Promise<UnitActionResult> {
   try {
     const result = await getAvailableUnits(projectId);
@@ -221,13 +235,15 @@ export async function getAvailableUnitsForCheckoutAction(
     }
 
     // Filter out units already in checkout
-    const filteredUnits = result.data.filter(unit => !excludeUnitIds.includes(unit.id));
+    const filteredUnits = result.data.filter(
+      (unit) => !excludeUnitIds.includes(unit.id),
+    );
 
     // Transform Decimal fields to numbers for client serialization
-    const transformedUnits = filteredUnits.map(unit => {
+    const transformedUnits = filteredUnits.map((unit) => {
       // Cast to any to handle the dynamic include types
       const unitWithProject = unit as any;
-      
+
       return {
         ...unit,
         totalArea: unit.totalArea ? Number(unit.totalArea) : null,
@@ -237,23 +253,32 @@ export async function getAvailableUnitsForCheckoutAction(
         ...(unitWithProject.project && {
           project: {
             ...unitWithProject.project,
-            basePrice: unitWithProject.project.basePrice ? Number(unitWithProject.project.basePrice) : null,
-            latitude: unitWithProject.project.latitude ? Number(unitWithProject.project.latitude) : null,
-            longitude: unitWithProject.project.longitude ? Number(unitWithProject.project.longitude) : null,
-          }
-        })
+            basePrice: unitWithProject.project.basePrice
+              ? Number(unitWithProject.project.basePrice)
+              : null,
+            latitude: unitWithProject.project.latitude
+              ? Number(unitWithProject.project.latitude)
+              : null,
+            longitude: unitWithProject.project.longitude
+              ? Number(unitWithProject.project.longitude)
+              : null,
+          },
+        }),
       };
     });
 
     return { success: true, data: transformedUnits };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting available units for checkout:', error);
+    console.error(
+      "[SERVER_ACTION] Error getting available units for checkout:",
+      error,
+    );
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo unidades disponibles para checkout',
+          : "Error obteniendo unidades disponibles para checkout",
     };
   }
 }
@@ -263,7 +288,7 @@ export async function getAvailableUnitsForCheckoutAction(
  * Public access for browsing
  */
 export async function getUnitByIdAction(
-  unitId: string
+  unitId: string,
 ): Promise<UnitActionResult> {
   try {
     const result = await getUnitById(unitId);
@@ -274,7 +299,7 @@ export async function getUnitByIdAction(
     const unit = result.data;
     // Cast to any to handle the dynamic include types
     const unitWithProject = unit as any;
-    
+
     // Transform Decimal fields to numbers for client serialization
     const transformedUnit = {
       ...unit,
@@ -285,19 +310,25 @@ export async function getUnitByIdAction(
       ...(unitWithProject.project && {
         project: {
           ...unitWithProject.project,
-          basePrice: unitWithProject.project.basePrice ? Number(unitWithProject.project.basePrice) : null,
-          latitude: unitWithProject.project.latitude ? Number(unitWithProject.project.latitude) : null,
-          longitude: unitWithProject.project.longitude ? Number(unitWithProject.project.longitude) : null,
-        }
-      })
+          basePrice: unitWithProject.project.basePrice
+            ? Number(unitWithProject.project.basePrice)
+            : null,
+          latitude: unitWithProject.project.latitude
+            ? Number(unitWithProject.project.latitude)
+            : null,
+          longitude: unitWithProject.project.longitude
+            ? Number(unitWithProject.project.longitude)
+            : null,
+        },
+      }),
     };
 
     return { success: true, data: transformedUnit };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting unit:', error);
+    console.error("[SERVER_ACTION] Error getting unit:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error obteniendo unidad',
+      error: error instanceof Error ? error.message : "Error obteniendo unidad",
     };
   }
 }
@@ -309,7 +340,7 @@ export async function getUnitByIdAction(
 export async function createUnitAction(
   input: CreateUnitInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<UnitActionResult> {
   try {
     // Validate project access
@@ -326,13 +357,13 @@ export async function createUnitAction(
 
     const user = authResult.user!;
     const hasPermission = user.userRoles.some((role) =>
-      ['admin', 'organization_owner', 'sales_manager'].includes(role.role)
+      ["admin", "organization_owner", "sales_manager"].includes(role.role),
     );
 
     if (!hasPermission) {
       return {
         success: false,
-        error: 'No tienes permisos para crear unidades',
+        error: "No tienes permisos para crear unidades",
       };
     }
 
@@ -343,16 +374,16 @@ export async function createUnitAction(
     }
 
     // Revalidate relevant paths
-    revalidatePath('/projects');
+    revalidatePath("/projects");
     revalidatePath(`/projects/${input.projectId}`);
-    revalidatePath('/dashboard');
+    revalidatePath("/dashboard");
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error creating unit:', error);
+    console.error("[SERVER_ACTION] Error creating unit:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error creando unidad',
+      error: error instanceof Error ? error.message : "Error creando unidad",
     };
   }
 }
@@ -365,7 +396,7 @@ export async function updateUnitAction(
   unitId: string,
   input: UpdateUnitInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<UnitActionResult> {
   try {
     // Get unit to validate project access
@@ -390,13 +421,13 @@ export async function updateUnitAction(
 
     const user = authResult.user!;
     const hasPermission = user.userRoles.some((role) =>
-      ['admin', 'organization_owner', 'sales_manager'].includes(role.role)
+      ["admin", "organization_owner", "sales_manager"].includes(role.role),
     );
 
     if (!hasPermission) {
       return {
         success: false,
-        error: 'No tienes permisos para actualizar unidades',
+        error: "No tienes permisos para actualizar unidades",
       };
     }
 
@@ -406,25 +437,25 @@ export async function updateUnitAction(
       input,
       user.id,
       ipAddress,
-      userAgent
+      userAgent,
     );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // Revalidate relevant paths
-    revalidatePath('/projects');
+    revalidatePath("/projects");
     revalidatePath(`/projects/${unit.projectId}`);
     revalidatePath(`/units/${unitId}`);
-    revalidatePath('/dashboard');
+    revalidatePath("/dashboard");
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error updating unit:', error);
+    console.error("[SERVER_ACTION] Error updating unit:", error);
     return {
       success: false,
       error:
-        error instanceof Error ? error.message : 'Error actualizando unidad',
+        error instanceof Error ? error.message : "Error actualizando unidad",
     };
   }
 }
@@ -437,7 +468,7 @@ export async function updateUnitsStatusAction(
   unitIds: string[],
   status: UnitStatus,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<UnitActionResult> {
   try {
     // Validate authentication
@@ -461,22 +492,22 @@ export async function updateUnitsStatusAction(
     if (organizationIds.length > 1) {
       return {
         success: false,
-        error: 'Todas las unidades deben pertenecer a la misma organización',
+        error: "Todas las unidades deben pertenecer a la misma organización",
       };
     }
 
     const organizationId = organizationIds[0];
     const hasAccess = user.userRoles.some(
       (role) =>
-        role.role === 'admin' ||
+        role.role === "admin" ||
         (role.organizationId === organizationId &&
-          ['organization_owner', 'sales_manager'].includes(role.role))
+          ["organization_owner", "sales_manager"].includes(role.role)),
     );
 
     if (!hasAccess) {
       return {
         success: false,
-        error: 'No tienes acceso a esta organización',
+        error: "No tienes acceso a esta organización",
       };
     }
 
@@ -486,25 +517,25 @@ export async function updateUnitsStatusAction(
       status,
       user.id,
       ipAddress,
-      userAgent
+      userAgent,
     );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // Revalidate relevant paths
-    revalidatePath('/projects');
-    revalidatePath('/dashboard');
+    revalidatePath("/projects");
+    revalidatePath("/dashboard");
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error updating units status:', error);
+    console.error("[SERVER_ACTION] Error updating units status:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error actualizando estado de unidades',
+          : "Error actualizando estado de unidades",
     };
   }
 }
@@ -518,19 +549,19 @@ export async function updateUnitsStatusAction(
  * Used by operations before creating reservations
  */
 export async function validateUnitsExistAction(
-  unitIds: string[]
+  unitIds: string[],
 ): Promise<UnitActionResult> {
   try {
     const result = await validateUnitsExist(unitIds);
     return { success: result.data || false, error: result.error };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error validating units exist:', error);
+    console.error("[SERVER_ACTION] Error validating units exist:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error validando existencia de unidades',
+          : "Error validando existencia de unidades",
     };
   }
 }
@@ -540,22 +571,22 @@ export async function validateUnitsExistAction(
  * Used by operations before creating reservations
  */
 export async function validateUnitsAvailabilityAction(
-  unitIds: string[]
+  unitIds: string[],
 ): Promise<UnitActionResult> {
   try {
     const result = await validateUnitsAvailability(unitIds);
     return { success: result.data || false, error: result.error };
   } catch (error) {
     console.error(
-      '[SERVER_ACTION] Error validating units availability:',
-      error
+      "[SERVER_ACTION] Error validating units availability:",
+      error,
     );
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error validando disponibilidad de unidades',
+          : "Error validando disponibilidad de unidades",
     };
   }
 }
@@ -565,7 +596,7 @@ export async function validateUnitsAvailabilityAction(
  * Used by operations service layer
  */
 export async function getUnitsWithOrganizationAction(
-  unitIds: string[]
+  unitIds: string[],
 ): Promise<UnitActionResult> {
   try {
     // Validate authentication
@@ -582,15 +613,15 @@ export async function getUnitsWithOrganizationAction(
     return { success: true, data: result.data };
   } catch (error) {
     console.error(
-      '[SERVER_ACTION] Error getting units with organization:',
-      error
+      "[SERVER_ACTION] Error getting units with organization:",
+      error,
     );
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo unidades con organización',
+          : "Error obteniendo unidades con organización",
     };
   }
 }
@@ -604,7 +635,7 @@ export async function getUnitsWithOrganizationAction(
  * Requires project access
  */
 export async function getUnitsCountByStatusAction(
-  projectId: string
+  projectId: string,
 ): Promise<UnitActionResult> {
   try {
     // Validate project access
@@ -621,15 +652,15 @@ export async function getUnitsCountByStatusAction(
     return { success: true, data: result.data };
   } catch (error) {
     console.error(
-      '[SERVER_ACTION] Error getting units count by status:',
-      error
+      "[SERVER_ACTION] Error getting units count by status:",
+      error,
     );
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo conteo de unidades',
+          : "Error obteniendo conteo de unidades",
     };
   }
 }
@@ -664,7 +695,7 @@ export async function bulkCreateUnitsAction(
     dimensions?: string;
   }>,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<UnitActionResult> {
   try {
     // Validate project access first
@@ -681,33 +712,33 @@ export async function bulkCreateUnitsAction(
 
     const user = authResult.user!;
     const hasPermission = user.userRoles.some((role) =>
-      ['admin', 'organization_owner', 'sales_manager'].includes(role.role)
+      ["admin", "organization_owner", "sales_manager"].includes(role.role),
     );
 
     if (!hasPermission) {
       return {
         success: false,
         error:
-          'No tienes permisos para crear unidades en lote. Se requiere rol de administrador, propietario de organización o gerente de ventas.',
+          "No tienes permisos para crear unidades en lote. Se requiere rol de administrador, propietario de organización o gerente de ventas.",
       };
     }
 
     // Additional validation for large batches
     if (
       units.length > 200 &&
-      !user.userRoles.some((role) => role.role === 'admin')
+      !user.userRoles.some((role) => role.role === "admin")
     ) {
       return {
         success: false,
         error:
-          'Batches de más de 200 unidades requieren permisos de administrador',
+          "Batches de más de 200 unidades requieren permisos de administrador",
       };
     }
 
     // Normalize and validate input data
     const normalizedUnits = units.map((unit) => ({
       ...unit,
-      currency: unit.currency || 'USD',
+      currency: unit.currency || "USD",
       features: unit.features || [],
       images: unit.images || [],
     }));
@@ -718,7 +749,7 @@ export async function bulkCreateUnitsAction(
       normalizedUnits,
       user.id,
       ipAddress,
-      userAgent
+      userAgent,
     );
 
     if (!result.data) {
@@ -726,9 +757,9 @@ export async function bulkCreateUnitsAction(
     }
 
     // Revalidate relevant paths
-    revalidatePath('/projects');
+    revalidatePath("/projects");
     revalidatePath(`/projects/${projectId}`);
-    revalidatePath('/dashboard');
+    revalidatePath("/dashboard");
     revalidatePath(`/projects/${projectId}/units`);
 
     return {
@@ -738,18 +769,18 @@ export async function bulkCreateUnitsAction(
         message: `Éxito: ${result.data.count} unidades creadas en lote`,
         performance: {
           unitsCreated: result.data.count,
-          processingTime: 'Completado eficientemente',
+          processingTime: "Completado eficientemente",
         },
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error in bulk create units:', error);
+    console.error("[SERVER_ACTION] Error in bulk create units:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error crítico en creación de unidades en lote',
+          : "Error crítico en creación de unidades en lote",
     };
   }
 }
@@ -760,7 +791,7 @@ export async function bulkCreateUnitsAction(
  */
 export async function validateBulkUnitNumbersAction(
   projectId: string,
-  unitNumbers: string[]
+  unitNumbers: string[],
 ): Promise<UnitActionResult> {
   try {
     // Validate project access
@@ -783,13 +814,13 @@ export async function validateBulkUnitNumbersAction(
       error: result.error,
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error validating bulk unit numbers:', error);
+    console.error("[SERVER_ACTION] Error validating bulk unit numbers:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error validando números de unidad',
+          : "Error validando números de unidad",
     };
   }
 }
@@ -800,7 +831,7 @@ export async function validateBulkUnitNumbersAction(
  */
 export async function getBulkCreationSummaryAction(
   projectId: string,
-  daysBack: number = 7
+  daysBack: number = 7,
 ): Promise<UnitActionResult> {
   try {
     // Validate project access
@@ -826,15 +857,15 @@ export async function getBulkCreationSummaryAction(
     return { success: true, data: result.data };
   } catch (error) {
     console.error(
-      '[SERVER_ACTION] Error getting bulk creation summary:',
-      error
+      "[SERVER_ACTION] Error getting bulk creation summary:",
+      error,
     );
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Error obteniendo resumen de creación en lote',
+          : "Error obteniendo resumen de creación en lote",
     };
   }
 }

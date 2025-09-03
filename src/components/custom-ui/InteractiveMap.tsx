@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import { cn } from '@/utils/utils';
+import dynamic from "next/dynamic";
+
+import { cn } from "@/utils/utils";
 
 interface InteractiveMapProps {
   latitude: number;
@@ -13,7 +14,7 @@ interface InteractiveMapProps {
 }
 
 // Dynamically import the map component to avoid SSR issues
-const LazyMap = dynamic(() => import('./LeafletMap'), {
+const LazyMap = dynamic(() => import("./LeafletMap"), {
   ssr: false,
   loading: () => (
     <div className="flex h-full items-center justify-center bg-gray-50">
@@ -30,13 +31,13 @@ export default function InteractiveMap({
   longitude,
   zoom = 15,
   className,
-  markerPopup = 'Ubicación del proyecto',
+  markerPopup = "Ubicación del proyecto",
 }: InteractiveMapProps) {
   return (
     <div
       className={cn(
-        'h-[50dvh] overflow-hidden rounded-2xl border border-gray-300',
-        className
+        "h-[50dvh] overflow-hidden rounded-2xl border border-gray-300",
+        className,
       )}
     >
       <LazyMap

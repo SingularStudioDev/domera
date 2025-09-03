@@ -1,11 +1,13 @@
-'use client';
+"use client";
 
-import { ChartLineMultiple } from '@/components/dashboard/ChartLineMultiple';
-import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
-import { ArrowRightIcon, BuildingIcon, AlertTriangle } from 'lucide-react';
-import { useAuth, useIsAdmin } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import { AlertTriangle, ArrowRightIcon, BuildingIcon } from "lucide-react";
+
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { Card, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
+import { ChartLineMultiple } from "@/components/dashboard/ChartLineMultiple";
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -15,14 +17,14 @@ export default function Dashboard() {
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.push('/login');
+        router.push("/login");
         return;
       }
-      
+
       if (!isAdmin) {
         // Show access denied message and redirect to home after 3 seconds
         setTimeout(() => {
-          router.push('/');
+          router.push("/");
         }, 3000);
       }
     }
@@ -31,9 +33,9 @@ export default function Dashboard() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primaryColor mx-auto"></div>
+          <div className="border-primaryColor mx-auto h-8 w-8 animate-spin rounded-full border-b-2"></div>
           <p className="mt-2 text-gray-600">Cargando...</p>
         </div>
       </div>
@@ -43,12 +45,15 @@ export default function Dashboard() {
   // Show access denied message for non-admin users
   if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center max-w-md mx-auto p-8">
-          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
-          <p className="text-gray-600 mb-4">
-            No tienes permisos para acceder a esta sección. Solo los administradores pueden ver el dashboard.
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="mx-auto max-w-md p-8 text-center">
+          <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-red-500" />
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">
+            Acceso Denegado
+          </h1>
+          <p className="mb-4 text-gray-600">
+            No tienes permisos para acceder a esta sección. Solo los
+            administradores pueden ver el dashboard.
           </p>
           <p className="text-sm text-gray-500">
             Serás redirigido al inicio en unos segundos...

@@ -4,8 +4,9 @@
 // Created: August 2025
 // =============================================================================
 
-import { prisma } from '@/lib/prisma';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from "@prisma/client";
+
+import { prisma } from "@/lib/prisma";
 
 // =============================================================================
 // BASE DATABASE CLIENT
@@ -29,10 +30,10 @@ export class DatabaseError extends Error {
   constructor(
     message: string,
     public code?: string,
-    public details?: any
+    public details?: any,
   ) {
     super(message);
-    this.name = 'DatabaseError';
+    this.name = "DatabaseError";
   }
 }
 
@@ -40,31 +41,33 @@ export class ValidationError extends Error {
   constructor(
     message: string,
     public field?: string,
-    public value?: any
+    public value?: any,
   ) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
   }
 }
 
 export class AuthorizationError extends Error {
-  constructor(message: string = 'No tienes permisos para realizar esta acción') {
+  constructor(
+    message: string = "No tienes permisos para realizar esta acción",
+  ) {
     super(message);
-    this.name = 'AuthorizationError';
+    this.name = "AuthorizationError";
   }
 }
 
 export class NotFoundError extends Error {
   constructor(resource: string, id?: string) {
-    super(`${resource}${id ? ` con ID ${id}` : ''} no encontrado`);
-    this.name = 'NotFoundError';
+    super(`${resource}${id ? ` con ID ${id}` : ""} no encontrado`);
+    this.name = "NotFoundError";
   }
 }
 
 export class ConflictError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'ConflictError';
+    this.name = "ConflictError";
   }
 }
 
@@ -72,13 +75,15 @@ export class ConflictError extends Error {
 // RESULT WRAPPER
 // =============================================================================
 
-export type Result<T> = {
-  data: T;
-  error: null;
-} | {
-  data: null;
-  error: string;
-};
+export type Result<T> =
+  | {
+      data: T;
+      error: null;
+    }
+  | {
+      data: null;
+      error: string;
+    };
 
 export function success<T>(data: T): Result<T> {
   return { data, error: null };
@@ -103,18 +108,18 @@ export async function logAudit(
     oldValues,
     newValues,
     ipAddress,
-    userAgent
+    userAgent,
   }: {
     userId?: string;
     organizationId?: string;
     tableName: string;
     recordId: string;
-    action: 'INSERT' | 'UPDATE' | 'DELETE' | 'SELECT';
+    action: "INSERT" | "UPDATE" | "DELETE" | "SELECT";
     oldValues?: Record<string, any>;
     newValues?: Record<string, any>;
     ipAddress?: string;
     userAgent?: string;
-  }
+  },
 ): Promise<void> {
   try {
     await client.auditLog.create({
@@ -127,12 +132,12 @@ export async function logAudit(
         oldValues,
         newValues,
         ipAddress,
-        userAgent
-      }
+        userAgent,
+      },
     });
   } catch (error) {
     // Log audit errors but don't fail the main operation
-    console.error('Failed to log audit:', error);
+    console.error("Failed to log audit:", error);
   }
 }
 
@@ -163,14 +168,14 @@ export function formatPaginatedResult<T>(
   data: T[],
   count: number,
   page: number,
-  pageSize: number
+  pageSize: number,
 ): PaginatedResult<T> {
   return {
     data,
     count,
     page,
     pageSize,
-    totalPages: Math.ceil(count / pageSize)
+    totalPages: Math.ceil(count / pageSize),
   };
 }
 
@@ -186,7 +191,7 @@ export async function getUserWithRoles(client: DatabaseClient, email: string) {
     const user = await client.user.findFirst({
       where: {
         email,
-        isActive: true
+        isActive: true,
       },
       include: {
         userRoles: {
@@ -195,21 +200,21 @@ export async function getUserWithRoles(client: DatabaseClient, email: string) {
             organization: {
               select: {
                 name: true,
-                slug: true
-              }
-            }
-          }
-        }
-      }
+                slug: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user) {
-      throw new DatabaseError('Usuario no encontrado', 'USER_NOT_FOUND');
+      throw new DatabaseError("Usuario no encontrado", "USER_NOT_FOUND");
     }
 
     return user;
   } catch (error) {
-    throw new DatabaseError('Error al obtener usuario', 'DB_ERROR', error);
+    throw new DatabaseError("Error al obtener usuario", "DB_ERROR", error);
   }
 }
 
@@ -217,43 +222,47 @@ export async function checkUserPermission(
   client: DatabaseClient,
   userId: string,
   requiredRole: string,
-  organizationId?: string
+  organizationId?: string,
 ): Promise<boolean> {
   try {
     const userRoles = await client.userRole.findMany({
       where: {
         userId,
-        isActive: true
+        isActive: true,
       },
       select: {
         role: true,
-        organizationId: true
-      }
+        organizationId: true,
+      },
     });
 
     // Check for admin role (global access)
-    if (userRoles.some(role => role.role === 'admin')) {
+    if (userRoles.some((role) => role.role === "admin")) {
       return true;
     }
 
     // Check for specific role in organization
     if (organizationId) {
-      return userRoles.some(role => 
-        role.role === requiredRole && 
-        role.organizationId === organizationId
+      return userRoles.some(
+        (role) =>
+          role.role === requiredRole && role.organizationId === organizationId,
       );
     }
 
     // Check for role without organization constraint
-    return userRoles.some(role => role.role === requiredRole);
+    return userRoles.some((role) => role.role === requiredRole);
   } catch (error) {
-    throw new DatabaseError('Error al verificar permisos', 'PERMISSION_ERROR', error);
+    throw new DatabaseError(
+      "Error al verificar permisos",
+      "PERMISSION_ERROR",
+      error,
+    );
   }
 }
 
 export async function getUserOrganizations(
   client: DatabaseClient,
-  userId: string
+  userId: string,
 ): Promise<string[]> {
   try {
     const userRoles = await client.userRole.findMany({
@@ -261,19 +270,23 @@ export async function getUserOrganizations(
         userId,
         isActive: true,
         organizationId: {
-          not: null
-        }
+          not: null,
+        },
       },
       select: {
-        organizationId: true
-      }
+        organizationId: true,
+      },
     });
 
     return userRoles
-      .filter(role => role.organizationId)
-      .map(role => role.organizationId!);
+      .filter((role) => role.organizationId)
+      .map((role) => role.organizationId!);
   } catch (error) {
-    throw new DatabaseError('Error al obtener organizaciones del usuario', 'ORG_FETCH_ERROR', error);
+    throw new DatabaseError(
+      "Error al obtener organizaciones del usuario",
+      "ORG_FETCH_ERROR",
+      error,
+    );
   }
 }
 
@@ -283,7 +296,7 @@ export async function getUserOrganizations(
 
 export async function withTransaction<T>(
   client: DatabaseClient,
-  operation: (client: DatabaseClient) => Promise<T>
+  operation: (client: DatabaseClient) => Promise<T>,
 ): Promise<T> {
   // Note: Supabase doesn't have explicit transactions in the client library
   // This is a placeholder for future implementation or can use stored procedures
@@ -312,17 +325,19 @@ export function buildDateRangeFilter(startDate?: string, endDate?: string) {
 }
 
 export function buildTextSearchFilter(searchTerm?: string) {
-  return searchTerm ? {
-    contains: searchTerm,
-    mode: 'insensitive' as const
-  } : undefined;
+  return searchTerm
+    ? {
+        contains: searchTerm,
+        mode: "insensitive" as const,
+      }
+    : undefined;
 }
 
 export function buildPaginationOptions(page: number, pageSize: number) {
   const skip = (page - 1) * pageSize;
   return {
     skip,
-    take: pageSize
+    take: pageSize,
   };
 }
 
@@ -350,14 +365,17 @@ export function buildPaginationOptions(page: number, pageSize: number) {
 // CACHE HELPERS (for future implementation)
 // =============================================================================
 
-export function getCacheKey(prefix: string, ...parts: (string | number)[]): string {
-  return `${prefix}:${parts.join(':')}`;
+export function getCacheKey(
+  prefix: string,
+  ...parts: (string | number)[]
+): string {
+  return `${prefix}:${parts.join(":")}`;
 }
 
 export async function withCache<T>(
   key: string,
   operation: () => Promise<T>,
-  ttl: number = 300 // 5 minutes default
+  ttl: number = 300, // 5 minutes default
 ): Promise<T> {
   // Placeholder for Redis cache implementation
   // For now, just execute the operation

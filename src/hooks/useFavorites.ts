@@ -43,8 +43,11 @@ export interface FavoriteStats {
  * Calculate if unit is favorite from favorites list
  * Use this in components that receive favorites as props
  */
-export function calculateIsFavorite(unitId: string, favorites: FavoriteUnit[]): boolean {
-  return favorites.some(fav => fav.id === unitId);
+export function calculateIsFavorite(
+  unitId: string,
+  favorites: FavoriteUnit[],
+): boolean {
+  return favorites.some((fav) => fav.id === unitId);
 }
 
 /**
@@ -52,36 +55,45 @@ export function calculateIsFavorite(unitId: string, favorites: FavoriteUnit[]): 
  * Use this in components that receive favorites as props
  */
 export function calculateFavoritesByProject(
-  projectId: string, 
-  favorites: FavoriteUnit[]
+  projectId: string,
+  favorites: FavoriteUnit[],
 ): FavoriteUnit[] {
-  return favorites.filter(fav => fav.project.id === projectId);
+  return favorites.filter((fav) => fav.project.id === projectId);
 }
 
 /**
  * Calculate favorite statistics from favorites list
  * Use this in components that receive favorites as props
  */
-export function calculateFavoriteStats(favorites: FavoriteUnit[]): FavoriteStats {
-  const projectCounts = favorites.reduce((acc, fav) => {
-    const projectId = fav.project.id;
-    acc[projectId] = (acc[projectId] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+export function calculateFavoriteStats(
+  favorites: FavoriteUnit[],
+): FavoriteStats {
+  const projectCounts = favorites.reduce(
+    (acc, fav) => {
+      const projectId = fav.project.id;
+      acc[projectId] = (acc[projectId] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
-  const favoritesByProject = Object.entries(projectCounts).map(([projectId, count]) => {
-    const project = favorites.find(fav => fav.project.id === projectId)?.project;
-    return {
-      projectId,
-      projectName: project?.name || 'Unknown',
-      favoriteCount: count
-    };
-  });
+  const favoritesByProject = Object.entries(projectCounts).map(
+    ([projectId, count]) => {
+      const project = favorites.find(
+        (fav) => fav.project.id === projectId,
+      )?.project;
+      return {
+        projectId,
+        projectName: project?.name || "Unknown",
+        favoriteCount: count,
+      };
+    },
+  );
 
   return {
     totalFavorites: favorites.length,
     projectsWithFavorites: Object.keys(projectCounts).length,
-    favoritesByProject
+    favoritesByProject,
   };
 }
 
@@ -90,13 +102,13 @@ export function calculateFavoriteStats(favorites: FavoriteUnit[]): FavoriteStats
  * Use this in components that need to check multiple units efficiently
  */
 export function createFavoriteStatusMap(
-  unitIds: string[], 
-  favorites: FavoriteUnit[]
+  unitIds: string[],
+  favorites: FavoriteUnit[],
 ): Record<string, boolean> {
   const favoriteMap: Record<string, boolean> = {};
-  
-  unitIds.forEach(unitId => {
-    favoriteMap[unitId] = favorites.some(fav => fav.id === unitId);
+
+  unitIds.forEach((unitId) => {
+    favoriteMap[unitId] = favorites.some((fav) => fav.id === unitId);
   });
 
   return favoriteMap;

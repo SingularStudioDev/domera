@@ -1,18 +1,20 @@
-'use client';
+"use client";
 
-import { Heart, Grid3X3, Filter } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Separator } from '@/components/ui/separator';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+import { Filter, Grid3X3, Heart } from "lucide-react";
+
+import { getUserFavoritesAction } from "@/lib/actions/favourites";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { getUserFavoritesAction } from '@/lib/actions/favourites';
-import UnitCard from '@/app/(landing)/projects/[slug]/units/_components/UnitCard';
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import UnitCard from "@/app/(landing)/projects/[slug]/units/_components/UnitCard";
 
 // Unit type for UnitCard component
 interface FavoriteUnit {
@@ -38,10 +40,10 @@ const FavoritesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Filter states
-  const [selectedRooms, setSelectedRooms] = useState<string>('all');
-  const [selectedNew, setSelectedNew] = useState<string>('all');
+  const [selectedRooms, setSelectedRooms] = useState<string>("all");
+  const [selectedNew, setSelectedNew] = useState<string>("all");
   const [selectedNeighborhood, setSelectedNeighborhood] =
-    useState<string>('all');
+    useState<string>("all");
 
   // Load favorite units from server
   useEffect(() => {
@@ -79,20 +81,20 @@ const FavoritesPage = () => {
               bedrooms: unit.bedrooms,
               bathrooms: unit.bathrooms,
               area: `${unit.totalArea}m²`,
-              orientation: 'Norte', // Default value, adjust based on your data
+              orientation: "Norte", // Default value, adjust based on your data
               price: `$${unit.price.toLocaleString()}`,
               type: unit.unitType,
-              image: '/project-default.png', // Default image, adjust based on your data
-              available: unit.status === 'available',
-              statusIcon: unit.status === 'available',
+              image: "/project-default.png", // Default image, adjust based on your data
+              available: unit.status === "available",
+              statusIcon: unit.status === "available",
               isFavorite: true,
               projectSlug: unit.project.slug,
-            })
+            }),
           );
           setFavoriteUnits(transformedUnits);
         }
       } catch (error) {
-        console.error('Error loading favorites:', error);
+        console.error("Error loading favorites:", error);
       } finally {
         setIsLoading(false);
       }
@@ -106,25 +108,25 @@ const FavoritesPage = () => {
     let filtered = favoriteUnits;
 
     // Filter by rooms
-    if (selectedRooms !== 'all') {
-      if (selectedRooms === '4+') {
+    if (selectedRooms !== "all") {
+      if (selectedRooms === "4+") {
         filtered = filtered.filter((unit) => unit.bedrooms >= 4);
       } else {
         filtered = filtered.filter(
-          (unit) => unit.bedrooms === parseInt(selectedRooms)
+          (unit) => unit.bedrooms === parseInt(selectedRooms),
         );
       }
     }
 
     // Filter by new construction (available status)
-    if (selectedNew !== 'all') {
+    if (selectedNew !== "all") {
       filtered = filtered.filter((unit) =>
-        selectedNew === 'true' ? unit.available : !unit.available
+        selectedNew === "true" ? unit.available : !unit.available,
       );
     }
 
     // Filter by type (using unit type instead of neighborhood)
-    if (selectedNeighborhood !== 'all') {
+    if (selectedNeighborhood !== "all") {
       filtered = filtered.filter((unit) => unit.type === selectedNeighborhood);
     }
 
@@ -274,7 +276,7 @@ const FavoritesPage = () => {
                     Ver Todos los Proyectos
                   </Link>
                 </div>
-              </div>{' '}
+              </div>{" "}
             </div>
           ) : (
             <>
@@ -284,7 +286,7 @@ const FavoritesPage = () => {
                   <UnitCard
                     key={unit.id}
                     unit={unit}
-                    projectId={unit.projectSlug || ''}
+                    projectId={unit.projectSlug || ""}
                   />
                 ))}
               </div>

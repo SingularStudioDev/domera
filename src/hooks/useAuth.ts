@@ -3,16 +3,18 @@
 // Custom hooks for session management and role checking
 // =============================================================================
 
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import type { UserRoleData } from '@/types/next-auth';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import { useSession } from "next-auth/react";
+
+import type { UserRoleData } from "@/types/next-auth";
 import {
-  hasRole,
-  isAdmin,
   belongsToOrganization,
   getUserOrganizationIds,
-} from '@/lib/auth/config';
+  hasRole,
+  isAdmin,
+} from "@/lib/auth/config";
 
 // =============================================================================
 // MAIN AUTH HOOK
@@ -23,9 +25,9 @@ export function useAuth() {
 
   return {
     user: session?.user || null,
-    isLoading: status === 'loading',
-    isAuthenticated: status === 'authenticated',
-    isUnauthenticated: status === 'unauthenticated',
+    isLoading: status === "loading",
+    isAuthenticated: status === "authenticated",
+    isUnauthenticated: status === "unauthenticated",
     status,
   };
 }
@@ -116,7 +118,7 @@ export function useCanAccess(requiredRole: string, organizationId?: string) {
 /**
  * Hook to require authentication (redirects if not authenticated)
  */
-export function useRequireAuth(redirectTo: string = '/login') {
+export function useRequireAuth(redirectTo: string = "/login") {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
@@ -135,7 +137,7 @@ export function useRequireAuth(redirectTo: string = '/login') {
 export function useRequireRole(
   requiredRole: string,
   organizationId?: string,
-  redirectTo?: string
+  redirectTo?: string,
 ) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -163,7 +165,7 @@ export function useRequireRole(
  * Hook to require admin access
  */
 export function useRequireAdmin(redirectTo?: string) {
-  return useRequireRole('admin', undefined, redirectTo);
+  return useRequireRole("admin", undefined, redirectTo);
 }
 
 // =============================================================================
@@ -175,7 +177,7 @@ export function useRequireAdmin(redirectTo?: string) {
  */
 export function useRequireOrganization(
   organizationId: string,
-  redirectTo?: string
+  redirectTo?: string,
 ) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -207,7 +209,7 @@ export function useOrganizationRole(organizationId: string) {
   if (!user?.roles) return null;
 
   const orgRole = user.roles.find(
-    (role) => role.organization_id === organizationId
+    (role) => role.organization_id === organizationId,
   );
   return orgRole?.role || null;
 }
@@ -222,7 +224,7 @@ export function useOrganizationRole(organizationId: string) {
 export function useUserRole() {
   const { user } = useAuth();
 
-  if (!user?.roles || user.roles.length === 0) return 'user';
+  if (!user?.roles || user.roles.length === 0) return "user";
 
   const rolePriority = {
     admin: 1,
@@ -239,7 +241,7 @@ export function useUserRole() {
     const highestPriority = rolePriority[highest] || 999;
 
     return currentPriority < highestPriority ? current.role : highest;
-  }, 'user' as string);
+  }, "user" as string);
 
   return highestRole;
 }
@@ -258,22 +260,22 @@ export function useHasActiveOperation() {
 // =============================================================================
 
 function getDefaultRedirectForUser(roles: UserRoleData[]): string {
-  if (isAdmin(roles)) return '/dashboard';
+  if (isAdmin(roles)) return "/dashboard";
 
   const hasOrgRole = roles.some((role) =>
     [
-      'organization_owner',
-      'sales_manager',
-      'finance_manager',
-      'site_manager',
-    ].includes(role.role)
+      "organization_owner",
+      "sales_manager",
+      "finance_manager",
+      "site_manager",
+    ].includes(role.role),
   );
 
-  if (hasOrgRole) return '/dashboard';
+  if (hasOrgRole) return "/dashboard";
 
-  if (roles.some((role) => role.role === 'professional')) {
-    return '/professionals/dashboard';
+  if (roles.some((role) => role.role === "professional")) {
+    return "/professionals/dashboard";
   }
 
-  return '/userDashboard';
+  return "/userDashboard";
 }

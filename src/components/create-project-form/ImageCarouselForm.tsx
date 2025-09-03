@@ -1,12 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { OptimizedImageUpload } from './OptimizedImageUpload';
-import { ImageCarouselFormProps } from '@/types/project-form';
-import { cn } from '@/utils/utils';
+import React, { useState } from "react";
 
-export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: string; projectId?: string }> = ({
+import { cn } from "@/utils/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { ImageCarouselFormProps } from "@/types/project-form";
+
+import { OptimizedImageUpload } from "./OptimizedImageUpload";
+
+export function ImageCarouselForm({
   value,
   onChange,
   projectName,
@@ -14,15 +17,15 @@ export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: 
   error,
   className,
   projectId,
-}) => {
+}: ImageCarouselFormProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleImagesChange = (imageUrls: string[]) => {
     onChange({
-      images: imageUrls
+      images: imageUrls,
     });
-    
+
     // Resetear índice si no hay imágenes
     if (imageUrls.length === 0) {
       setCurrentIndex(0);
@@ -32,14 +35,14 @@ export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: 
   };
 
   const goToPrevious = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === 0 ? value.images.length - 1 : prevIndex - 1
+    setCurrentIndex((prevIndex) =>
+      prevIndex === 0 ? value.images.length - 1 : prevIndex - 1,
     );
   };
 
   const goToNext = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === value.images.length - 1 ? 0 : prevIndex + 1
+    setCurrentIndex((prevIndex) =>
+      prevIndex === value.images.length - 1 ? 0 : prevIndex + 1,
     );
   };
 
@@ -50,9 +53,11 @@ export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: 
     <>
       {/* Modal para edición de imágenes */}
       {isEditing && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">Editar Carrusel de Imágenes</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
+            <h3 className="mb-4 text-lg font-semibold">
+              Editar Carrusel de Imágenes
+            </h3>
             <OptimizedImageUpload
               value={value.images || []}
               onChange={handleImagesChange}
@@ -64,16 +69,16 @@ export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: 
               disabled={disabled}
               showUploadButton={true}
             />
-            <div className="flex gap-2 mt-4">
+            <div className="mt-4 flex gap-2">
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-4 py-2 bg-primaryColor text-white rounded hover:bg-primaryColor/90"
+                className="bg-primaryColor hover:bg-primaryColor/90 rounded px-4 py-2 text-white"
               >
                 Guardar
               </button>
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50"
               >
                 Cancelar
               </button>
@@ -83,24 +88,24 @@ export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: 
       )}
 
       {/* Componente principal - EXACTAMENTE igual al original ProjectImageCarousel */}
-      <div className={cn('w-full', className)}>
+      <div className={cn("w-full", className)}>
         {value.images.length > 0 ? (
           <div className="relative">
             {/* Imagen principal */}
-            <div 
-              className="relative w-full h-[80dvh] cursor-pointer"
+            <div
+              className="relative h-[80dvh] w-full cursor-pointer"
               onClick={() => !disabled && setIsEditing(true)}
             >
               <img
                 src={currentImage}
                 alt={`${projectName} - Imagen ${currentIndex + 1}`}
-                className="w-full h-full object-cover rounded-lg"
+                className="h-full w-full rounded-lg object-cover"
               />
-              
+
               {/* Overlay para indicar que es editable */}
               {!disabled && (
-                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-all duration-200 rounded-lg flex items-center justify-center">
-                  <div className="opacity-0 hover:opacity-100 bg-white/90 rounded-lg px-4 py-2 text-gray-900 font-medium">
+                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 transition-all duration-200 hover:bg-black/10">
+                  <div className="rounded-lg bg-white/90 px-4 py-2 font-medium text-gray-900 opacity-0 hover:opacity-100">
                     Haz clic para editar imágenes
                   </div>
                 </div>
@@ -113,23 +118,23 @@ export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: 
                 {/* Botón anterior */}
                 <button
                   onClick={goToPrevious}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-200"
+                  className="absolute top-1/2 left-4 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-lg transition-all duration-200 hover:bg-white"
                   disabled={disabled}
                 >
-                  <ChevronLeft className="w-6 h-6 text-gray-900" />
+                  <ChevronLeft className="h-6 w-6 text-gray-900" />
                 </button>
 
                 {/* Botón siguiente */}
                 <button
                   onClick={goToNext}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-200"
+                  className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-lg transition-all duration-200 hover:bg-white"
                   disabled={disabled}
                 >
-                  <ChevronRight className="w-6 h-6 text-gray-900" />
+                  <ChevronRight className="h-6 w-6 text-gray-900" />
                 </button>
 
                 {/* Contador */}
-                <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+                <div className="absolute right-4 bottom-4 rounded-full bg-black/70 px-3 py-1 text-sm text-white">
                   {currentIndex + 1} / {value.images.length}
                 </div>
               </>
@@ -137,15 +142,19 @@ export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: 
           </div>
         ) : (
           /* Estado vacío - Igual al original */
-          <div 
-            className="relative w-full h-[80dvh] bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+          <div
+            className="relative flex h-[80dvh] w-full cursor-pointer items-center justify-center rounded-lg bg-gray-100 transition-colors hover:bg-gray-200"
             onClick={() => !disabled && setIsEditing(true)}
           >
             <div className="text-center text-gray-500">
-              <div className="text-6xl mb-4">📷</div>
-              <p className="text-xl font-medium mb-2">No hay imágenes disponibles</p>
+              <div className="mb-4 text-6xl">📷</div>
+              <p className="mb-2 text-xl font-medium">
+                No hay imágenes disponibles
+              </p>
               {!disabled && (
-                <p className="text-sm">Haz clic para agregar imágenes al carrusel</p>
+                <p className="text-sm">
+                  Haz clic para agregar imágenes al carrusel
+                </p>
               )}
             </div>
           </div>
@@ -153,11 +162,11 @@ export const ImageCarouselForm: React.FC<ImageCarouselFormProps & { className?: 
 
         {/* Error message */}
         {error && (
-          <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg">
+          <div className="mt-4 rounded-lg bg-red-100 p-3 text-red-700">
             {error}
           </div>
         )}
       </div>
     </>
   );
-};
+}

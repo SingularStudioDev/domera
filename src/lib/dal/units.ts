@@ -4,28 +4,30 @@
 // Following single responsibility principle - only unit-related operations
 // =============================================================================
 
-import {
-  getDbClient,
-  DatabaseError,
-  ValidationError,
-  NotFoundError,
-  ConflictError,
-  logAudit,
-  type Result,
-  type PaginatedResult,
-  success,
-  failure,
-  formatPaginatedResult,
-  buildPaginationOptions,
-  buildTextSearchFilter,
-  buildDateRangeFilter
-} from './base';
+import type { Unit, UnitStatus, UnitType } from "@prisma/client";
+
 import {
   CreateUnitSchema,
+  UnitFiltersSchema,
   UpdateUnitSchema,
-  UnitFiltersSchema
-} from '@/lib/validations/schemas';
-import type { Unit, UnitStatus, UnitType } from '@prisma/client';
+} from "@/lib/validations/schemas";
+
+import {
+  buildDateRangeFilter,
+  buildPaginationOptions,
+  buildTextSearchFilter,
+  ConflictError,
+  DatabaseError,
+  failure,
+  formatPaginatedResult,
+  getDbClient,
+  logAudit,
+  NotFoundError,
+  success,
+  ValidationError,
+  type PaginatedResult,
+  type Result,
+} from "./base";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -85,75 +87,91 @@ interface UpdateUnitInput {
 /**
  * Validate that units exist and return basic info
  */
-export async function validateUnitsExist(unitIds: string[]): Promise<Result<boolean>> {
+export async function validateUnitsExist(
+  unitIds: string[],
+): Promise<Result<boolean>> {
   try {
     const client = getDbClient();
-    
+
     const count = await client.unit.count({
       where: {
-        id: { in: unitIds }
-      }
+        id: { in: unitIds },
+      },
     });
 
     if (count !== unitIds.length) {
-      throw new NotFoundError('Algunas unidades no existen');
+      throw new NotFoundError("Algunas unidades no existen");
     }
 
     return success(true);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
 /**
  * Validate that units are available for reservation
  */
-export async function validateUnitsAvailability(unitIds: string[]): Promise<Result<boolean>> {
+export async function validateUnitsAvailability(
+  unitIds: string[],
+): Promise<Result<boolean>> {
   try {
     const client = getDbClient();
-    
+
     const units = await client.unit.findMany({
       where: {
-        id: { in: unitIds }
+        id: { in: unitIds },
       },
       select: {
         id: true,
         status: true,
-        unitNumber: true
-      }
+        unitNumber: true,
+      },
     });
 
     if (units.length !== unitIds.length) {
-      throw new NotFoundError('Algunas unidades no existen');
+      throw new NotFoundError("Algunas unidades no existen");
     }
 
-    const unavailableUnits = units.filter(unit => unit.status !== 'available');
+    const unavailableUnits = units.filter(
+      (unit) => unit.status !== "available",
+    );
     if (unavailableUnits.length > 0) {
-      const unitNumbers = unavailableUnits.map(u => u.unitNumber).join(', ');
-      throw new ConflictError(`Las siguientes unidades no están disponibles: ${unitNumbers}`);
+      const unitNumbers = unavailableUnits.map((u) => u.unitNumber).join(", ");
+      throw new ConflictError(
+        `Las siguientes unidades no están disponibles: ${unitNumbers}`,
+      );
     }
 
     return success(true);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
 /**
  * Get basic unit information with project organization
  */
-export async function getUnitsWithOrganization(unitIds: string[]): Promise<Result<{
-  id: string;
-  projectId: string;
-  organizationId: string;
-  price: number;
-}[]>> {
+export async function getUnitsWithOrganization(unitIds: string[]): Promise<
+  Result<
+    {
+      id: string;
+      projectId: string;
+      organizationId: string;
+      price: number;
+    }[]
+  >
+> {
   try {
     const client = getDbClient();
-    
+
     const units = await client.unit.findMany({
       where: {
-        id: { in: unitIds }
+        id: { in: unitIds },
       },
       select: {
         id: true,
@@ -161,26 +179,28 @@ export async function getUnitsWithOrganization(unitIds: string[]): Promise<Resul
         price: true,
         project: {
           select: {
-            organizationId: true
-          }
-        }
-      }
+            organizationId: true,
+          },
+        },
+      },
     });
 
     if (units.length === 0) {
-      throw new NotFoundError('Unidades no encontradas');
+      throw new NotFoundError("Unidades no encontradas");
     }
 
-    const result = units.map(unit => ({
+    const result = units.map((unit) => ({
       id: unit.id,
       projectId: unit.projectId,
       organizationId: unit.project.organizationId,
-      price: unit.price.toNumber()
+      price: unit.price.toNumber(),
     }));
 
     return success(result);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
@@ -192,37 +212,39 @@ export async function updateUnitsStatus(
   status: UnitStatus,
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<boolean>> {
   try {
     const client = getDbClient();
 
     await client.unit.updateMany({
       where: {
-        id: { in: unitIds }
+        id: { in: unitIds },
       },
       data: {
         status,
-        updatedBy: userId
-      }
+        updatedBy: userId,
+      },
     });
 
     // Log audit for each unit
     for (const unitId of unitIds) {
       await logAudit(client, {
         userId,
-        tableName: 'units',
+        tableName: "units",
         recordId: unitId,
-        action: 'UPDATE',
+        action: "UPDATE",
         newValues: { status },
         ipAddress,
-        userAgent
+        userAgent,
       });
     }
 
     return success(true);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
@@ -234,7 +256,7 @@ export async function updateUnitsStatus(
  * Get units with filters and pagination
  */
 export async function getUnits(
-  filters: UnitFiltersInput = { page: 1, pageSize: 20 }
+  filters: UnitFiltersInput = { page: 1, pageSize: 20 },
 ): Promise<Result<PaginatedResult<Unit>>> {
   try {
     const validFilters = UnitFiltersSchema.parse(filters);
@@ -242,7 +264,7 @@ export async function getUnits(
 
     // Build where clause
     const where: any = {};
-    
+
     if (validFilters.projectId) {
       where.projectId = validFilters.projectId;
     }
@@ -257,8 +279,10 @@ export async function getUnits(
 
     if (validFilters.minBedrooms || validFilters.maxBedrooms) {
       where.bedrooms = {};
-      if (validFilters.minBedrooms) where.bedrooms.gte = validFilters.minBedrooms;
-      if (validFilters.maxBedrooms) where.bedrooms.lte = validFilters.maxBedrooms;
+      if (validFilters.minBedrooms)
+        where.bedrooms.gte = validFilters.minBedrooms;
+      if (validFilters.maxBedrooms)
+        where.bedrooms.lte = validFilters.maxBedrooms;
     }
 
     if (validFilters.minPrice || validFilters.maxPrice) {
@@ -279,7 +303,10 @@ export async function getUnits(
     const totalCount = await client.unit.count({ where });
 
     // Apply pagination
-    const paginationOptions = buildPaginationOptions(validFilters.page, validFilters.pageSize);
+    const paginationOptions = buildPaginationOptions(
+      validFilters.page,
+      validFilters.pageSize,
+    );
 
     // Get units with project info
     const units = await client.unit.findMany({
@@ -287,56 +314,62 @@ export async function getUnits(
       include: {
         project: {
           include: {
-            organization: true
-          }
-        }
+            organization: true,
+          },
+        },
       },
       orderBy: {
-        unitNumber: 'asc'
+        unitNumber: "asc",
       },
-      ...paginationOptions
+      ...paginationOptions,
     });
 
     const result = formatPaginatedResult(
       units,
       totalCount,
       validFilters.page,
-      validFilters.pageSize
+      validFilters.pageSize,
     );
 
     return success(result);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
 /**
  * Get available units for a project
  */
-export async function getAvailableUnits(projectId: string): Promise<Result<Unit[]>> {
+export async function getAvailableUnits(
+  projectId: string,
+): Promise<Result<Unit[]>> {
   try {
     const client = getDbClient();
 
     const units = await client.unit.findMany({
       where: {
         projectId,
-        status: 'available'
+        status: "available",
       },
       include: {
         project: {
           include: {
-            organization: true
-          }
-        }
+            organization: true,
+          },
+        },
       },
       orderBy: {
-        unitNumber: 'asc'
-      }
+        unitNumber: "asc",
+      },
     });
 
     return success(units);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
@@ -352,14 +385,14 @@ export async function getUnitById(unitId: string): Promise<Result<Unit>> {
       include: {
         project: {
           include: {
-            organization: true
-          }
-        }
-      }
+            organization: true,
+          },
+        },
+      },
     });
 
     if (!unit) {
-      throw new NotFoundError('Unidad', unitId);
+      throw new NotFoundError("Unidad", unitId);
     }
 
     // Serialize Decimal fields to numbers for client compatibility
@@ -372,16 +405,24 @@ export async function getUnitById(unitId: string): Promise<Result<Unit>> {
       ...(unit.project && {
         project: {
           ...unit.project,
-          latitude: unit.project.latitude ? unit.project.latitude.toNumber() : null,
-          longitude: unit.project.longitude ? unit.project.longitude.toNumber() : null,
-          basePrice: unit.project.basePrice ? unit.project.basePrice.toNumber() : null,
-        }
-      })
+          latitude: unit.project.latitude
+            ? unit.project.latitude.toNumber()
+            : null,
+          longitude: unit.project.longitude
+            ? unit.project.longitude.toNumber()
+            : null,
+          basePrice: unit.project.basePrice
+            ? unit.project.basePrice.toNumber()
+            : null,
+        },
+      }),
     } as any; // Cast to any since we're transforming the type
 
     return success(serializedUnit);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
@@ -392,7 +433,7 @@ export async function createUnit(
   input: CreateUnitInput,
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<Unit>> {
   try {
     const validInput = CreateUnitSchema.parse(input);
@@ -402,44 +443,48 @@ export async function createUnit(
     const existingUnit = await client.unit.findFirst({
       where: {
         projectId: validInput.projectId,
-        unitNumber: validInput.unitNumber
-      }
+        unitNumber: validInput.unitNumber,
+      },
     });
 
     if (existingUnit) {
-      throw new ConflictError('Ya existe una unidad con este número en el proyecto');
+      throw new ConflictError(
+        "Ya existe una unidad con este número en el proyecto",
+      );
     }
 
     // Create unit
     const unit = await client.unit.create({
       data: {
         ...validInput,
-        createdBy: userId
+        createdBy: userId,
       },
       include: {
         project: {
           include: {
-            organization: true
-          }
-        }
-      }
+            organization: true,
+          },
+        },
+      },
     });
 
     // Log audit
     await logAudit(client, {
       userId,
       organizationId: unit.project.organizationId,
-      tableName: 'units',
+      tableName: "units",
       recordId: unit.id,
-      action: 'INSERT',
+      action: "INSERT",
       newValues: unit,
       ipAddress,
-      userAgent
+      userAgent,
     });
 
     return success(unit);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
@@ -451,7 +496,7 @@ export async function updateUnit(
   input: UpdateUnitInput,
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<Unit>> {
   try {
     const validInput = UpdateUnitSchema.parse(input);
@@ -460,25 +505,30 @@ export async function updateUnit(
     // Get current unit for audit and project info
     const currentResult = await getUnitById(unitId);
     if (!currentResult.data) {
-      return failure(currentResult.error || 'Unidad no encontrada');
+      return failure(currentResult.error || "Unidad no encontrada");
     }
 
     const currentUnit = currentResult.data;
 
     // If unit number is being updated, check uniqueness
-    if (validInput.unitNumber && validInput.unitNumber !== currentUnit.unitNumber) {
+    if (
+      validInput.unitNumber &&
+      validInput.unitNumber !== currentUnit.unitNumber
+    ) {
       const existingUnit = await client.unit.findFirst({
         where: {
           projectId: currentUnit.projectId,
           unitNumber: validInput.unitNumber,
           NOT: {
-            id: unitId
-          }
-        }
+            id: unitId,
+          },
+        },
       });
 
       if (existingUnit) {
-        throw new ConflictError('Ya existe una unidad con este número en el proyecto');
+        throw new ConflictError(
+          "Ya existe una unidad con este número en el proyecto",
+        );
       }
     }
 
@@ -487,33 +537,35 @@ export async function updateUnit(
       where: { id: unitId },
       data: {
         ...validInput,
-        updatedBy: userId
+        updatedBy: userId,
       },
       include: {
         project: {
           include: {
-            organization: true
-          }
-        }
-      }
+            organization: true,
+          },
+        },
+      },
     });
 
     // Log audit
     await logAudit(client, {
       userId,
       organizationId: unit.project.organizationId,
-      tableName: 'units',
+      tableName: "units",
       recordId: unitId,
-      action: 'UPDATE',
+      action: "UPDATE",
       oldValues: currentUnit,
       newValues: validInput,
       ipAddress,
-      userAgent
+      userAgent,
     });
 
     return success(unit);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
@@ -524,31 +576,35 @@ export async function updateUnit(
 /**
  * Get units count by status for a project
  */
-export async function getUnitsCountByStatus(projectId: string): Promise<Result<{
-  total: number;
-  available: number;
-  sold: number;
-  reserved: number;
-  in_process: number;
-}>> {
+export async function getUnitsCountByStatus(projectId: string): Promise<
+  Result<{
+    total: number;
+    available: number;
+    sold: number;
+    reserved: number;
+    in_process: number;
+  }>
+> {
   try {
     const client = getDbClient();
 
     const units = await client.unit.findMany({
       where: { projectId },
-      select: { status: true }
+      select: { status: true },
     });
 
     const counts = {
       total: units.length,
-      available: units.filter(u => u.status === 'available').length,
-      sold: units.filter(u => u.status === 'sold').length,
-      reserved: units.filter(u => u.status === 'reserved').length,
-      in_process: units.filter(u => u.status === 'in_process').length
+      available: units.filter((u) => u.status === "available").length,
+      sold: units.filter((u) => u.status === "sold").length,
+      reserved: units.filter((u) => u.status === "reserved").length,
+      in_process: units.filter((u) => u.status === "in_process").length,
     };
 
     return success(counts);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }

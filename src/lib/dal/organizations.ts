@@ -4,25 +4,27 @@
 // Following single responsibility principle - only organization-related operations
 // =============================================================================
 
-import {
-  getDbClient,
-  DatabaseError,
-  ValidationError,
-  NotFoundError,
-  ConflictError,
-  logAudit,
-  type Result,
-  type PaginatedResult,
-  success,
-  failure,
-  formatPaginatedResult,
-  buildPaginationOptions,
-} from './base';
+import type { Organization, OrganizationStatus } from "@prisma/client";
+
 import {
   CreateOrganizationSchema,
   UpdateOrganizationSchema,
-} from '@/lib/validations/schemas';
-import type { Organization, OrganizationStatus } from '@prisma/client';
+} from "@/lib/validations/schemas";
+
+import {
+  buildPaginationOptions,
+  ConflictError,
+  DatabaseError,
+  failure,
+  formatPaginatedResult,
+  getDbClient,
+  logAudit,
+  NotFoundError,
+  success,
+  ValidationError,
+  type PaginatedResult,
+  type Result,
+} from "./base";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -69,7 +71,7 @@ interface UpdateOrganizationInput {
  * Validate that organization exists
  */
 export async function validateOrganizationExists(
-  organizationId: string
+  organizationId: string,
 ): Promise<Result<boolean>> {
   try {
     const client = getDbClient();
@@ -83,7 +85,7 @@ export async function validateOrganizationExists(
     return success(!!organization);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -93,7 +95,7 @@ export async function validateOrganizationExists(
  */
 export async function isSlugUnique(
   slug: string,
-  excludeId?: string
+  excludeId?: string,
 ): Promise<Result<boolean>> {
   try {
     const client = getDbClient();
@@ -109,7 +111,7 @@ export async function isSlugUnique(
     return success(!organization);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -122,7 +124,7 @@ export async function isSlugUnique(
  * Get all organizations with filters and pagination
  */
 export async function getOrganizations(
-  filters: OrganizationFiltersInput = { page: 1, pageSize: 20 }
+  filters: OrganizationFiltersInput = { page: 1, pageSize: 20 },
 ): Promise<Result<PaginatedResult<Organization>>> {
   try {
     const client = getDbClient();
@@ -136,9 +138,9 @@ export async function getOrganizations(
 
     if (filters.search) {
       where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { slug: { contains: filters.search, mode: 'insensitive' } },
-        { email: { contains: filters.search, mode: 'insensitive' } },
+        { name: { contains: filters.search, mode: "insensitive" } },
+        { slug: { contains: filters.search, mode: "insensitive" } },
+        { email: { contains: filters.search, mode: "insensitive" } },
       ];
     }
 
@@ -148,14 +150,14 @@ export async function getOrganizations(
     // Apply pagination
     const paginationOptions = buildPaginationOptions(
       filters.page,
-      filters.pageSize
+      filters.pageSize,
     );
 
     // Get organizations
     const organizations = await client.organization.findMany({
       where,
       orderBy: {
-        name: 'asc',
+        name: "asc",
       },
       ...paginationOptions,
     });
@@ -164,13 +166,13 @@ export async function getOrganizations(
       organizations,
       totalCount,
       filters.page,
-      filters.pageSize
+      filters.pageSize,
     );
 
     return success(result);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -179,7 +181,7 @@ export async function getOrganizations(
  * Get organization by ID
  */
 export async function getOrganizationById(
-  organizationId: string
+  organizationId: string,
 ): Promise<Result<Organization>> {
   try {
     const client = getDbClient();
@@ -189,13 +191,13 @@ export async function getOrganizationById(
     });
 
     if (!organization) {
-      throw new NotFoundError('Organización', organizationId);
+      throw new NotFoundError("Organización", organizationId);
     }
 
     return success(organization);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -204,7 +206,7 @@ export async function getOrganizationById(
  * Get organization by slug
  */
 export async function getOrganizationBySlug(
-  slug: string
+  slug: string,
 ): Promise<Result<Organization>> {
   try {
     const client = getDbClient();
@@ -214,13 +216,13 @@ export async function getOrganizationBySlug(
     });
 
     if (!organization) {
-      throw new NotFoundError('Organización con slug', slug);
+      throw new NotFoundError("Organización con slug", slug);
     }
 
     return success(organization);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -232,7 +234,7 @@ export async function createOrganization(
   input: CreateOrganizationInput,
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<Organization>> {
   try {
     const validInput = CreateOrganizationSchema.parse(input);
@@ -244,7 +246,7 @@ export async function createOrganization(
       return failure(slugResult.error);
     }
     if (!slugResult.data) {
-      throw new ConflictError('Ya existe una organización con este slug');
+      throw new ConflictError("Ya existe una organización con este slug");
     }
 
     // Create organization
@@ -259,9 +261,9 @@ export async function createOrganization(
     await logAudit(client, {
       userId,
       organizationId: organization.id,
-      tableName: 'organizations',
+      tableName: "organizations",
       recordId: organization.id,
-      action: 'INSERT',
+      action: "INSERT",
       newValues: organization,
       ipAddress,
       userAgent,
@@ -270,7 +272,7 @@ export async function createOrganization(
     return success(organization);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -283,7 +285,7 @@ export async function updateOrganization(
   input: UpdateOrganizationInput,
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<Organization>> {
   try {
     const validInput = UpdateOrganizationSchema.parse(input);
@@ -292,7 +294,7 @@ export async function updateOrganization(
     // Get current organization for audit
     const currentResult = await getOrganizationById(organizationId);
     if (!currentResult.data) {
-      return failure(currentResult.error || 'Organización no encontrada');
+      return failure(currentResult.error || "Organización no encontrada");
     }
 
     const currentOrganization = currentResult.data;
@@ -304,7 +306,7 @@ export async function updateOrganization(
         return failure(slugResult.error);
       }
       if (!slugResult.data) {
-        throw new ConflictError('Ya existe una organización con este slug');
+        throw new ConflictError("Ya existe una organización con este slug");
       }
     }
 
@@ -321,9 +323,9 @@ export async function updateOrganization(
     await logAudit(client, {
       userId,
       organizationId,
-      tableName: 'organizations',
+      tableName: "organizations",
       recordId: organizationId,
-      action: 'UPDATE',
+      action: "UPDATE",
       oldValues: currentOrganization,
       newValues: validInput,
       ipAddress,
@@ -333,7 +335,7 @@ export async function updateOrganization(
     return success(organization);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -383,7 +385,7 @@ export async function getOrganizationStats(organizationId: string): Promise<
     // Calculate statistics
     const totalProjects = projects.length;
     const activeProjects = projects.filter(
-      (p) => p.status === 'pre_sale' || p.status === 'construction'
+      (p) => p.status === "pre_sale" || p.status === "construction",
     ).length;
 
     let totalUnits = 0;
@@ -393,7 +395,7 @@ export async function getOrganizationStats(organizationId: string): Promise<
     projects.forEach((project) => {
       totalUnits += project.units.length;
       project.units.forEach((unit) => {
-        if (unit.status === 'sold') {
+        if (unit.status === "sold") {
           soldUnits++;
           totalRevenue += unit.price.toNumber();
         }
@@ -414,7 +416,7 @@ export async function getOrganizationStats(organizationId: string): Promise<
     return failure(
       error instanceof Error
         ? error.message
-        : 'Error obteniendo estadísticas de la organización'
+        : "Error obteniendo estadísticas de la organización",
     );
   }
 }
@@ -423,7 +425,7 @@ export async function getOrganizationStats(organizationId: string): Promise<
  * Get organizations that user has access to
  */
 export async function getUserOrganizations(
-  userId: string
+  userId: string,
 ): Promise<Result<Organization[]>> {
   try {
     const client = getDbClient();
@@ -447,7 +449,7 @@ export async function getUserOrganizations(
     return failure(
       error instanceof Error
         ? error.message
-        : 'Error obteniendo organizaciones del usuario'
+        : "Error obteniendo organizaciones del usuario",
     );
   }
 }
@@ -457,7 +459,7 @@ export async function getUserOrganizations(
  */
 export async function userBelongsToOrganization(
   userId: string,
-  organizationId: string
+  organizationId: string,
 ): Promise<Result<boolean>> {
   try {
     const client = getDbClient();
@@ -475,7 +477,7 @@ export async function userBelongsToOrganization(
     return failure(
       error instanceof Error
         ? error.message
-        : 'Error verificando membresía de organización'
+        : "Error verificando membresía de organización",
     );
   }
 }

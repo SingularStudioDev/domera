@@ -4,9 +4,10 @@
 // Following project patterns: functions, not classes
 // =============================================================================
 
-import { createClient } from '@/lib/supabase/server';
-import { uploadFileToS3, deleteFileFromS3 } from '@/lib/supabase/storage';
-import { type Result, success, failure } from './base';
+import { createClient } from "@/lib/supabase/server";
+import { deleteFileFromS3, uploadFileToS3 } from "@/lib/supabase/storage";
+
+import { failure, success, type Result } from "./base";
 
 // =============================================================================
 // TYPES
@@ -45,20 +46,26 @@ export interface BatchUploadResult {
 // =============================================================================
 
 export const STORAGE_BUCKETS = {
-  IMAGES: 'files',
-  DOCUMENTS: 'files',
-  AVATARS: 'files',
+  IMAGES: "files",
+  DOCUMENTS: "files",
+  AVATARS: "files",
 } as const;
 
 export const STORAGE_FOLDERS = {
-  PROJECTS: 'projects',
-  UNITS: 'units', 
-  ORGANIZATIONS: 'organizations',
-  AVATARS: 'avatars',
+  PROJECTS: "projects",
+  UNITS: "units",
+  ORGANIZATIONS: "organizations",
+  AVATARS: "avatars",
 } as const;
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/avif'];
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+];
 
 // =============================================================================
 // VALIDATION FUNCTIONS
@@ -83,10 +90,10 @@ function validateFile(file: File, options: UploadOptions): string | null {
 function generateFileName(file: File, folder?: string): string {
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 8);
-  const extension = file.name.split('.').pop();
+  const extension = file.name.split(".").pop();
   const baseName = file.name
-    .replace(/\.[^/.]+$/, '')
-    .replace(/[^a-zA-Z0-9]/g, '-')
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[^a-zA-Z0-9]/g, "-")
     .toLowerCase();
 
   const fileName = `${baseName}-${timestamp}-${randomSuffix}.${extension}`;
@@ -97,7 +104,10 @@ function generateFileName(file: File, folder?: string): string {
 // CORE STORAGE FUNCTIONS
 // =============================================================================
 
-export async function uploadFile(file: File, options: UploadOptions): Promise<Result<StorageFile>> {
+export async function uploadFile(
+  file: File,
+  options: UploadOptions,
+): Promise<Result<StorageFile>> {
   try {
     // Validate file
     const validationError = validateFile(file, options);
@@ -107,12 +117,12 @@ export async function uploadFile(file: File, options: UploadOptions): Promise<Re
 
     // Generate file path
     const fileName = options.fileName || generateFileName(file, options.folder);
-    
+
     // Upload using S3 client
     const uploadResult = await uploadFileToS3(file, fileName, options.bucket);
-    
+
     if (!uploadResult.data) {
-      return failure(uploadResult.error || 'Error uploading file');
+      return failure(uploadResult.error || "Error uploading file");
     }
 
     const storageFile: StorageFile = {
@@ -123,17 +133,21 @@ export async function uploadFile(file: File, options: UploadOptions): Promise<Re
       mimeType: file.type,
       bucket: options.bucket,
       path: uploadResult.data.key,
-      uploadedAt: new Date()
+      uploadedAt: new Date(),
     };
 
     return success(storageFile);
-
   } catch (error) {
-    return failure(`Unexpected error during file upload: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return failure(
+      `Unexpected error during file upload: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
-export async function uploadFiles(files: File[], options: UploadOptions): Promise<Result<BatchUploadResult>> {
+export async function uploadFiles(
+  files: File[],
+  options: UploadOptions,
+): Promise<Result<BatchUploadResult>> {
   try {
     const successful: StorageFile[] = [];
     const failed: Array<{ fileName: string; error: string }> = [];
@@ -141,40 +155,48 @@ export async function uploadFiles(files: File[], options: UploadOptions): Promis
     // Process files sequentially to avoid overwhelming storage
     for (const file of files) {
       const result = await uploadFile(file, options);
-      
+
       if (result.data) {
         successful.push(result.data);
       } else {
         failed.push({
           fileName: file.name,
-          error: result.error || 'Unknown error'
+          error: result.error || "Unknown error",
         });
       }
     }
 
     const batchResult: BatchUploadResult = {
       successful,
-      failed
+      failed,
     };
 
     return success(batchResult);
-
   } catch (error) {
-    return failure(`Unexpected error during batch upload: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return failure(
+      `Unexpected error during batch upload: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
-export async function deleteFile(path: string, bucket: string): Promise<Result<boolean>> {
+export async function deleteFile(
+  path: string,
+  bucket: string,
+): Promise<Result<boolean>> {
   try {
     const deleteResult = await deleteFileFromS3(path, bucket);
     return deleteResult;
-
   } catch (error) {
-    return failure(`Unexpected error deleting file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return failure(
+      `Unexpected error deleting file: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
-export async function deleteFiles(paths: string[], bucket: string): Promise<Result<{ deleted: string[]; failed: string[] }>> {
+export async function deleteFiles(
+  paths: string[],
+  bucket: string,
+): Promise<Result<{ deleted: string[]; failed: string[] }>> {
   try {
     const deleted: string[] = [];
     const failed: string[] = [];
@@ -189,9 +211,10 @@ export async function deleteFiles(paths: string[], bucket: string): Promise<Resu
     }
 
     return success({ deleted, failed });
-
   } catch (error) {
-    return failure(`Unexpected error during batch delete: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return failure(
+      `Unexpected error during batch delete: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -199,32 +222,48 @@ export async function deleteFiles(paths: string[], bucket: string): Promise<Resu
 // CONVENIENCE FUNCTIONS
 // =============================================================================
 
-export async function uploadImage(file: File, folder?: string): Promise<Result<StorageFile>> {
+export async function uploadImage(
+  file: File,
+  folder?: string,
+): Promise<Result<StorageFile>> {
   return uploadFile(file, {
     bucket: STORAGE_BUCKETS.IMAGES,
     folder,
     isPublic: true,
     maxSize: MAX_FILE_SIZE,
-    allowedMimeTypes: ALLOWED_IMAGE_TYPES
+    allowedMimeTypes: ALLOWED_IMAGE_TYPES,
   });
 }
 
-export async function uploadImages(files: File[], folder?: string): Promise<Result<BatchUploadResult>> {
+export async function uploadImages(
+  files: File[],
+  folder?: string,
+): Promise<Result<BatchUploadResult>> {
   return uploadFiles(files, {
     bucket: STORAGE_BUCKETS.IMAGES,
     folder,
     isPublic: true,
     maxSize: MAX_FILE_SIZE,
-    allowedMimeTypes: ALLOWED_IMAGE_TYPES
+    allowedMimeTypes: ALLOWED_IMAGE_TYPES,
   });
 }
 
-export async function uploadProjectImages(files: File[], projectId?: string): Promise<Result<BatchUploadResult>> {
-  const folder = projectId ? `${STORAGE_FOLDERS.PROJECTS}/${projectId}` : STORAGE_FOLDERS.PROJECTS;
+export async function uploadProjectImages(
+  files: File[],
+  projectId?: string,
+): Promise<Result<BatchUploadResult>> {
+  const folder = projectId
+    ? `${STORAGE_FOLDERS.PROJECTS}/${projectId}`
+    : STORAGE_FOLDERS.PROJECTS;
   return uploadImages(files, folder);
 }
 
-export async function uploadOrganizationImages(files: File[], organizationId?: string): Promise<Result<BatchUploadResult>> {
-  const folder = organizationId ? `${STORAGE_FOLDERS.ORGANIZATIONS}/${organizationId}` : STORAGE_FOLDERS.ORGANIZATIONS;
+export async function uploadOrganizationImages(
+  files: File[],
+  organizationId?: string,
+): Promise<Result<BatchUploadResult>> {
+  const folder = organizationId
+    ? `${STORAGE_FOLDERS.ORGANIZATIONS}/${organizationId}`
+    : STORAGE_FOLDERS.ORGANIZATIONS;
   return uploadImages(files, folder);
 }

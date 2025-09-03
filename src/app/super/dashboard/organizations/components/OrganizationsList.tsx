@@ -1,27 +1,29 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from "react";
+
+import {
+  Building,
+  Edit,
+  Globe,
+  Mail,
+  MapPin,
+  Phone,
+  Search,
+  Trash2,
+} from "lucide-react";
+
+import { getOrganizationsAction } from "@/lib/actions/organizations";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { getOrganizationsAction } from '@/lib/actions/organizations';
-import {
-  Search,
-  Building,
-  Mail,
-  Phone,
-  Globe,
-  MapPin,
-  Edit,
-  Trash2,
-} from 'lucide-react';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 interface Organization {
   id: string;
@@ -32,7 +34,7 @@ interface Organization {
   address?: string;
   taxId?: string;
   websiteUrl?: string;
-  status: 'active' | 'inactive' | 'pending_approval';
+  status: "active" | "inactive" | "pending_approval";
   logoUrl?: string;
   createdAt: string;
   updatedAt: string;
@@ -51,10 +53,10 @@ export default function OrganizationsList() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    'all' | 'active' | 'inactive' | 'pending_approval'
-  >('all');
+    "all" | "active" | "inactive" | "pending_approval"
+  >("all");
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -72,118 +74,141 @@ export default function OrganizationsList() {
   };
 
   // Debug current state
-  console.log('🎯 [OrganizationsList] Current component state:', {
+  console.log("🎯 [OrganizationsList] Current component state:", {
     organizationsCount: safeOrganizations.length,
     isLoading,
     error,
     searchTerm,
     statusFilter,
     pagination: safePagination,
-    organizationsPreview: safeOrganizations.slice(0, 2).map(org => ({ id: org.id, name: org.name, status: org.status }))
+    organizationsPreview: safeOrganizations
+      .slice(0, 2)
+      .map((org) => ({ id: org.id, name: org.name, status: org.status })),
   });
 
   const fetchOrganizations = useCallback(async () => {
-    console.log('🔍 [OrganizationsList] Starting fetchOrganizations with params:', {
-      page: pagination?.page || 1,
-      pageSize: pagination?.pageSize || 10,
-      search: searchTerm || undefined,
-      status: statusFilter === 'all' ? undefined : statusFilter,
-    });
-    
+    console.log(
+      "🔍 [OrganizationsList] Starting fetchOrganizations with params:",
+      {
+        page: pagination?.page || 1,
+        pageSize: pagination?.pageSize || 10,
+        search: searchTerm || undefined,
+        status: statusFilter === "all" ? undefined : statusFilter,
+      },
+    );
+
     try {
       setIsLoading(true);
       setError(null);
 
-      console.log('🚀 [OrganizationsList] About to call getOrganizationsAction...');
-      
+      console.log(
+        "🚀 [OrganizationsList] About to call getOrganizationsAction...",
+      );
+
       const result = await getOrganizationsAction({
         page: pagination?.page || 1,
         pageSize: pagination?.pageSize || 10,
         search: searchTerm || undefined,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-      });
-      
-      console.log('🎯 [OrganizationsList] getOrganizationsAction completed with result:', {
-        success: result.success,
-        hasData: !!result.data,
-        error: result.error
+        status: statusFilter === "all" ? undefined : statusFilter,
       });
 
-      console.log('📊 [OrganizationsList] Server action result:', {
+      console.log(
+        "🎯 [OrganizationsList] getOrganizationsAction completed with result:",
+        {
+          success: result.success,
+          hasData: !!result.data,
+          error: result.error,
+        },
+      );
+
+      console.log("📊 [OrganizationsList] Server action result:", {
         success: result.success,
         hasData: !!result.data,
         error: result.error,
         dataType: typeof result.data,
-        dataKeys: result.data ? Object.keys(result.data) : null
+        dataKeys: result.data ? Object.keys(result.data) : null,
       });
 
       if (result.success && result.data) {
         const data = result.data as OrganizationsData;
-        console.log('📋 [OrganizationsList] Parsed data structure:', {
+        console.log("📋 [OrganizationsList] Parsed data structure:", {
           dataArray: Array.isArray(data.data),
           dataLength: data.data?.length || 0,
           count: data.count,
           page: data.page,
           pageSize: data.pageSize,
           totalPages: data.totalPages,
-          firstOrganization: data.data?.[0]
+          firstOrganization: data.data?.[0],
         });
-        
+
         setOrganizations(data.data || []);
         setPagination({
           page: data.page,
           pageSize: data.pageSize,
           totalCount: data.count,
-          totalPages: data.totalPages
+          totalPages: data.totalPages,
         });
       } else {
-        console.error('❌ [OrganizationsList] Server action failed:', result.error);
-        setError(result.error || 'Error cargando organizaciones');
+        console.error(
+          "❌ [OrganizationsList] Server action failed:",
+          result.error,
+        );
+        setError(result.error || "Error cargando organizaciones");
       }
     } catch (err) {
-      console.error('💥 [OrganizationsList] Unexpected error:', err);
-      
+      console.error("💥 [OrganizationsList] Unexpected error:", err);
+
       // Log detailed error information
       if (err instanceof Error) {
-        console.error('Error name:', err.name);
-        console.error('Error message:', err.message);
-        console.error('Error stack:', err.stack);
+        console.error("Error name:", err.name);
+        console.error("Error message:", err.message);
+        console.error("Error stack:", err.stack);
       }
-      
-      setError(`Error inesperado cargando organizaciones: ${err instanceof Error ? err.message : 'Unknown error'}`);
+
+      setError(
+        `Error inesperado cargando organizaciones: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
     } finally {
-      console.log('✅ [OrganizationsList] fetchOrganizations completed, isLoading set to false');
+      console.log(
+        "✅ [OrganizationsList] fetchOrganizations completed, isLoading set to false",
+      );
       setIsLoading(false);
     }
   }, [pagination?.page, pagination?.pageSize, searchTerm, statusFilter]);
 
   useEffect(() => {
-    console.log('🔄 [OrganizationsList] useEffect triggered with dependencies:', {
-      page: pagination?.page,
-      statusFilter,
-    });
-    
+    console.log(
+      "🔄 [OrganizationsList] useEffect triggered with dependencies:",
+      {
+        page: pagination?.page,
+        statusFilter,
+      },
+    );
+
     // Component is now properly executing
     fetchOrganizations();
   }, [pagination?.page, statusFilter, fetchOrganizations]);
 
   const handleSearch = () => {
-    console.log('🔍 [OrganizationsList] Search triggered with term:', searchTerm);
+    console.log(
+      "🔍 [OrganizationsList] Search triggered with term:",
+      searchTerm,
+    );
     setPagination((prev) => ({ ...prev, page: 1 }));
     fetchOrganizations();
   };
 
   const handleStatusChange = (newStatus: typeof statusFilter) => {
-    console.log('📊 [OrganizationsList] Status filter changed to:', newStatus);
+    console.log("📊 [OrganizationsList] Status filter changed to:", newStatus);
     setStatusFilter(newStatus);
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  const getStatusBadge = (status: Organization['status']) => {
+  const getStatusBadge = (status: Organization["status"]) => {
     const statusConfig = {
-      active: { label: 'Activa', variant: 'default' as const },
-      inactive: { label: 'Inactiva', variant: 'secondary' as const },
-      pending_approval: { label: 'Pendiente', variant: 'destructive' as const },
+      active: { label: "Activa", variant: "default" as const },
+      inactive: { label: "Inactiva", variant: "secondary" as const },
+      pending_approval: { label: "Pendiente", variant: "destructive" as const },
     };
 
     const config = statusConfig[status];
@@ -220,7 +245,7 @@ export default function OrganizationsList() {
                   placeholder="Buscar por nombre, email o slug..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 />
                 <Button onClick={handleSearch} size="sm">
                   <Search className="h-4 w-4" />
@@ -259,7 +284,7 @@ export default function OrganizationsList() {
         {/* Organizations List */}
         {isLoading && safeOrganizations.length === 0 ? (
           <div className="py-8 text-center text-gray-500">
-            <Building className="mx-auto mb-4 h-12 w-12 text-gray-400 animate-pulse" />
+            <Building className="mx-auto mb-4 h-12 w-12 animate-pulse text-gray-400" />
             <p>Cargando organizaciones...</p>
           </div>
         ) : safeOrganizations.length === 0 ? (
@@ -333,8 +358,8 @@ export default function OrganizationsList() {
                     {/* Metadata */}
                     <div className="text-muted-foreground flex items-center gap-4 text-xs">
                       <span>
-                        Creada:{' '}
-                        {new Date(org.createdAt).toLocaleDateString('es-UY')}
+                        Creada:{" "}
+                        {new Date(org.createdAt).toLocaleDateString("es-UY")}
                       </span>
                       {org.taxId && <span>RUT: {org.taxId}</span>}
                     </div>

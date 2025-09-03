@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback } from 'react';
-import { cn } from '@/utils/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useCallback, useState } from "react";
+
+import { cn } from "@/utils/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ProjectImageCarouselProps {
   images: string[];
@@ -24,27 +25,27 @@ const ProjectImageCarousel: React.FC<ProjectImageCarouselProps> = ({
 
   const goToPrevious = useCallback(() => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1,
     );
   }, [images.length]);
 
   const goToNext = useCallback(() => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1,
     );
   }, [images.length]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') {
+      if (event.key === "ArrowLeft") {
         event.preventDefault();
         goToPrevious();
-      } else if (event.key === 'ArrowRight') {
+      } else if (event.key === "ArrowRight") {
         event.preventDefault();
         goToNext();
       }
     },
-    [goToPrevious, goToNext]
+    [goToPrevious, goToNext],
   );
 
   // Handle empty or single image arrays
@@ -52,8 +53,8 @@ const ProjectImageCarousel: React.FC<ProjectImageCarouselProps> = ({
     return (
       <div
         className={cn(
-          'relative flex h-64 w-full items-center justify-center rounded-lg bg-gray-100 md:h-96',
-          className
+          "relative flex h-64 w-full items-center justify-center rounded-lg bg-gray-100 md:h-96",
+          className,
         )}
       >
         <span className="text-lg text-gray-400">
@@ -65,7 +66,7 @@ const ProjectImageCarousel: React.FC<ProjectImageCarouselProps> = ({
 
   if (images.length === 1) {
     return (
-      <div className={cn('relative w-full', className)}>
+      <div className={cn("relative w-full", className)}>
         <img
           src={images[0]}
           alt={`Imagen de ${projectName}`}
@@ -77,7 +78,7 @@ const ProjectImageCarousel: React.FC<ProjectImageCarouselProps> = ({
 
   return (
     <div
-      className={cn('group relative w-full', className)}
+      className={cn("group relative w-full", className)}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="region"

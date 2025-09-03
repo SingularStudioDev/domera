@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SuperDashboard() {
   const router = useRouter();
@@ -10,18 +10,18 @@ export default function SuperDashboard() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch('/api/auth/super-admin/session-check');
-        
+        const response = await fetch("/api/auth/super-admin/session-check");
+
         if (response.ok) {
           // Valid session, redirect to organizations page
-          router.push('/super/dashboard/organizations');
+          router.push("/super/dashboard/organizations");
         } else {
           // Invalid session, redirect to login
-          router.push('/super');
+          router.push("/super");
         }
       } catch (error) {
         // Error checking session, redirect to login
-        router.push('/super');
+        router.push("/super");
       } finally {
         setIsVerifying(false);
       }

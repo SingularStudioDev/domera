@@ -3,16 +3,18 @@
 // Client-side hook to manage operation documents
 // =============================================================================
 
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { 
-  getRequiredDocumentsForOperation, 
-  getUserDocuments, 
-  uploadDocument 
-} from '@/lib/actions/documents';
-import { DocumentType } from '@prisma/client';
+import { useEffect, useState } from "react";
+
+import { DocumentType } from "@prisma/client";
+import { useSession } from "next-auth/react";
+
+import {
+  getRequiredDocumentsForOperation,
+  getUserDocuments,
+  uploadDocument,
+} from "@/lib/actions/documents";
 
 export interface DocumentData {
   id: string;
@@ -38,7 +40,9 @@ export interface RequiredDocument {
 export function useDocuments(operationId?: string) {
   const { data: session } = useSession();
   const [documents, setDocuments] = useState<DocumentData[]>([]);
-  const [requiredDocuments, setRequiredDocuments] = useState<RequiredDocument[]>([]);
+  const [requiredDocuments, setRequiredDocuments] = useState<
+    RequiredDocument[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -59,7 +63,7 @@ export function useDocuments(operationId?: string) {
             setRequiredDocuments(result.data.requiredDocuments);
             setDocuments(result.data.existingDocuments);
           } else {
-            setError(result.error || 'Error al cargar documentos');
+            setError(result.error || "Error al cargar documentos");
           }
         } else {
           // Get all user documents
@@ -67,12 +71,12 @@ export function useDocuments(operationId?: string) {
           if (result.success) {
             setDocuments(result.data);
           } else {
-            setError(result.error || 'Error al cargar documentos');
+            setError(result.error || "Error al cargar documentos");
           }
         }
       } catch (err) {
-        console.error('Error fetching documents:', err);
-        setError('Error interno del servidor');
+        console.error("Error fetching documents:", err);
+        setError("Error interno del servidor");
       } finally {
         setLoading(false);
       }
@@ -86,10 +90,10 @@ export function useDocuments(operationId?: string) {
     file: File,
     documentType: DocumentType,
     title: string,
-    description?: string
+    description?: string,
   ) => {
     if (!session?.user) {
-      setError('Usuario no autenticado');
+      setError("Usuario no autenticado");
       return false;
     }
 
@@ -109,13 +113,14 @@ export function useDocuments(operationId?: string) {
         fileUrl,
         fileName: file.name,
         fileSize: file.size,
-        mimeType: file.type
+        mimeType: file.type,
       });
 
       if (result.success) {
         // Refresh documents list
         if (operationId) {
-          const refreshResult = await getRequiredDocumentsForOperation(operationId);
+          const refreshResult =
+            await getRequiredDocumentsForOperation(operationId);
           if (refreshResult.success) {
             setDocuments(refreshResult.data.existingDocuments);
           }
@@ -127,12 +132,12 @@ export function useDocuments(operationId?: string) {
         }
         return true;
       } else {
-        setError(result.error || 'Error al subir documento');
+        setError(result.error || "Error al subir documento");
         return false;
       }
     } catch (err) {
-      console.error('Error uploading document:', err);
-      setError('Error interno del servidor');
+      console.error("Error uploading document:", err);
+      setError("Error interno del servidor");
       return false;
     } finally {
       setUploading(false);
@@ -142,26 +147,27 @@ export function useDocuments(operationId?: string) {
   // Check if document type is uploaded and validated
   const isDocumentCompleted = (documentType: DocumentType) => {
     return documents.some(
-      doc => doc.documentType === documentType && doc.status === 'validated'
+      (doc) => doc.documentType === documentType && doc.status === "validated",
     );
   };
 
   // Check if document type is uploaded but pending validation
   const isDocumentPending = (documentType: DocumentType) => {
     return documents.some(
-      doc => doc.documentType === documentType && 
-      ['uploaded', 'under_review'].includes(doc.status)
+      (doc) =>
+        doc.documentType === documentType &&
+        ["uploaded", "under_review"].includes(doc.status),
     );
   };
 
   // Get completion progress percentage
   const getCompletionProgress = () => {
     if (requiredDocuments.length === 0) return 0;
-    
-    const completedCount = requiredDocuments.filter(reqDoc => 
-      isDocumentCompleted(reqDoc.type)
+
+    const completedCount = requiredDocuments.filter((reqDoc) =>
+      isDocumentCompleted(reqDoc.type),
     ).length;
-    
+
     return Math.round((completedCount / requiredDocuments.length) * 100);
   };
 
@@ -174,6 +180,6 @@ export function useDocuments(operationId?: string) {
     handleUploadDocument,
     isDocumentCompleted,
     isDocumentPending,
-    getCompletionProgress
+    getCompletionProgress,
   };
 }

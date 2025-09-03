@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
 import {
   ArrowDown,
   ArrowDownIcon,
   ArrowUpIcon,
   TrendingUp,
-} from 'lucide-react';
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+} from "lucide-react";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 import {
   Card,
@@ -15,7 +15,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -23,9 +23,9 @@ import {
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from '@/components/ui/chart';
+} from "@/components/ui/chart";
 
-export const description = 'A multiple line chart with 5 lines';
+export const description = "A multiple line chart with 5 lines";
 
 const chartData = [
   { day: 1, ventas: 2, leads: 5, conversiones: 0, visitas: 8, ingresos: 1 },
@@ -251,24 +251,24 @@ const chartData = [
 
 const chartConfig = {
   ventas: {
-    label: 'Ventas',
-    color: '#2563eb',
+    label: "Ventas",
+    color: "#2563eb",
   },
   leads: {
-    label: 'Leads',
-    color: '#dc2626',
+    label: "Leads",
+    color: "#dc2626",
   },
   conversiones: {
-    label: 'Conversiones',
-    color: '#16a34a',
+    label: "Conversiones",
+    color: "#16a34a",
   },
   visitas: {
-    label: 'Visitas',
-    color: '#ca8a04',
+    label: "Visitas",
+    color: "#ca8a04",
   },
   ingresos: {
-    label: 'Ingresos',
-    color: '#9333ea',
+    label: "Ingresos",
+    color: "#9333ea",
   },
 } satisfies ChartConfig;
 
@@ -411,7 +411,7 @@ function LegendCard({ title, number, color, stat, statBool }: LegendCardProps) {
       <div className="mt-1 flex items-center justify-start gap-2">
         <p className="font-semibold text-[#0040FF]">{number} unidades</p>
         <div
-          className={`${statBool ? 'bg-green-100 text-green-500' : 'bg-red-200 text-red-500'} flex items-center justify-center gap-1 rounded-full px-1 py-0.5 text-xs font-bold`}
+          className={`${statBool ? "bg-green-100 text-green-500" : "bg-red-200 text-red-500"} flex items-center justify-center gap-1 rounded-full px-1 py-0.5 text-xs font-bold`}
         >
           {statBool ? (
             <ArrowUpIcon className="h-4 w-4" />

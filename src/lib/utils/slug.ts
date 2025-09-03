@@ -9,15 +9,17 @@
  * @returns A kebab-case slug
  */
 export function generateSlug(text: string): string {
-  if (!text) return '';
-  
-  return text
-    .trim()
-    .toLowerCase()
-    // Replace spaces and special characters with hyphens
-    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
-    .replace(/[\s_-]+/g, '-') // Replace spaces, underscores, and multiple hyphens with single hyphen
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+  if (!text) return "";
+
+  return (
+    text
+      .trim()
+      .toLowerCase()
+      // Replace spaces and special characters with hyphens
+      .replace(/[^\w\s-]/g, "") // Remove special characters except spaces and hyphens
+      .replace(/[\s_-]+/g, "-") // Replace spaces, underscores, and multiple hyphens with single hyphen
+      .replace(/^-+|-+$/g, "")
+  ); // Remove leading/trailing hyphens
 }
 
 /**
@@ -27,7 +29,7 @@ export function generateSlug(text: string): string {
  */
 export function isValidSlug(slug: string): boolean {
   if (!slug) return false;
-  
+
   // Slug should only contain lowercase letters, numbers, and hyphens
   // Should not start or end with hyphen
   const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

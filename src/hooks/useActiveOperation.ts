@@ -3,11 +3,13 @@
 // Client-side hook to manage user's active operation state
 // =============================================================================
 
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { getUserActiveOperationAction } from '@/lib/actions/operations';
+import { useEffect, useState } from "react";
+
+import { useSession } from "next-auth/react";
+
+import { getUserActiveOperationAction } from "@/lib/actions/operations";
 
 export interface ActiveOperation {
   id: string;
@@ -47,7 +49,7 @@ export function useActiveOperation() {
 
   useEffect(() => {
     async function fetchActiveOperation() {
-      if (status === 'loading') return;
+      if (status === "loading") return;
 
       if (!session?.user?.id) {
         setActiveOperation(null);
@@ -63,11 +65,11 @@ export function useActiveOperation() {
         if (result.success) {
           setActiveOperation(result.data as ActiveOperation | null);
         } else {
-          throw new Error(result.error || 'Error obteniendo operación activa');
+          throw new Error(result.error || "Error obteniendo operación activa");
         }
       } catch (err) {
-        console.error('Error fetching active operation:', err);
-        setError('Error al cargar la operación activa');
+        console.error("Error fetching active operation:", err);
+        setError("Error al cargar la operación activa");
       } finally {
         setLoading(false);
       }
@@ -85,11 +87,11 @@ export function useActiveOperation() {
       if (result.success) {
         setActiveOperation(result.data as ActiveOperation | null);
       } else {
-        throw new Error(result.error || 'Error obteniendo operación activa');
+        throw new Error(result.error || "Error obteniendo operación activa");
       }
     } catch (err) {
-      console.error('Error refreshing active operation:', err);
-      setError('Error al actualizar la operación activa');
+      console.error("Error refreshing active operation:", err);
+      setError("Error al actualizar la operación activa");
     }
   };
 

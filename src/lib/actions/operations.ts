@@ -4,22 +4,28 @@
 // Only handles operation-related operations
 // =============================================================================
 
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
-import { validateSession, requireRole, requireOrganizationAccess } from '@/lib/auth/validation';
+import { revalidatePath } from "next/cache";
+
+import type { OperationStatus } from "@prisma/client";
+
 import {
-  hasActiveOperation,
+  requireOrganizationAccess,
+  requireRole,
+  validateSession,
+} from "@/lib/auth/validation";
+import {
+  cancelOperation as cancelOperationDAL,
   getOperationById,
   getUserActiveOperation,
+  hasActiveOperation,
   updateOperation,
-  cancelOperation as cancelOperationDAL
-} from '@/lib/dal/operations';
-import { 
+} from "@/lib/dal/operations";
+import {
+  createOperationWithValidation,
   validateUnitsSameOrganization,
-  createOperationWithValidation 
-} from '@/lib/services/operations';
-import type { OperationStatus } from '@prisma/client';
+} from "@/lib/services/operations";
 
 // Input types
 interface CreateOperationInput {
@@ -55,7 +61,7 @@ interface OperationActionResult {
 export async function createOperationAction(
   input: CreateOperationInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<OperationActionResult> {
   try {
     // Validate authentication
@@ -72,41 +78,44 @@ export async function createOperationAction(
       return { success: false, error: hasActiveResult.error };
     }
     if (hasActiveResult.data) {
-      return { 
-        success: false, 
-        error: 'Ya tienes una operación activa. Solo puedes tener una operación a la vez.' 
+      return {
+        success: false,
+        error:
+          "Ya tienes una operación activa. Solo puedes tener una operación a la vez.",
       };
     }
 
     // Validate organization access
-    const orgAccessResult = await requireOrganizationAccess(input.organizationId);
+    const orgAccessResult = await requireOrganizationAccess(
+      input.organizationId,
+    );
     if (!orgAccessResult.success) {
       return { success: false, error: orgAccessResult.error };
     }
 
     // Use service layer to create operation with full validation
     const result = await createOperationWithValidation(
-      user.id, 
-      input, 
-      ipAddress, 
-      userAgent
+      user.id,
+      input,
+      ipAddress,
+      userAgent,
     );
-    
+
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // Revalidate relevant paths
-    revalidatePath('/dashboard');
-    revalidatePath('/userDashboard');
-    revalidatePath('/projects');
+    revalidatePath("/dashboard");
+    revalidatePath("/userDashboard");
+    revalidatePath("/projects");
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error creating operation:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error creando operación' 
+    console.error("[SERVER_ACTION] Error creating operation:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error creando operación",
     };
   }
 }
@@ -116,7 +125,7 @@ export async function createOperationAction(
  * Requires authentication and operation access
  */
 export async function getOperationByIdAction(
-  operationId: string
+  operationId: string,
 ): Promise<OperationActionResult> {
   try {
     // Validate authentication
@@ -126,20 +135,24 @@ export async function getOperationByIdAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some(role => role.role === 'admin');
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
 
     // Get operation (with user access validation if not admin)
-    const result = await getOperationById(operationId, isAdmin ? undefined : user.id);
+    const result = await getOperationById(
+      operationId,
+      isAdmin ? undefined : user.id,
+    );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting operation:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error obteniendo operación' 
+    console.error("[SERVER_ACTION] Error getting operation:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error obteniendo operación",
     };
   }
 }
@@ -152,7 +165,7 @@ export async function updateOperationAction(
   operationId: string,
   input: UpdateOperationInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<OperationActionResult> {
   try {
     // Validate authentication
@@ -162,10 +175,13 @@ export async function updateOperationAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some(role => role.role === 'admin');
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
 
     // Check if user can access this operation
-    const operationResult = await getOperationById(operationId, isAdmin ? undefined : user.id);
+    const operationResult = await getOperationById(
+      operationId,
+      isAdmin ? undefined : user.id,
+    );
     if (!operationResult.data) {
       return { success: false, error: operationResult.error };
     }
@@ -173,39 +189,46 @@ export async function updateOperationAction(
     const operation = operationResult.data;
 
     // Validate access: user owns operation, is admin, or has organization access
-    const canUpdate = (
-      operation.userId === user.id || 
+    const canUpdate =
+      operation.userId === user.id ||
       isAdmin ||
-      user.userRoles.some(role => 
-        role.organizationId === operation.organizationId &&
-        ['organization_owner', 'sales_manager'].includes(role.role)
-      )
-    );
+      user.userRoles.some(
+        (role) =>
+          role.organizationId === operation.organizationId &&
+          ["organization_owner", "sales_manager"].includes(role.role),
+      );
 
     if (!canUpdate) {
-      return { 
-        success: false, 
-        error: 'No tienes permisos para actualizar esta operación' 
+      return {
+        success: false,
+        error: "No tienes permisos para actualizar esta operación",
       };
     }
 
     // Update operation
-    const result = await updateOperation(operationId, user.id, input, ipAddress, userAgent);
+    const result = await updateOperation(
+      operationId,
+      user.id,
+      input,
+      ipAddress,
+      userAgent,
+    );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // Revalidate relevant paths
-    revalidatePath('/dashboard');
-    revalidatePath('/userDashboard');
+    revalidatePath("/dashboard");
+    revalidatePath("/userDashboard");
     revalidatePath(`/operations/${operationId}`);
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error updating operation:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error actualizando operación' 
+    console.error("[SERVER_ACTION] Error updating operation:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error actualizando operación",
     };
   }
 }
@@ -218,7 +241,7 @@ export async function cancelOperationAction(
   operationId: string,
   reason: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<OperationActionResult> {
   try {
     // Validate authentication
@@ -228,10 +251,13 @@ export async function cancelOperationAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some(role => role.role === 'admin');
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
 
     // Check if user can access this operation
-    const operationResult = await getOperationById(operationId, isAdmin ? undefined : user.id);
+    const operationResult = await getOperationById(
+      operationId,
+      isAdmin ? undefined : user.id,
+    );
     if (!operationResult.data) {
       return { success: false, error: operationResult.error };
     }
@@ -239,41 +265,48 @@ export async function cancelOperationAction(
     const operation = operationResult.data;
 
     // Validate access: user owns operation, is admin, or has organization access
-    const canCancel = (
-      operation.userId === user.id || 
+    const canCancel =
+      operation.userId === user.id ||
       isAdmin ||
-      user.userRoles.some(role => 
-        role.organizationId === operation.organizationId &&
-        ['organization_owner', 'sales_manager'].includes(role.role)
-      )
-    );
+      user.userRoles.some(
+        (role) =>
+          role.organizationId === operation.organizationId &&
+          ["organization_owner", "sales_manager"].includes(role.role),
+      );
 
     if (!canCancel) {
-      return { 
-        success: false, 
-        error: 'No tienes permisos para cancelar esta operación' 
+      return {
+        success: false,
+        error: "No tienes permisos para cancelar esta operación",
       };
     }
 
     // Cancel operation
-    const result = await cancelOperationDAL(operationId, user.id, reason, ipAddress, userAgent);
+    const result = await cancelOperationDAL(
+      operationId,
+      user.id,
+      reason,
+      ipAddress,
+      userAgent,
+    );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // NOTE: Service layer should handle unit status updates when operation is cancelled
     // Revalidate relevant paths
-    revalidatePath('/dashboard');
-    revalidatePath('/userDashboard');
-    revalidatePath('/projects');
+    revalidatePath("/dashboard");
+    revalidatePath("/userDashboard");
+    revalidatePath("/projects");
     revalidatePath(`/operations/${operationId}`);
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error cancelling operation:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error cancelando operación' 
+    console.error("[SERVER_ACTION] Error cancelling operation:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error cancelando operación",
     };
   }
 }
@@ -300,10 +333,13 @@ export async function getUserActiveOperationAction(): Promise<OperationActionRes
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting active operation:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error obteniendo operación activa' 
+    console.error("[SERVER_ACTION] Error getting active operation:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo operación activa",
     };
   }
 }
@@ -324,12 +360,19 @@ export async function hasActiveOperationAction(): Promise<OperationActionResult>
 
     // Check for active operation
     const result = await hasActiveOperation(user.id);
-    return { success: result.data || false, data: result.data, error: result.error };
+    return {
+      success: result.data || false,
+      data: result.data,
+      error: result.error,
+    };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error checking active operation:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error verificando operación activa' 
+    console.error("[SERVER_ACTION] Error checking active operation:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error verificando operación activa",
     };
   }
 }
@@ -343,7 +386,7 @@ export async function hasActiveOperationAction(): Promise<OperationActionResult>
  * Used before creating operations
  */
 export async function validateUnitsSameOrganizationAction(
-  unitIds: string[]
+  unitIds: string[],
 ): Promise<OperationActionResult> {
   try {
     // Validate authentication
@@ -360,10 +403,16 @@ export async function validateUnitsSameOrganizationAction(
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error validating units organization:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error validando organización de unidades' 
+    console.error(
+      "[SERVER_ACTION] Error validating units organization:",
+      error,
+    );
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error validando organización de unidades",
     };
   }
 }
@@ -375,7 +424,7 @@ export async function validateUnitsSameOrganizationAction(
 export async function createOperationSimpleAction(
   input: { unitIds: string[]; notes?: string },
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<OperationActionResult> {
   try {
     // Validate authentication
@@ -388,27 +437,30 @@ export async function createOperationSimpleAction(
 
     // Use service layer to create operation with full validation
     const result = await createOperationWithValidation(
-      user.id, 
-      input, 
-      ipAddress, 
-      userAgent
+      user.id,
+      input,
+      ipAddress,
+      userAgent,
     );
-    
+
     if (!result.data) {
-      return { success: false, error: result.error || 'Error creando operación' };
+      return {
+        success: false,
+        error: result.error || "Error creando operación",
+      };
     }
 
     // Revalidate relevant paths
-    revalidatePath('/dashboard');
-    revalidatePath('/userDashboard');
-    revalidatePath('/projects');
+    revalidatePath("/dashboard");
+    revalidatePath("/userDashboard");
+    revalidatePath("/projects");
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error creating operation:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error creando operación' 
+    console.error("[SERVER_ACTION] Error creating operation:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error creando operación",
     };
   }
 }

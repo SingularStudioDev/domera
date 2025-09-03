@@ -4,18 +4,19 @@
 // Only handles favorites-related operations
 // =============================================================================
 
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
-import { validateSession } from '@/lib/auth/validation';
-import { getUnitById } from '@/lib/dal/units';
+import { revalidatePath } from "next/cache";
+
+import { validateSession } from "@/lib/auth/validation";
 import {
+  failure,
   getDbClient,
   logAudit,
   success,
-  failure,
-  type Result
-} from '@/lib/dal/base';
+  type Result,
+} from "@/lib/dal/base";
+import { getUnitById } from "@/lib/dal/units";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -54,7 +55,9 @@ interface FavoriteUnit {
 /**
  * Add a unit to user's favorites
  */
-export async function addToFavoritesAction(unitId: string): Promise<FavoriteActionResult> {
+export async function addToFavoritesAction(
+  unitId: string,
+): Promise<FavoriteActionResult> {
   try {
     // Validate authentication
     const authResult = await validateSession();
@@ -70,7 +73,7 @@ export async function addToFavoritesAction(unitId: string): Promise<FavoriteActi
     if (!unitResult.data) {
       return {
         success: false,
-        error: 'Unidad no encontrada',
+        error: "Unidad no encontrada",
       };
     }
 
@@ -89,7 +92,7 @@ export async function addToFavoritesAction(unitId: string): Promise<FavoriteActi
     if (existingFavorite) {
       return {
         success: false,
-        error: 'Esta unidad ya está en tus favoritos',
+        error: "Esta unidad ya está en tus favoritos",
       };
     }
 
@@ -116,14 +119,14 @@ export async function addToFavoritesAction(unitId: string): Promise<FavoriteActi
     // Log audit
     await logAudit(client, {
       userId: user.id,
-      tableName: 'user_favorites',
+      tableName: "user_favorites",
       recordId: favorite.id,
-      action: 'INSERT',
+      action: "INSERT",
       newValues: { userId: user.id, unitId },
     });
 
-    revalidatePath('/favorites');
-    revalidatePath('/projects');
+    revalidatePath("/favorites");
+    revalidatePath("/projects");
 
     return {
       success: true,
@@ -133,10 +136,11 @@ export async function addToFavoritesAction(unitId: string): Promise<FavoriteActi
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error adding to favorites:', error);
+    console.error("[SERVER_ACTION] Error adding to favorites:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error agregando a favoritos',
+      error:
+        error instanceof Error ? error.message : "Error agregando a favoritos",
     };
   }
 }
@@ -145,7 +149,7 @@ export async function addToFavoritesAction(unitId: string): Promise<FavoriteActi
  * Remove a unit from user's favorites
  */
 export async function removeFromFavoritesAction(
-  unitId: string
+  unitId: string,
 ): Promise<FavoriteActionResult> {
   try {
     // Validate authentication
@@ -177,7 +181,7 @@ export async function removeFromFavoritesAction(
     if (!existingFavorite) {
       return {
         success: false,
-        error: 'Esta unidad no está en tus favoritos',
+        error: "Esta unidad no está en tus favoritos",
       };
     }
 
@@ -194,14 +198,14 @@ export async function removeFromFavoritesAction(
     // Log audit
     await logAudit(client, {
       userId: user.id,
-      tableName: 'user_favorites',
+      tableName: "user_favorites",
       recordId: existingFavorite.id,
-      action: 'DELETE',
+      action: "DELETE",
       oldValues: { userId: user.id, unitId },
     });
 
-    revalidatePath('/favorites');
-    revalidatePath('/projects');
+    revalidatePath("/favorites");
+    revalidatePath("/projects");
 
     return {
       success: true,
@@ -210,10 +214,13 @@ export async function removeFromFavoritesAction(
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error removing from favorites:', error);
+    console.error("[SERVER_ACTION] Error removing from favorites:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error removiendo de favoritos',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error removiendo de favoritos",
     };
   }
 }
@@ -221,7 +228,9 @@ export async function removeFromFavoritesAction(
 /**
  * Toggle favorite status (add if not favorite, remove if favorite)
  */
-export async function toggleFavoriteAction(unitId: string): Promise<FavoriteActionResult> {
+export async function toggleFavoriteAction(
+  unitId: string,
+): Promise<FavoriteActionResult> {
   try {
     // Validate authentication
     const authResult = await validateSession();
@@ -238,10 +247,11 @@ export async function toggleFavoriteAction(unitId: string): Promise<FavoriteActi
       return await addToFavoritesAction(unitId);
     }
   } catch (error) {
-    console.error('[SERVER_ACTION] Error toggling favorite:', error);
+    console.error("[SERVER_ACTION] Error toggling favorite:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error alternando favorito',
+      error:
+        error instanceof Error ? error.message : "Error alternando favorito",
     };
   }
 }
@@ -271,7 +281,7 @@ export async function checkIsFavoriteAction(unitId: string): Promise<boolean> {
 
     return !!favorite;
   } catch (error) {
-    console.error('[SERVER_ACTION] Error checking favorite status:', error);
+    console.error("[SERVER_ACTION] Error checking favorite status:", error);
     return false;
   }
 }
@@ -309,7 +319,7 @@ export async function getUserFavoritesAction(): Promise<FavoriteActionResult> {
           },
         },
       },
-      orderBy: { addedAt: 'desc' },
+      orderBy: { addedAt: "desc" },
     });
 
     // Transform data for easier frontend consumption
@@ -341,10 +351,13 @@ export async function getUserFavoritesAction(): Promise<FavoriteActionResult> {
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error fetching user favorites:', error);
+    console.error("[SERVER_ACTION] Error fetching user favorites:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error obteniendo favoritos del usuario',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo favoritos del usuario",
     };
   }
 }
@@ -409,10 +422,13 @@ export async function getFavoriteStatsAction(): Promise<FavoriteActionResult> {
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error fetching favorite stats:', error);
+    console.error("[SERVER_ACTION] Error fetching favorite stats:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error obteniendo estadísticas de favoritos',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo estadísticas de favoritos",
     };
   }
 }
@@ -421,7 +437,7 @@ export async function getFavoriteStatsAction(): Promise<FavoriteActionResult> {
  * Get multiple favorite statuses for units (for efficient checking)
  */
 export async function getMultipleFavoriteStatusAction(
-  unitIds: string[]
+  unitIds: string[],
 ): Promise<Record<string, boolean>> {
   try {
     // Validate authentication
@@ -450,7 +466,10 @@ export async function getMultipleFavoriteStatusAction(
 
     return favoriteMap;
   } catch (error) {
-    console.error('[SERVER_ACTION] Error checking multiple favorite statuses:', error);
+    console.error(
+      "[SERVER_ACTION] Error checking multiple favorite statuses:",
+      error,
+    );
     return {};
   }
 }

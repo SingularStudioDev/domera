@@ -1,23 +1,25 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
+import Link from "next/link";
+
 import {
-  ChevronRightIcon,
+  ArrowDown01Icon,
   BedDoubleIcon,
   CarFrontIcon,
-  ArrowDown01Icon,
+  ChevronRightIcon,
   SearchIcon,
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Pagination } from '@/components/ui/pagination';
-import Link from 'next/link';
+} from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 
 // Mock data for the table
 const mockProjects = [
   {
     id: 1,
-    name: 'Torres del Río',
+    name: "Torres del Río",
     soldPercentage: 85,
     sales: {
       studios: 12,
@@ -30,7 +32,7 @@ const mockProjects = [
   },
   {
     id: 2,
-    name: 'Urban Living Cordón',
+    name: "Urban Living Cordón",
     soldPercentage: 42,
     sales: {
       studios: 5,
@@ -43,7 +45,7 @@ const mockProjects = [
   },
   {
     id: 3,
-    name: 'Residencial Pocitos',
+    name: "Residencial Pocitos",
     soldPercentage: 73,
     sales: {
       studios: 0,
@@ -56,7 +58,7 @@ const mockProjects = [
   },
   {
     id: 4,
-    name: 'Vista al Puerto',
+    name: "Vista al Puerto",
     soldPercentage: 28,
     sales: {
       studios: 3,
@@ -69,7 +71,7 @@ const mockProjects = [
   },
   {
     id: 5,
-    name: 'Carrasco Premium',
+    name: "Carrasco Premium",
     soldPercentage: 91,
     sales: {
       studios: 0,
@@ -84,12 +86,12 @@ const mockProjects = [
 
 export default function SalesPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const pageSize = 10;
 
   // Filter projects based on search term
   const filteredProjects = mockProjects.filter((project) =>
-    project.name.toLowerCase().includes(searchTerm.toLowerCase())
+    project.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const projects = filteredProjects;
@@ -101,10 +103,10 @@ export default function SalesPage() {
   };
 
   const getPercentageColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600 bg-green-50';
-    if (percentage >= 60) return 'text-yellow-600 bg-yellow-50';
-    if (percentage >= 40) return 'text-orange-600 bg-orange-50';
-    return 'text-red-600 bg-red-50';
+    if (percentage >= 80) return "text-green-600 bg-green-50";
+    if (percentage >= 60) return "text-yellow-600 bg-yellow-50";
+    if (percentage >= 40) return "text-orange-600 bg-orange-50";
+    return "text-red-600 bg-red-50";
   };
 
   return (
@@ -115,7 +117,7 @@ export default function SalesPage() {
 
         <div className="flex w-full items-center justify-end gap-5">
           <div className="text-black">
-            {total} proyecto{total !== 1 ? 's' : ''}
+            {total} proyecto{total !== 1 ? "s" : ""}
           </div>
 
           {/* Search Input */}
@@ -263,7 +265,7 @@ export default function SalesPage() {
           {totalPages > 1 && (
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Mostrando {(currentPage - 1) * pageSize + 1} a{' '}
+                Mostrando {(currentPage - 1) * pageSize + 1} a{" "}
                 {Math.min(currentPage * pageSize, total)} de {total} proyectos
               </div>
               <Pagination

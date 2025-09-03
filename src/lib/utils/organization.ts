@@ -22,7 +22,7 @@ export function getOrganizationDisplay(organization: Organization) {
     hasLogo: Boolean(organization.logoUrl),
     logoUrl: organization.logoUrl,
     name: organization.name,
-    displayName: organization.name
+    displayName: organization.name,
   };
 }
 
@@ -30,5 +30,5 @@ export function getOrganizationDisplay(organization: Organization) {
  * Check if organization has a valid logo URL
  */
 export function hasOrganizationLogo(organization: Organization): boolean {
-  return Boolean(organization.logoUrl && organization.logoUrl.trim() !== '');
+  return Boolean(organization.logoUrl && organization.logoUrl.trim() !== "");
 }

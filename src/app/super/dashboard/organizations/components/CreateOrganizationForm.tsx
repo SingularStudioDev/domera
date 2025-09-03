@@ -1,43 +1,47 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
+import { useRef, useState } from "react";
+
+import { Image, Plus, Upload, X } from "lucide-react";
+
+import { createOrganizationAction } from "@/lib/actions/organizations";
+import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { createOrganizationAction } from '@/lib/actions/organizations';
-import { Upload, X, Image, Plus } from 'lucide-react';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 interface CreateOrganizationFormProps {
   onSuccess?: () => void;
 }
 
-export default function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProps) {
+export default function CreateOrganizationForm({
+  onSuccess,
+}: CreateOrganizationFormProps) {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    name: '',
-    slug: '',
-    email: '',
-    phone: '',
-    address: '',
-    taxId: '',
-    websiteUrl: '',
-    description: '',
+    name: "",
+    slug: "",
+    email: "",
+    phone: "",
+    address: "",
+    taxId: "",
+    websiteUrl: "",
+    description: "",
     logo: null as File | null,
   });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -45,12 +49,12 @@ export default function CreateOrganizationForm({ onSuccess }: CreateOrganization
       [name]: value,
     }));
 
-    if (name === 'name' && !formData.slug) {
+    if (name === "name" && !formData.slug) {
       const slug = value
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
         .trim();
       setFormData((prev) => ({
         ...prev,
@@ -62,18 +66,19 @@ export default function CreateOrganizationForm({ onSuccess }: CreateOrganization
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setError('El archivo del logo debe ser menor a 5MB');
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
+        setError("El archivo del logo debe ser menor a 5MB");
         return;
       }
-      
-      if (!file.type.startsWith('image/')) {
-        setError('El archivo debe ser una imagen');
+
+      if (!file.type.startsWith("image/")) {
+        setError("El archivo debe ser una imagen");
         return;
       }
 
       setFormData((prev) => ({ ...prev, logo: file }));
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string);
@@ -86,25 +91,25 @@ export default function CreateOrganizationForm({ onSuccess }: CreateOrganization
     setFormData((prev) => ({ ...prev, logo: null }));
     setLogoPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      slug: '',
-      email: '',
-      phone: '',
-      address: '',
-      taxId: '',
-      websiteUrl: '',
-      description: '',
+      name: "",
+      slug: "",
+      email: "",
+      phone: "",
+      address: "",
+      taxId: "",
+      websiteUrl: "",
+      description: "",
       logo: null,
     });
     setLogoPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -126,26 +131,26 @@ export default function CreateOrganizationForm({ onSuccess }: CreateOrganization
         taxId: formData.taxId || undefined,
         websiteUrl: formData.websiteUrl || undefined,
         description: formData.description || undefined,
-        status: 'pending_approval' as const,
+        status: "pending_approval" as const,
         // logo: formData.logo, // TODO: Implement file upload
       };
 
       const result = await createOrganizationAction(organizationData);
 
       if (result.success) {
-        setSuccess('Organización creada exitosamente');
+        setSuccess("Organización creada exitosamente");
         resetForm();
         // Call onSuccess callback to refresh the list
         onSuccess?.();
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError(result.error || 'Error al crear la organización');
+        setError(result.error || "Error al crear la organización");
       }
     } catch (err) {
-      setError('Error inesperado al crear la organización');
-      console.error('Error:', err);
+      setError("Error inesperado al crear la organización");
+      console.error("Error:", err);
     } finally {
       setIsSubmitLoading(false);
     }
@@ -321,18 +326,18 @@ export default function CreateOrganizationForm({ onSuccess }: CreateOrganization
                     <button
                       type="button"
                       onClick={handleRemoveLogo}
-                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                      className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
                     >
                       <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
-                    <Image className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                  <div className="rounded-lg border-2 border-dashed border-gray-300 p-4 text-center transition-colors hover:border-gray-400">
+                    <Image className="mx-auto mb-2 h-8 w-8 text-gray-400" />
                     <p className="text-sm text-gray-600">PNG, JPG hasta 5MB</p>
                   </div>
                 )}
-                
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -341,7 +346,7 @@ export default function CreateOrganizationForm({ onSuccess }: CreateOrganization
                   className="hidden"
                   id="logo-upload"
                 />
-                
+
                 <Button
                   type="button"
                   variant="outline"
@@ -350,7 +355,7 @@ export default function CreateOrganizationForm({ onSuccess }: CreateOrganization
                   className="w-full"
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  {logoPreview ? 'Cambiar Logo' : 'Subir Logo'}
+                  {logoPreview ? "Cambiar Logo" : "Subir Logo"}
                 </Button>
               </div>
             </div>
@@ -392,7 +397,7 @@ export default function CreateOrganizationForm({ onSuccess }: CreateOrganization
           {/* Submit Button */}
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitLoading} className="px-6">
-              {isSubmitLoading ? 'Creando...' : 'Crear Organización'}
+              {isSubmitLoading ? "Creando..." : "Crear Organización"}
             </Button>
           </div>
         </form>

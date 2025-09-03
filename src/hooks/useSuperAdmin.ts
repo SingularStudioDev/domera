@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
 interface SuperAdminUser {
   userId: string;
@@ -25,9 +25,9 @@ export function useSuperAdmin(): SuperAdminSession {
   useEffect(() => {
     async function checkSession() {
       try {
-        const response = await fetch('/api/auth/super-admin/session-check', {
-          method: 'GET',
-          credentials: 'include', // Include cookies
+        const response = await fetch("/api/auth/super-admin/session-check", {
+          method: "GET",
+          credentials: "include", // Include cookies
         });
 
         if (response.ok) {
@@ -44,23 +44,23 @@ export function useSuperAdmin(): SuperAdminSession {
             user: null,
             isLoading: false,
             isAuthenticated: false,
-            error: 'Sesión inválida',
+            error: "Sesión inválida",
           });
-          
+
           // Redirect to super admin login
-          window.location.href = '/super';
+          window.location.href = "/super";
         }
       } catch (error) {
-        console.error('Error checking super admin session:', error);
+        console.error("Error checking super admin session:", error);
         setSession({
           user: null,
           isLoading: false,
           isAuthenticated: false,
-          error: 'Error verificando sesión',
+          error: "Error verificando sesión",
         });
-        
+
         // Redirect to super admin login
-        window.location.href = '/super';
+        window.location.href = "/super";
       }
     }
 

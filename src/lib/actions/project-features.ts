@@ -4,17 +4,23 @@
 // Only handles project feature-related operations
 // =============================================================================
 
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
-import { validateSession, requireRole, validateProjectAccess } from '@/lib/auth/validation';
+import { revalidatePath } from "next/cache";
+
+import type { ProjectStatus } from "@prisma/client";
+
+import {
+  requireRole,
+  validateProjectAccess,
+  validateSession,
+} from "@/lib/auth/validation";
 import {
   getProjectById,
   getProjects,
   getPublicProjects,
-  updateProject
-} from '@/lib/dal/projects';
-import type { ProjectStatus } from '@prisma/client';
+  updateProject,
+} from "@/lib/dal/projects";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -39,7 +45,7 @@ export interface ProjectFeatures {
 
 export interface FeatureFilters {
   parking?: boolean;
-  roomTypes?: ('studio' | '1bed' | '2bed' | '3bed' | '4bed' | '5bed')[];
+  roomTypes?: ("studio" | "1bed" | "2bed" | "3bed" | "4bed" | "5bed")[];
   commercial?: boolean;
 }
 
@@ -74,7 +80,7 @@ export async function updateProjectFeaturesAction(
   projectId: string,
   features: Partial<ProjectFeatures>,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<ProjectFeaturesActionResult> {
   try {
     // Validate project access
@@ -90,27 +96,34 @@ export async function updateProjectFeaturesAction(
     }
 
     const user = authResult.user!;
-    const hasPermission = user.userRoles.some(role => 
-      ['admin', 'organization_owner', 'sales_manager'].includes(role.role)
+    const hasPermission = user.userRoles.some((role) =>
+      ["admin", "organization_owner", "sales_manager"].includes(role.role),
     );
 
     if (!hasPermission) {
       return {
         success: false,
-        error: 'No tienes permisos para actualizar características de proyectos',
+        error:
+          "No tienes permisos para actualizar características de proyectos",
       };
     }
 
     // Update project using DAL
-    const result = await updateProject(projectId, features, user.id, ipAddress, userAgent);
+    const result = await updateProject(
+      projectId,
+      features,
+      user.id,
+      ipAddress,
+      userAgent,
+    );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // Revalidate relevant paths
-    revalidatePath('/projects');
+    revalidatePath("/projects");
     revalidatePath(`/projects/${projectId}`);
-    revalidatePath('/dashboard');
+    revalidatePath("/dashboard");
 
     return {
       success: true,
@@ -120,10 +133,13 @@ export async function updateProjectFeaturesAction(
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error updating project features:', error);
+    console.error("[SERVER_ACTION] Error updating project features:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error actualizando características del proyecto',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error actualizando características del proyecto",
     };
   }
 }
@@ -133,7 +149,7 @@ export async function updateProjectFeaturesAction(
  * Public access for browsing
  */
 export async function getProjectFeaturesAction(
-  projectId: string
+  projectId: string,
 ): Promise<ProjectFeaturesActionResult> {
   try {
     const result = await getProjectById(projectId);
@@ -162,10 +178,13 @@ export async function getProjectFeaturesAction(
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error fetching project features:', error);
+    console.error("[SERVER_ACTION] Error fetching project features:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error obteniendo características del proyecto',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo características del proyecto",
     };
   }
 }
@@ -199,10 +218,10 @@ export async function getProjectsWithFeaturesAction(): Promise<ProjectFeaturesAc
         availableUnits: project.availableUnits || 0,
         images: Array.isArray(project.images)
           ? project.images
-          : JSON.parse((project.images as string) || '[]'),
+          : JSON.parse((project.images as string) || "[]"),
         amenities: Array.isArray(project.amenities)
           ? project.amenities
-          : JSON.parse((project.amenities as string) || '[]'),
+          : JSON.parse((project.amenities as string) || "[]"),
         features: {
           hasParking: project.hasParking || false,
           hasStudio: project.hasStudio || false,
@@ -214,7 +233,7 @@ export async function getProjectsWithFeaturesAction(): Promise<ProjectFeaturesAc
           hasCommercial: project.hasCommercial || false,
         },
         createdAt: project.createdAt,
-      })
+      }),
     );
 
     return {
@@ -222,10 +241,16 @@ export async function getProjectsWithFeaturesAction(): Promise<ProjectFeaturesAc
       data: projectsWithFeatures,
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error fetching projects with features:', error);
+    console.error(
+      "[SERVER_ACTION] Error fetching projects with features:",
+      error,
+    );
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error obteniendo proyectos con características',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo proyectos con características",
     };
   }
 }
@@ -235,7 +260,7 @@ export async function getProjectsWithFeaturesAction(): Promise<ProjectFeaturesAc
  * Public access for browsing
  */
 export async function getProjectsByFeaturesAction(
-  filters: FeatureFilters
+  filters: FeatureFilters,
 ): Promise<ProjectFeaturesActionResult> {
   try {
     // Note: This would ideally be implemented in the DAL layer with proper filtering
@@ -249,24 +274,35 @@ export async function getProjectsByFeaturesAction(
 
     // Apply filters
     if (filters.parking !== undefined) {
-      filteredProjects = filteredProjects.filter((p: any) => p.hasParking === filters.parking);
+      filteredProjects = filteredProjects.filter(
+        (p: any) => p.hasParking === filters.parking,
+      );
     }
 
     if (filters.commercial !== undefined) {
-      filteredProjects = filteredProjects.filter((p: any) => p.hasCommercial === filters.commercial);
+      filteredProjects = filteredProjects.filter(
+        (p: any) => p.hasCommercial === filters.commercial,
+      );
     }
 
     if (filters.roomTypes && filters.roomTypes.length > 0) {
       filteredProjects = filteredProjects.filter((project: any) => {
         return filters.roomTypes!.some((roomType) => {
           switch (roomType) {
-            case 'studio': return project.hasStudio;
-            case '1bed': return project.has1Bedroom;
-            case '2bed': return project.has2Bedroom;
-            case '3bed': return project.has3Bedroom;
-            case '4bed': return project.has4Bedroom;
-            case '5bed': return project.has5Bedroom;
-            default: return false;
+            case "studio":
+              return project.hasStudio;
+            case "1bed":
+              return project.has1Bedroom;
+            case "2bed":
+              return project.has2Bedroom;
+            case "3bed":
+              return project.has3Bedroom;
+            case "4bed":
+              return project.has4Bedroom;
+            case "5bed":
+              return project.has5Bedroom;
+            default:
+              return false;
           }
         });
       });
@@ -289,10 +325,10 @@ export async function getProjectsByFeaturesAction(
         availableUnits: project.availableUnits || 0,
         images: Array.isArray(project.images)
           ? project.images
-          : JSON.parse((project.images as string) || '[]'),
+          : JSON.parse((project.images as string) || "[]"),
         amenities: Array.isArray(project.amenities)
           ? project.amenities
-          : JSON.parse((project.amenities as string) || '[]'),
+          : JSON.parse((project.amenities as string) || "[]"),
         features: {
           hasParking: project.hasParking || false,
           hasStudio: project.hasStudio || false,
@@ -304,7 +340,7 @@ export async function getProjectsByFeaturesAction(
           hasCommercial: project.hasCommercial || false,
         },
         createdAt: project.createdAt,
-      })
+      }),
     );
 
     return {
@@ -316,10 +352,16 @@ export async function getProjectsByFeaturesAction(
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error filtering projects by features:', error);
+    console.error(
+      "[SERVER_ACTION] Error filtering projects by features:",
+      error,
+    );
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error filtrando proyectos por características',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error filtrando proyectos por características",
     };
   }
 }
@@ -364,22 +406,52 @@ export async function getFeatureStatisticsAction(): Promise<ProjectFeaturesActio
           commercial: commercialCount,
         },
         featurePercentages: {
-          parking: totalProjects > 0 ? Math.round((parkingCount / totalProjects) * 100) : 0,
-          studio: totalProjects > 0 ? Math.round((studioCount / totalProjects) * 100) : 0,
-          oneBedroom: totalProjects > 0 ? Math.round((bed1Count / totalProjects) * 100) : 0,
-          twoBedroom: totalProjects > 0 ? Math.round((bed2Count / totalProjects) * 100) : 0,
-          threeBedroom: totalProjects > 0 ? Math.round((bed3Count / totalProjects) * 100) : 0,
-          fourBedroom: totalProjects > 0 ? Math.round((bed4Count / totalProjects) * 100) : 0,
-          fiveBedroom: totalProjects > 0 ? Math.round((bed5Count / totalProjects) * 100) : 0,
-          commercial: totalProjects > 0 ? Math.round((commercialCount / totalProjects) * 100) : 0,
+          parking:
+            totalProjects > 0
+              ? Math.round((parkingCount / totalProjects) * 100)
+              : 0,
+          studio:
+            totalProjects > 0
+              ? Math.round((studioCount / totalProjects) * 100)
+              : 0,
+          oneBedroom:
+            totalProjects > 0
+              ? Math.round((bed1Count / totalProjects) * 100)
+              : 0,
+          twoBedroom:
+            totalProjects > 0
+              ? Math.round((bed2Count / totalProjects) * 100)
+              : 0,
+          threeBedroom:
+            totalProjects > 0
+              ? Math.round((bed3Count / totalProjects) * 100)
+              : 0,
+          fourBedroom:
+            totalProjects > 0
+              ? Math.round((bed4Count / totalProjects) * 100)
+              : 0,
+          fiveBedroom:
+            totalProjects > 0
+              ? Math.round((bed5Count / totalProjects) * 100)
+              : 0,
+          commercial:
+            totalProjects > 0
+              ? Math.round((commercialCount / totalProjects) * 100)
+              : 0,
         },
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error calculating feature statistics:', error);
+    console.error(
+      "[SERVER_ACTION] Error calculating feature statistics:",
+      error,
+    );
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error calculando estadísticas de características',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error calculando estadísticas de características",
     };
   }
 }

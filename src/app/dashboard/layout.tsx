@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/dashboard/AppSidebar';
-import { OrgMenuItems } from '@/utils/MenuItems';
+import { OrgMenuItems } from "@/utils/MenuItems";
+
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/dashboard/AppSidebar";
 
 export default function DashboardLayout({
   children,
@@ -12,8 +13,8 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-white">
-      <AppSidebar menuItems={OrgMenuItems} />
-        <main className="flex flex-1 flex-col overflow-auto bg-[#F5F5F5] pt-7 p-6">
+        <AppSidebar menuItems={OrgMenuItems} />
+        <main className="flex flex-1 flex-col overflow-auto bg-[#F5F5F5] p-6 pt-7">
           {children}
         </main>
       </div>

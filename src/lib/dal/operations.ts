@@ -3,23 +3,25 @@
 // Database operations for the core business logic
 // =============================================================================
 
-import {
-  getDbClient,
-  DatabaseError,
-  ValidationError,
-  AuthorizationError,
-  NotFoundError,
-  ConflictError,
-  logAudit,
-  type Result,
-  success,
-  failure,
-} from './base';
+import type { Operation, OperationStatus } from "@prisma/client";
+
 import {
   CreateOperationSchema,
   UpdateOperationSchema,
-} from '@/lib/validations/schemas';
-import type { OperationStatus, Operation } from '@prisma/client';
+} from "@/lib/validations/schemas";
+
+import {
+  AuthorizationError,
+  ConflictError,
+  DatabaseError,
+  failure,
+  getDbClient,
+  logAudit,
+  NotFoundError,
+  success,
+  ValidationError,
+  type Result,
+} from "./base";
 
 // Input types for operations
 export interface CreateOperationInput {
@@ -42,7 +44,7 @@ interface UpdateOperationInput {
  * Check if user has an active operation
  */
 export async function hasActiveOperation(
-  userId: string
+  userId: string,
 ): Promise<Result<boolean>> {
   try {
     const client = getDbClient();
@@ -51,7 +53,7 @@ export async function hasActiveOperation(
       where: {
         userId,
         status: {
-          notIn: ['completed', 'cancelled'],
+          notIn: ["completed", "cancelled"],
         },
       },
       select: { id: true },
@@ -60,7 +62,7 @@ export async function hasActiveOperation(
     return success(!!operation);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -79,7 +81,7 @@ export async function createOperation(
   userId: string,
   input: CreateOperationInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<Operation>> {
   try {
     // Validate input
@@ -92,10 +94,10 @@ export async function createOperation(
       data: {
         userId,
         organizationId: validInput.organizationId,
-        status: 'initiated',
+        status: "initiated",
         totalAmount: validInput.totalAmount,
         platformFee: 3000, // Fixed platform fee
-        currency: 'USD',
+        currency: "USD",
         notes: validInput.notes,
         createdBy: userId,
       },
@@ -123,33 +125,33 @@ export async function createOperation(
     const operationSteps = [
       {
         operationId: operation.id,
-        stepName: 'document_generation',
+        stepName: "document_generation",
         stepOrder: 1,
-        status: 'completed' as const,
+        status: "completed" as const,
       },
       {
         operationId: operation.id,
-        stepName: 'document_upload',
+        stepName: "document_upload",
         stepOrder: 2,
-        status: 'pending' as const,
+        status: "pending" as const,
       },
       {
         operationId: operation.id,
-        stepName: 'professional_validation',
+        stepName: "professional_validation",
         stepOrder: 3,
-        status: 'pending' as const,
+        status: "pending" as const,
       },
       {
         operationId: operation.id,
-        stepName: 'payment_confirmation',
+        stepName: "payment_confirmation",
         stepOrder: 4,
-        status: 'pending' as const,
+        status: "pending" as const,
       },
       {
         operationId: operation.id,
-        stepName: 'operation_completion',
+        stepName: "operation_completion",
         stepOrder: 5,
-        status: 'pending' as const,
+        status: "pending" as const,
       },
     ];
 
@@ -161,9 +163,9 @@ export async function createOperation(
     await logAudit(client, {
       userId,
       organizationId: validInput.organizationId,
-      tableName: 'operations',
+      tableName: "operations",
       recordId: operation.id,
-      action: 'INSERT',
+      action: "INSERT",
       newValues: operation,
       ipAddress,
       userAgent,
@@ -172,7 +174,7 @@ export async function createOperation(
     return success(operation);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -182,7 +184,7 @@ export async function createOperation(
  */
 export async function getOperationById(
   operationId: string,
-  userId?: string
+  userId?: string,
 ): Promise<Result<Operation>> {
   try {
     const client = getDbClient();
@@ -216,19 +218,19 @@ export async function getOperationById(
     });
 
     if (!operation) {
-      throw new NotFoundError('Operación', operationId);
+      throw new NotFoundError("Operación", operationId);
     }
 
     // If userId provided, ensure user can access this operation
     if (userId && operation.userId !== userId) {
       // This will be enforced by RLS, but we add explicit check here
-      throw new AuthorizationError('No tienes acceso a esta operación');
+      throw new AuthorizationError("No tienes acceso a esta operación");
     }
 
     return success(operation);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -241,7 +243,7 @@ export async function updateOperation(
   userId: string,
   input: UpdateOperationInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<Operation>> {
   try {
     const validInput = UpdateOperationSchema.parse(input);
@@ -251,7 +253,7 @@ export async function updateOperation(
     // Get current operation for audit
     const currentResult = await getOperationById(operationId, userId);
     if (!currentResult.data) {
-      return failure(currentResult.error || 'Operación no encontrada');
+      return failure(currentResult.error || "Operación no encontrada");
     }
 
     const currentOperation = currentResult.data;
@@ -260,11 +262,11 @@ export async function updateOperation(
     if (validInput.status) {
       const isValidTransition = validateStatusTransition(
         currentOperation.status,
-        validInput.status
+        validInput.status,
       );
       if (!isValidTransition) {
         throw new ValidationError(
-          `Transición de estado inválida: ${currentOperation.status} → ${validInput.status}`
+          `Transición de estado inválida: ${currentOperation.status} → ${validInput.status}`,
         );
       }
     }
@@ -308,9 +310,9 @@ export async function updateOperation(
     await logAudit(client, {
       userId,
       organizationId: updatedOperation.organizationId,
-      tableName: 'operations',
+      tableName: "operations",
       recordId: operationId,
-      action: 'UPDATE',
+      action: "UPDATE",
       oldValues: currentOperation,
       newValues: validInput,
       ipAddress,
@@ -320,7 +322,7 @@ export async function updateOperation(
     return success(updatedOperation);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -333,7 +335,7 @@ export async function cancelOperation(
   userId: string,
   reason: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<Operation>> {
   try {
     const client = getDbClient();
@@ -341,15 +343,15 @@ export async function cancelOperation(
     // Get current operation
     const currentResult = await getOperationById(operationId, userId);
     if (!currentResult.data) {
-      return failure(currentResult.error || 'Operación no encontrada');
+      return failure(currentResult.error || "Operación no encontrada");
     }
 
     const currentOperation = currentResult.data;
 
     // Validate that operation can be cancelled
-    if (['completed', 'cancelled'].includes(currentOperation.status)) {
+    if (["completed", "cancelled"].includes(currentOperation.status)) {
       throw new ValidationError(
-        'No se puede cancelar una operación que ya está completada o cancelada'
+        "No se puede cancelar una operación que ya está completada o cancelada",
       );
     }
 
@@ -357,7 +359,7 @@ export async function cancelOperation(
     const cancelledOperation = await client.operation.update({
       where: { id: operationId },
       data: {
-        status: 'cancelled',
+        status: "cancelled",
         cancelledAt: new Date(),
         cancelledBy: userId,
         cancellationReason: reason,
@@ -376,11 +378,11 @@ export async function cancelOperation(
     await logAudit(client, {
       userId,
       organizationId: cancelledOperation.organizationId,
-      tableName: 'operations',
+      tableName: "operations",
       recordId: operationId,
-      action: 'UPDATE',
+      action: "UPDATE",
       oldValues: currentOperation,
-      newValues: { status: 'cancelled', cancellation_reason: reason },
+      newValues: { status: "cancelled", cancellation_reason: reason },
       ipAddress,
       userAgent,
     });
@@ -388,7 +390,7 @@ export async function cancelOperation(
     return success(cancelledOperation);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -397,7 +399,7 @@ export async function cancelOperation(
  * Get user's active operation
  */
 export async function getUserActiveOperation(
-  userId: string
+  userId: string,
 ): Promise<Result<Operation | null>> {
   try {
     const client = getDbClient();
@@ -406,7 +408,7 @@ export async function getUserActiveOperation(
       where: {
         userId,
         status: {
-          notIn: ['completed', 'cancelled'],
+          notIn: ["completed", "cancelled"],
         },
       },
       include: {
@@ -434,14 +436,14 @@ export async function getUserActiveOperation(
         documents: true,
       },
       orderBy: {
-        startedAt: 'desc',
+        startedAt: "desc",
       },
     });
 
     return success(operation);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -455,30 +457,30 @@ export async function getUserActiveOperation(
  */
 function validateStatusTransition(
   from: OperationStatus,
-  to: OperationStatus
+  to: OperationStatus,
 ): boolean {
   const validTransitions: Record<OperationStatus, OperationStatus[]> = {
-    initiated: ['documents_pending', 'cancelled'],
-    documents_pending: ['documents_uploaded', 'cancelled'],
-    documents_uploaded: ['under_validation', 'documents_pending', 'cancelled'],
+    initiated: ["documents_pending", "cancelled"],
+    documents_pending: ["documents_uploaded", "cancelled"],
+    documents_uploaded: ["under_validation", "documents_pending", "cancelled"],
     under_validation: [
-      'professional_assigned',
-      'documents_uploaded',
-      'cancelled',
+      "professional_assigned",
+      "documents_uploaded",
+      "cancelled",
     ],
     professional_assigned: [
-      'waiting_signature',
-      'under_validation',
-      'cancelled',
+      "waiting_signature",
+      "under_validation",
+      "cancelled",
     ],
     waiting_signature: [
-      'signature_completed',
-      'professional_assigned',
-      'cancelled',
+      "signature_completed",
+      "professional_assigned",
+      "cancelled",
     ],
-    signature_completed: ['payment_pending', 'waiting_signature', 'cancelled'],
-    payment_pending: ['payment_confirmed', 'signature_completed', 'cancelled'],
-    payment_confirmed: ['completed'],
+    signature_completed: ["payment_pending", "waiting_signature", "cancelled"],
+    payment_pending: ["payment_confirmed", "signature_completed", "cancelled"],
+    payment_confirmed: ["completed"],
     completed: [], // No transitions from completed
     cancelled: [], // No transitions from cancelled
   };
@@ -493,27 +495,27 @@ async function handleStatusChange(
   client: any,
   operationId: string,
   newStatus: OperationStatus,
-  _userId: string // Prefixed with underscore to indicate intentionally unused
+  _userId: string, // Prefixed with underscore to indicate intentionally unused
 ): Promise<void> {
   switch (newStatus) {
-    case 'completed':
+    case "completed":
       // NOTE: Unit status updates (marking as sold) should be handled by service layer
       // Service layer will coordinate between operations DAL and units DAL
       break;
 
-    case 'cancelled':
+    case "cancelled":
       // This is handled in the cancelOperation function
       break;
 
-    case 'documents_uploaded':
+    case "documents_uploaded":
       // Update the document_upload step
       await client.operationStep.updateMany({
         where: {
           operationId,
-          stepName: 'document_upload',
+          stepName: "document_upload",
         },
         data: {
-          status: 'completed',
+          status: "completed",
           completedAt: new Date(),
         },
       });

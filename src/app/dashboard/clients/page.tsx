@@ -1,10 +1,12 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MailIcon, BuildingIcon, ChevronRightIcon } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Pagination } from '@/components/ui/pagination';
-import Link from 'next/link';
+import { useState } from "react";
+import Link from "next/link";
+
+import { BuildingIcon, ChevronRightIcon, MailIcon } from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Pagination } from "@/components/ui/pagination";
 
 // Mock data for the clients table
 const mockClients = [
@@ -17,7 +19,7 @@ const mockClients = [
     unitType: "2 dormitorios",
     status: "Activo",
     operationDate: "2024-12-15",
-    totalInvestment: 180000
+    totalInvestment: 180000,
   },
   {
     id: 2,
@@ -28,7 +30,7 @@ const mockClients = [
     unitType: "1 dormitorio",
     status: "En proceso",
     operationDate: "2025-01-10",
-    totalInvestment: 120000
+    totalInvestment: 120000,
   },
   {
     id: 3,
@@ -39,7 +41,7 @@ const mockClients = [
     unitType: "3 dormitorios",
     status: "Completado",
     operationDate: "2024-11-20",
-    totalInvestment: 250000
+    totalInvestment: 250000,
   },
   {
     id: 4,
@@ -50,7 +52,7 @@ const mockClients = [
     unitType: "Studio",
     status: "Activo",
     operationDate: "2025-02-05",
-    totalInvestment: 95000
+    totalInvestment: 95000,
   },
   {
     id: 5,
@@ -61,7 +63,7 @@ const mockClients = [
     unitType: "3 dormitorios",
     status: "En proceso",
     operationDate: "2024-12-28",
-    totalInvestment: 320000
+    totalInvestment: 320000,
   },
   {
     id: 6,
@@ -72,14 +74,14 @@ const mockClients = [
     unitType: "1 dormitorio",
     status: "Activo",
     operationDate: "2025-01-18",
-    totalInvestment: 140000
-  }
+    totalInvestment: 140000,
+  },
 ];
 
 export default function ClientesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  
+
   // For mockup, we'll use static data
   const clients = mockClients;
   const totalPages = Math.ceil(clients.length / pageSize);
@@ -91,30 +93,30 @@ export default function ClientesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completado':
-        return 'text-green-600 bg-green-50';
-      case 'activo':
-        return 'text-primaryColor bg-blue-50';
-      case 'en proceso':
-        return 'text-yellow-600 bg-yellow-50';
+      case "completado":
+        return "text-green-600 bg-green-50";
+      case "activo":
+        return "text-primaryColor bg-blue-50";
+      case "en proceso":
+        return "text-yellow-600 bg-yellow-50";
       default:
-        return 'text-gray-600 bg-gray-50';
+        return "text-gray-600 bg-gray-50";
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-UY', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
+    return new Intl.NumberFormat("es-UY", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-UY', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("es-UY", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
   };
 
@@ -124,7 +126,7 @@ export default function ClientesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
         <div className="text-sm text-gray-500">
-          Total: {total} cliente{total !== 1 ? 's' : ''}
+          Total: {total} cliente{total !== 1 ? "s" : ""}
         </div>
       </div>
 
@@ -133,8 +135,8 @@ export default function ClientesPage() {
         <CardContent className="p-6">
           <div className="overflow-x-auto rounded-xl">
             <div className="w-full overflow-hidden rounded-xl">
-              <div className="bg-[#E8EEFF] grid grid-cols-7 rounded-xl">
-                <div className="px-4 py-3 w-full text-left font-medium first:rounded-tl-xl">
+              <div className="grid grid-cols-7 rounded-xl bg-[#E8EEFF]">
+                <div className="w-full px-4 py-3 text-left font-medium first:rounded-tl-xl">
                   Cliente
                 </div>
                 <div className="px-4 py-3 text-center font-medium">
@@ -149,12 +151,8 @@ export default function ClientesPage() {
                     <span>Proyecto</span>
                   </div>
                 </div>
-                <div className="px-4 py-3 text-center font-medium">
-                  Unidad
-                </div>
-                <div className="px-4 py-3 text-center font-medium">
-                  Estado
-                </div>
+                <div className="px-4 py-3 text-center font-medium">Unidad</div>
+                <div className="px-4 py-3 text-center font-medium">Estado</div>
                 <div className="px-4 py-3 text-center font-medium">
                   Inversión
                 </div>
@@ -162,12 +160,12 @@ export default function ClientesPage() {
                   Fecha
                 </div>
               </div>
-              <div className='space-y-2'>
+              <div className="space-y-2">
                 {clients.map((client) => (
-                  <Link 
-                    key={client.id} 
+                  <Link
+                    key={client.id}
                     href={`/dashboard/clients/${client.id}`}
-                    className={`border border-t border-transparent rounded-lg hover:border-[#0004FF] hover:bg-blue-50 transition-colors grid grid-cols-7 cursor-pointer`}
+                    className={`grid cursor-pointer grid-cols-7 rounded-lg border border-t border-transparent transition-colors hover:border-[#0004FF] hover:bg-blue-50`}
                   >
                     {/* Client Name */}
                     <div className="px-4 py-3">
@@ -186,7 +184,7 @@ export default function ClientesPage() {
 
                     {/* Email */}
                     <div className="px-4 py-3">
-                      <div className="text-sm text-gray-600 truncate">
+                      <div className="truncate text-sm text-gray-600">
                         {client.email}
                       </div>
                     </div>
@@ -207,7 +205,9 @@ export default function ClientesPage() {
 
                     {/* Status */}
                     <div className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${getStatusColor(client.status)}`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${getStatusColor(client.status)}`}
+                      >
                         {client.status}
                       </span>
                     </div>
@@ -235,7 +235,7 @@ export default function ClientesPage() {
           {totalPages > 1 && (
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Mostrando {(currentPage - 1) * pageSize + 1} a{' '}
+                Mostrando {(currentPage - 1) * pageSize + 1} a{" "}
                 {Math.min(currentPage * pageSize, total)} de {total} clientes
               </div>
               <Pagination

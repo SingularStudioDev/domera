@@ -3,7 +3,7 @@
 // Utilities to handle Prisma Decimal serialization for client components
 // =============================================================================
 
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from "@prisma/client/runtime/library";
 
 /**
  * Converts Prisma Decimal objects to numbers for client serialization
@@ -12,21 +12,21 @@ export function serializeDecimal(value: any): number | null {
   if (value === null || value === undefined) {
     return null;
   }
-  
+
   if (value instanceof Decimal) {
     return value.toNumber();
   }
-  
+
   // If it's already a number, return as is
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return value;
   }
-  
+
   // If it's a string that represents a number, parse it
-  if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+  if (typeof value === "string" && !isNaN(parseFloat(value))) {
     return parseFloat(value);
   }
-  
+
   return null;
 }
 
@@ -35,7 +35,7 @@ export function serializeDecimal(value: any): number | null {
  */
 export function serializeProject(project: any): any {
   if (!project) return null;
-  
+
   return {
     ...project,
     latitude: serializeDecimal(project.latitude),
@@ -57,7 +57,7 @@ export function serializeProject(project: any): any {
  */
 export function serializeUnit(unit: any): any {
   if (!unit) return null;
-  
+
   return {
     ...unit,
     price: serializeDecimal(unit.price),
@@ -74,7 +74,7 @@ export function serializeUnit(unit: any): any {
  */
 export function serializeOrganization(org: any): any {
   if (!org) return null;
-  
+
   return {
     ...org,
     // Handle dates
@@ -88,7 +88,7 @@ export function serializeOrganization(org: any): any {
  */
 export function serializeOperation(operation: any): any {
   if (!operation) return null;
-  
+
   return {
     ...operation,
     totalAmount: serializeDecimal(operation.totalAmount),
@@ -109,28 +109,28 @@ export function serializeObject(obj: any): any {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  
+
   if (Array.isArray(obj)) {
-    return obj.map(item => serializeObject(item));
+    return obj.map((item) => serializeObject(item));
   }
-  
-  if (typeof obj === 'object') {
+
+  if (typeof obj === "object") {
     const serialized: any = {};
-    
+
     for (const [key, value] of Object.entries(obj)) {
       if (value instanceof Decimal) {
         serialized[key] = value.toNumber();
       } else if (value instanceof Date) {
         serialized[key] = value.toISOString();
-      } else if (typeof value === 'object') {
+      } else if (typeof value === "object") {
         serialized[key] = serializeObject(value);
       } else {
         serialized[key] = value;
       }
     }
-    
+
     return serialized;
   }
-  
+
   return obj;
 }

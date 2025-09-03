@@ -3,7 +3,7 @@
 // Secure password hashing and verification using bcryptjs
 // =============================================================================
 
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
 
 // Security configuration
 const SALT_ROUNDS = 12; // High security - computationally expensive but secure
@@ -15,15 +15,15 @@ const SALT_ROUNDS = 12; // High security - computationally expensive but secure
  */
 export async function hashPassword(password: string): Promise<string> {
   if (!password || password.length < 8) {
-    throw new Error('Password must be at least 8 characters long');
+    throw new Error("Password must be at least 8 characters long");
   }
 
   try {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     return hashedPassword;
   } catch (error) {
-    console.error('Error hashing password:', error);
-    throw new Error('Failed to hash password');
+    console.error("Error hashing password:", error);
+    throw new Error("Failed to hash password");
   }
 }
 
@@ -35,7 +35,7 @@ export async function hashPassword(password: string): Promise<string> {
  */
 export async function verifyPassword(
   password: string,
-  hashedPassword: string
+  hashedPassword: string,
 ): Promise<boolean> {
   if (!password || !hashedPassword) {
     return false;
@@ -45,7 +45,7 @@ export async function verifyPassword(
     const isValid = await bcrypt.compare(password, hashedPassword);
     return isValid;
   } catch (error) {
-    console.error('Error verifying password:', error);
+    console.error("Error verifying password:", error);
     return false;
   }
 }
@@ -62,50 +62,50 @@ export function validatePasswordStrength(password: string): {
   const errors: string[] = [];
 
   if (!password) {
-    errors.push('Password is required');
+    errors.push("Password is required");
     return { isValid: false, errors };
   }
 
   if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
+    errors.push("Password must be at least 8 characters long");
   }
 
   if (password.length > 128) {
-    errors.push('Password must be less than 128 characters');
+    errors.push("Password must be less than 128 characters");
   }
 
   if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
+    errors.push("Password must contain at least one uppercase letter");
   }
 
   if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
+    errors.push("Password must contain at least one lowercase letter");
   }
 
   if (!/[0-9]/.test(password)) {
-    errors.push('Password must contain at least one number');
+    errors.push("Password must contain at least one number");
   }
 
   if (!/[^A-Za-z0-9]/.test(password)) {
-    errors.push('Password must contain at least one special character');
+    errors.push("Password must contain at least one special character");
   }
 
   // Check for common weak passwords
   const commonPasswords = [
-    'password',
-    'password123',
-    '123456',
-    '123456789',
-    'qwerty',
-    'abc123',
-    'admin',
-    'letmein',
-    'welcome',
-    'monkey',
+    "password",
+    "password123",
+    "123456",
+    "123456789",
+    "qwerty",
+    "abc123",
+    "admin",
+    "letmein",
+    "welcome",
+    "monkey",
   ];
 
   if (commonPasswords.includes(password.toLowerCase())) {
-    errors.push('Password is too common and not secure');
+    errors.push("Password is too common and not secure");
   }
 
   return {
@@ -120,14 +120,14 @@ export function validatePasswordStrength(password: string): {
  * @returns string - Generated password
  */
 export function generateSecurePassword(length: number = 12): string {
-  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-  const numbers = '0123456789';
-  const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lowercase = "abcdefghijklmnopqrstuvwxyz";
+  const numbers = "0123456789";
+  const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
 
   const allChars = uppercase + lowercase + numbers + symbols;
 
-  let password = '';
+  let password = "";
 
   // Ensure at least one character from each category
   password += uppercase[Math.floor(Math.random() * uppercase.length)];
@@ -142,9 +142,9 @@ export function generateSecurePassword(length: number = 12): string {
 
   // Shuffle the password to avoid predictable patterns
   return password
-    .split('')
+    .split("")
     .sort(() => 0.5 - Math.random())
-    .join('');
+    .join("");
 }
 
 /**
@@ -168,15 +168,15 @@ export const PASSWORD_REQUIREMENTS = {
  */
 export async function hashToken(token: string): Promise<string> {
   if (!token) {
-    throw new Error('Token cannot be empty');
+    throw new Error("Token cannot be empty");
   }
 
   try {
     const hashedToken = await bcrypt.hash(token, SALT_ROUNDS);
     return hashedToken;
   } catch (error) {
-    console.error('Error hashing token:', error);
-    throw new Error('Failed to hash token');
+    console.error("Error hashing token:", error);
+    throw new Error("Failed to hash token");
   }
 }
 
@@ -184,7 +184,7 @@ export async function hashToken(token: string): Promise<string> {
  * Test password for development - DO NOT USE IN PRODUCTION
  * This is the standard password for all test users
  */
-export const TEST_PASSWORD = 'Password.123';
+export const TEST_PASSWORD = "Password.123";
 
 /**
  * Hash the test password for development use

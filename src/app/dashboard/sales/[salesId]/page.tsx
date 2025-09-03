@@ -1,26 +1,24 @@
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
-import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import Link from "next/link";
+import { useParams } from "next/navigation";
+
 import {
   ArrowLeftIcon,
-  UserIcon,
-  CalendarIcon,
-  CreditCardIcon,
-  MapPinIcon,
-  HomeIcon,
   BedIcon,
   CarIcon,
+  HomeIcon,
   StoreIcon,
-} from 'lucide-react';
-import Link from 'next/link';
+} from "lucide-react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 
 // Mock data for specific project
 const projectDetails = {
   1: {
-    name: 'Torres del Río',
-    location: 'Pocitos, Montevideo',
+    name: "Torres del Río",
+    location: "Pocitos, Montevideo",
     soldPercentage: 85,
     totalUnits: 67,
     soldUnits: 57,
@@ -36,77 +34,77 @@ const projectDetails = {
     buyers: [
       {
         id: 1,
-        name: 'María González',
-        email: 'maria.gonzalez@email.com',
-        unit: '2B - Piso 8',
-        unitType: '2 dormitorios',
+        name: "María González",
+        email: "maria.gonzalez@email.com",
+        unit: "2B - Piso 8",
+        unitType: "2 dormitorios",
         apartments: 1,
         garages: 1,
-        purchaseDate: '2024-03-15',
-        paymentMethod: 'Financiamiento',
+        purchaseDate: "2024-03-15",
+        paymentMethod: "Financiamiento",
         price: 145000,
-        status: 'Confirmado',
-        currentStage: 'Documentación',
+        status: "Confirmado",
+        currentStage: "Documentación",
         stageProgress: 75,
       },
       {
         id: 2,
-        name: 'Carlos Rodríguez',
-        email: 'carlos.rodriguez@email.com',
-        unit: '3A - Piso 12',
-        unitType: '3 dormitorios',
+        name: "Carlos Rodríguez",
+        email: "carlos.rodriguez@email.com",
+        unit: "3A - Piso 12",
+        unitType: "3 dormitorios",
         apartments: 1,
         garages: 2,
-        purchaseDate: '2024-03-18',
-        paymentMethod: 'Contado',
+        purchaseDate: "2024-03-18",
+        paymentMethod: "Contado",
         price: 185000,
-        status: 'En proceso',
-        currentStage: 'Firma',
+        status: "En proceso",
+        currentStage: "Firma",
         stageProgress: 45,
       },
       {
         id: 3,
-        name: 'Ana Silva',
-        email: 'ana.silva@email.com',
-        unit: '1C - Piso 4',
-        unitType: '1 dormitorio',
+        name: "Ana Silva",
+        email: "ana.silva@email.com",
+        unit: "1C - Piso 4",
+        unitType: "1 dormitorio",
         apartments: 1,
         garages: 0,
-        purchaseDate: '2024-03-20',
-        paymentMethod: 'Financiamiento',
+        purchaseDate: "2024-03-20",
+        paymentMethod: "Financiamiento",
         price: 95000,
-        status: 'Confirmado',
-        currentStage: 'Entrega',
+        status: "Confirmado",
+        currentStage: "Entrega",
         stageProgress: 90,
       },
       {
         id: 4,
-        name: 'Roberto Méndez',
-        email: 'roberto.mendez@email.com',
-        unit: 'Studio - Piso 6',
-        unitType: 'Studio',
+        name: "Roberto Méndez",
+        email: "roberto.mendez@email.com",
+        unit: "Studio - Piso 6",
+        unitType: "Studio",
         apartments: 1,
         garages: 1,
-        purchaseDate: '2024-03-22',
-        paymentMethod: 'Contado',
+        purchaseDate: "2024-03-22",
+        paymentMethod: "Contado",
         price: 75000,
-        status: 'Pendiente',
-        currentStage: 'Reserva',
+        status: "Pendiente",
+        currentStage: "Reserva",
         stageProgress: 25,
       },
       {
         id: 5,
-        name: 'Lucía Fernández',
-        email: 'lucia.fernandez@email.com',
-        unit: '2A - Piso 10',
-        unitType: '2 dormitorios',
+        name: "Lucía Fernández",
+        email: "lucia.fernandez@email.com",
+        unit: "2A - Piso 10",
+        unitType: "2 dormitorios",
         apartments: 1,
         garages: 1,
-        purchaseDate: '2024-03-25',
-        paymentMethod: 'Financiamiento',
+        purchaseDate: "2024-03-25",
+        paymentMethod: "Financiamiento",
         price: 155000,
-        status: 'Confirmado',
-        currentStage: 'Construcción',
+        status: "Confirmado",
+        currentStage: "Construcción",
         stageProgress: 60,
       },
     ],
@@ -114,12 +112,12 @@ const projectDetails = {
 };
 
 const COLORS = [
-  '#0088FE',
-  '#00C49F',
-  '#FFBB28',
-  '#FF8042',
-  '#8884D8',
-  '#82CA9D',
+  "#0088FE",
+  "#00C49F",
+  "#FFBB28",
+  "#FF8042",
+  "#8884D8",
+  "#82CA9D",
 ];
 
 export default function SalesDetailPage() {
@@ -138,42 +136,42 @@ export default function SalesDetailPage() {
   // Prepare data for percentage progress indicators
   const progressData = [
     {
-      name: 'Studio',
+      name: "Studio",
       sold: project.sales.studios,
       total: 15,
       percentage: (project.sales.studios / 15) * 100,
       icon: HomeIcon,
     },
     {
-      name: '1 Dormitorio',
+      name: "1 Dormitorio",
       sold: project.sales.oneBedroom,
       total: 12,
       percentage: (project.sales.oneBedroom / 12) * 100,
       icon: BedIcon,
     },
     {
-      name: '2 Dormitorios',
+      name: "2 Dormitorios",
       sold: project.sales.twoBedroom,
       total: 20,
       percentage: (project.sales.twoBedroom / 20) * 100,
       icon: BedIcon,
     },
     {
-      name: '3 Dormitorios',
+      name: "3 Dormitorios",
       sold: project.sales.threeBedroom,
       total: 10,
       percentage: (project.sales.threeBedroom / 10) * 100,
       icon: BedIcon,
     },
     {
-      name: 'Parking',
+      name: "Parking",
       sold: project.sales.parking,
       total: 30,
       percentage: (project.sales.parking / 30) * 100,
       icon: CarIcon,
     },
     {
-      name: 'Comercial',
+      name: "Comercial",
       sold: project.sales.commercial,
       total: 5,
       percentage: (project.sales.commercial / 5) * 100,
@@ -182,24 +180,24 @@ export default function SalesDetailPage() {
   ];
 
   const pieChartData = [
-    { name: 'Studio', value: project.sales.studios },
-    { name: '1 Dormitorio', value: project.sales.oneBedroom },
-    { name: '2 Dormitorios', value: project.sales.twoBedroom },
-    { name: '3 Dormitorios', value: project.sales.threeBedroom },
-    { name: 'Parking', value: project.sales.parking },
-    { name: 'Comercial', value: project.sales.commercial },
+    { name: "Studio", value: project.sales.studios },
+    { name: "1 Dormitorio", value: project.sales.oneBedroom },
+    { name: "2 Dormitorios", value: project.sales.twoBedroom },
+    { name: "3 Dormitorios", value: project.sales.threeBedroom },
+    { name: "Parking", value: project.sales.parking },
+    { name: "Comercial", value: project.sales.commercial },
   ].filter((item) => item.value > 0);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Confirmado':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'En proceso':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'Pendiente':
-        return 'bg-red-50 text-red-700 border-red-200';
+      case "Confirmado":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "En proceso":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "Pendiente":
+        return "bg-red-50 text-red-700 border-red-200";
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
 
@@ -316,10 +314,10 @@ export default function SalesDetailPage() {
                 {pieChartData.map((entry, index) => {
                   const totalSales = pieChartData.reduce(
                     (sum, item) => sum + item.value,
-                    0
+                    0,
                   );
                   const percentage = ((entry.value / totalSales) * 100).toFixed(
-                    1
+                    1,
                   );
                   return (
                     <div key={index} className="flex items-center gap-2">

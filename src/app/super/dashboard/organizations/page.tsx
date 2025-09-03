@@ -1,11 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { Button } from '@/components/ui/button';
-import { Plus, X } from 'lucide-react';
-import CreateOrganizationForm from './components/CreateOrganizationForm';
-import OrganizationsList from './components/OrganizationsList';
+import { useState } from "react";
+
+import { Plus, X } from "lucide-react";
+
+import { useSuperAdmin } from "@/hooks/useSuperAdmin";
+import { Button } from "@/components/ui/button";
+
+import CreateOrganizationForm from "./components/CreateOrganizationForm";
+import OrganizationsList from "./components/OrganizationsList";
 
 export default function OrganizationsPage() {
   const { isLoading: isSessionLoading, isAuthenticated } = useSuperAdmin();
@@ -14,7 +17,7 @@ export default function OrganizationsPage() {
 
   const handleOrganizationCreated = () => {
     // Trigger refresh of the organizations list
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
     // Hide the form after successful creation
     setShowCreateForm(false);
   };
@@ -39,7 +42,7 @@ export default function OrganizationsPage() {
     <div className="min-h-screen">
       <div className="space-y-6">
         {/* Header with Create Button */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h1 className="dashboard-title">Gestión de Organizaciones</h1>
           <Button
             onClick={() => setShowCreateForm(!showCreateForm)}

@@ -4,19 +4,25 @@
 // Only handles document-related operations
 // =============================================================================
 
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
-import { validateSession, requireRole, requireOrganizationAccess } from '@/lib/auth/validation';
-import { getOperationById } from '@/lib/dal/operations';
+import { revalidatePath } from "next/cache";
+
+import type { DocumentStatus, DocumentType } from "@prisma/client";
+
 import {
+  requireOrganizationAccess,
+  requireRole,
+  validateSession,
+} from "@/lib/auth/validation";
+import {
+  failure,
   getDbClient,
   logAudit,
   success,
-  failure,
-  type Result
-} from '@/lib/dal/base';
-import type { DocumentType, DocumentStatus } from '@prisma/client';
+  type Result,
+} from "@/lib/dal/base";
+import { getOperationById } from "@/lib/dal/operations";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -55,7 +61,7 @@ interface DocumentTemplateInput {
  * Get all document templates for an organization
  */
 export async function getDocumentTemplatesAction(
-  organizationId?: string
+  organizationId?: string,
 ): Promise<DocumentActionResult> {
   try {
     // Validate authentication
@@ -85,7 +91,7 @@ export async function getDocumentTemplatesAction(
           select: { name: true, slug: true },
         },
       },
-      orderBy: [{ documentType: 'asc' }, { version: 'desc' }],
+      orderBy: [{ documentType: "asc" }, { version: "desc" }],
     });
 
     return {
@@ -93,10 +99,13 @@ export async function getDocumentTemplatesAction(
       data: templates,
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error fetching document templates:', error);
+    console.error("[SERVER_ACTION] Error fetching document templates:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error obteniendo plantillas de documentos',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo plantillas de documentos",
     };
   }
 }
@@ -107,7 +116,7 @@ export async function getDocumentTemplatesAction(
 export async function createDocumentTemplateAction(
   input: DocumentTemplateInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<DocumentActionResult> {
   try {
     // Validate authentication and check role
@@ -118,13 +127,13 @@ export async function createDocumentTemplateAction(
 
     const user = authResult.user!;
     const hasPermission = user.userRoles.some((role) =>
-      ['admin', 'organization_owner'].includes(role.role)
+      ["admin", "organization_owner"].includes(role.role),
     );
 
     if (!hasPermission) {
       return {
         success: false,
-        error: 'No tienes permisos para crear plantillas de documentos',
+        error: "No tienes permisos para crear plantillas de documentos",
       };
     }
 
@@ -157,25 +166,28 @@ export async function createDocumentTemplateAction(
     await logAudit(client, {
       userId: user.id,
       organizationId,
-      tableName: 'document_templates',
+      tableName: "document_templates",
       recordId: template.id,
-      action: 'INSERT',
+      action: "INSERT",
       newValues: template,
       ipAddress,
       userAgent,
     });
 
-    revalidatePath('/admin/templates');
+    revalidatePath("/admin/templates");
 
     return {
       success: true,
       data: template,
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error creating document template:', error);
+    console.error("[SERVER_ACTION] Error creating document template:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error creando plantilla de documento',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error creando plantilla de documento",
     };
   }
 }
@@ -188,7 +200,7 @@ export async function createDocumentTemplateAction(
  * Get required documents for an operation based on its current step
  */
 export async function getRequiredDocumentsForOperationAction(
-  operationId: string
+  operationId: string,
 ): Promise<DocumentActionResult> {
   try {
     // Validate authentication
@@ -198,14 +210,17 @@ export async function getRequiredDocumentsForOperationAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some(role => role.role === 'admin');
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
 
     // Get operation using DAL (with user access validation if not admin)
-    const operationResult = await getOperationById(operationId, isAdmin ? undefined : user.id);
+    const operationResult = await getOperationById(
+      operationId,
+      isAdmin ? undefined : user.id,
+    );
     if (!operationResult.data) {
       return {
         success: false,
-        error: 'Operación no encontrada',
+        error: "Operación no encontrada",
       };
     }
 
@@ -213,14 +228,14 @@ export async function getRequiredDocumentsForOperationAction(
 
     // Define required documents based on operation status and steps
     const documentRequirements = getDocumentRequirementsByStatus(
-      operation.status
+      operation.status,
     );
 
     // Get existing documents for this operation
     const client = getDbClient();
     const existingDocs = await client.document.findMany({
       where: { operationId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return {
@@ -232,10 +247,13 @@ export async function getRequiredDocumentsForOperationAction(
       },
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error fetching required documents:', error);
+    console.error("[SERVER_ACTION] Error fetching required documents:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error obteniendo documentos requeridos',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo documentos requeridos",
     };
   }
 }
@@ -250,67 +268,67 @@ function getDocumentRequirementsByStatus(status: string): Array<{
 }> {
   const baseRequirements = [
     {
-      type: 'cedula_identidad' as DocumentType,
+      type: "cedula_identidad" as DocumentType,
       required: true,
-      description: 'Cédula de Identidad del comprador',
+      description: "Cédula de Identidad del comprador",
     },
     {
-      type: 'certificado_ingresos' as DocumentType,
+      type: "certificado_ingresos" as DocumentType,
       required: true,
-      description: 'Certificado de ingresos o comprobantes de sueldo',
+      description: "Certificado de ingresos o comprobantes de sueldo",
     },
   ];
 
   switch (status) {
-    case 'initiated':
-    case 'documents_pending':
+    case "initiated":
+    case "documents_pending":
       return baseRequirements;
 
-    case 'documents_uploaded':
-    case 'under_validation':
+    case "documents_uploaded":
+    case "under_validation":
       return [
         ...baseRequirements,
         {
-          type: 'boleto_reserva' as DocumentType,
+          type: "boleto_reserva" as DocumentType,
           required: true,
-          description: 'Boleto de reserva firmado',
+          description: "Boleto de reserva firmado",
         },
       ];
 
-    case 'professional_assigned':
-    case 'waiting_signature':
+    case "professional_assigned":
+    case "waiting_signature":
       return [
         ...baseRequirements,
         {
-          type: 'boleto_reserva' as DocumentType,
+          type: "boleto_reserva" as DocumentType,
           required: true,
-          description: 'Boleto de reserva firmado',
+          description: "Boleto de reserva firmado",
         },
         {
-          type: 'compromiso_compraventa' as DocumentType,
+          type: "compromiso_compraventa" as DocumentType,
           required: true,
-          description: 'Compromiso de compraventa',
+          description: "Compromiso de compraventa",
         },
       ];
 
-    case 'payment_pending':
-    case 'payment_confirmed':
+    case "payment_pending":
+    case "payment_confirmed":
       return [
         ...baseRequirements,
         {
-          type: 'boleto_reserva' as DocumentType,
+          type: "boleto_reserva" as DocumentType,
           required: true,
-          description: 'Boleto de reserva firmado',
+          description: "Boleto de reserva firmado",
         },
         {
-          type: 'compromiso_compraventa' as DocumentType,
+          type: "compromiso_compraventa" as DocumentType,
           required: true,
-          description: 'Compromiso de compraventa firmado',
+          description: "Compromiso de compraventa firmado",
         },
         {
-          type: 'comprobante_pago' as DocumentType,
+          type: "comprobante_pago" as DocumentType,
           required: true,
-          description: 'Comprobantes de pago',
+          description: "Comprobantes de pago",
         },
       ];
 
@@ -325,7 +343,7 @@ function getDocumentRequirementsByStatus(status: string): Array<{
 export async function uploadDocumentAction(
   input: CreateDocumentInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<DocumentActionResult> {
   try {
     // Validate authentication
@@ -339,13 +357,16 @@ export async function uploadDocumentAction(
 
     // If operationId is provided, verify user owns the operation
     if (input.operationId) {
-      const isAdmin = user.userRoles.some(role => role.role === 'admin');
-      const operationResult = await getOperationById(input.operationId, isAdmin ? undefined : user.id);
-      
+      const isAdmin = user.userRoles.some((role) => role.role === "admin");
+      const operationResult = await getOperationById(
+        input.operationId,
+        isAdmin ? undefined : user.id,
+      );
+
       if (!operationResult.data) {
         return {
           success: false,
-          error: 'Operación no encontrada o no autorizada',
+          error: "Operación no encontrada o no autorizada",
         };
       }
     }
@@ -366,7 +387,7 @@ export async function uploadDocumentAction(
         fileName: input.fileName,
         fileSize: input.fileSize,
         mimeType: input.mimeType,
-        status: 'uploaded',
+        status: "uploaded",
         uploadedBy: user.id,
       },
     });
@@ -375,9 +396,9 @@ export async function uploadDocumentAction(
     await logAudit(client, {
       userId: user.id,
       organizationId,
-      tableName: 'documents',
+      tableName: "documents",
       recordId: document.id,
-      action: 'INSERT',
+      action: "INSERT",
       newValues: document,
       ipAddress,
       userAgent,
@@ -389,15 +410,15 @@ export async function uploadDocumentAction(
         where: { id: input.operationId },
       });
 
-      if (operation?.status === 'initiated') {
+      if (operation?.status === "initiated") {
         await client.operation.update({
           where: { id: input.operationId },
-          data: { status: 'documents_pending' },
+          data: { status: "documents_pending" },
         });
       }
     }
 
-    revalidatePath('/operations');
+    revalidatePath("/operations");
     revalidatePath(`/operations/${input.operationId}`);
 
     return {
@@ -405,10 +426,11 @@ export async function uploadDocumentAction(
       data: document,
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error uploading document:', error);
+    console.error("[SERVER_ACTION] Error uploading document:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error subiendo documento',
+      error:
+        error instanceof Error ? error.message : "Error subiendo documento",
     };
   }
 }
@@ -421,7 +443,7 @@ export async function validateDocumentAction(
   status: DocumentStatus,
   notes?: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<DocumentActionResult> {
   try {
     // Validate authentication and check role
@@ -432,18 +454,18 @@ export async function validateDocumentAction(
 
     const user = authResult.user!;
     const hasPermission = user.userRoles.some((role) =>
-      ['admin', 'organization_owner', 'professional'].includes(role.role)
+      ["admin", "organization_owner", "professional"].includes(role.role),
     );
 
     if (!hasPermission) {
       return {
         success: false,
-        error: 'No tienes permisos para validar documentos',
+        error: "No tienes permisos para validar documentos",
       };
     }
 
     const client = getDbClient();
-    
+
     // Get current document for audit
     const currentDocument = await client.document.findUnique({
       where: { id: documentId },
@@ -452,7 +474,7 @@ export async function validateDocumentAction(
     if (!currentDocument) {
       return {
         success: false,
-        error: 'Documento no encontrado',
+        error: "Documento no encontrado",
       };
     }
 
@@ -470,9 +492,9 @@ export async function validateDocumentAction(
     await logAudit(client, {
       userId: user.id,
       organizationId: currentDocument.organizationId,
-      tableName: 'documents',
+      tableName: "documents",
       recordId: documentId,
-      action: 'UPDATE',
+      action: "UPDATE",
       oldValues: { status: currentDocument.status },
       newValues: { status, validationNotes: notes },
       ipAddress,
@@ -480,22 +502,23 @@ export async function validateDocumentAction(
     });
 
     // Check if all required documents for the operation are validated
-    if (updatedDocument.operationId && status === 'validated') {
+    if (updatedDocument.operationId && status === "validated") {
       await checkAndUpdateOperationDocumentStatus(updatedDocument.operationId);
     }
 
-    revalidatePath('/operations');
-    revalidatePath('/admin/documents');
+    revalidatePath("/operations");
+    revalidatePath("/admin/documents");
 
     return {
       success: true,
       data: updatedDocument,
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error validating document:', error);
+    console.error("[SERVER_ACTION] Error validating document:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error validando documento',
+      error:
+        error instanceof Error ? error.message : "Error validando documento",
     };
   }
 }
@@ -522,22 +545,22 @@ async function checkAndUpdateOperationDocumentStatus(operationId: string) {
 
     // Check if all required document types are uploaded and validated
     const validatedTypes = operation.documents
-      .filter((doc) => doc.status === 'validated')
+      .filter((doc) => doc.status === "validated")
       .map((doc) => doc.documentType);
 
     const allRequiredValidated = requiredTypes.every((type) =>
-      validatedTypes.includes(type)
+      validatedTypes.includes(type),
     );
 
     // Update operation status if all documents are validated
-    if (allRequiredValidated && operation.status === 'documents_pending') {
+    if (allRequiredValidated && operation.status === "documents_pending") {
       await client.operation.update({
         where: { id: operationId },
-        data: { status: 'under_validation' },
+        data: { status: "under_validation" },
       });
     }
   } catch (error) {
-    console.error('Error checking document validation status:', error);
+    console.error("Error checking document validation status:", error);
   }
 }
 
@@ -566,7 +589,7 @@ export async function getUserDocumentsAction(): Promise<DocumentActionResult> {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return {
@@ -574,10 +597,13 @@ export async function getUserDocumentsAction(): Promise<DocumentActionResult> {
       data: documents,
     };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error fetching user documents:', error);
+    console.error("[SERVER_ACTION] Error fetching user documents:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error obteniendo documentos del usuario',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo documentos del usuario",
     };
   }
 }

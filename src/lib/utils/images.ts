@@ -8,10 +8,12 @@
  * Convert File objects to image URLs for processing
  * This is used when we need to store images in batch with other data
  */
-export function processImageFiles(files: File[]): Array<{ file: File; preview: string }> {
-  return files.map(file => ({
+export function processImageFiles(
+  files: File[],
+): Array<{ file: File; preview: string }> {
+  return files.map((file) => ({
     file,
-    preview: URL.createObjectURL(file)
+    preview: URL.createObjectURL(file),
   }));
 }
 
@@ -19,16 +21,28 @@ export function processImageFiles(files: File[]): Array<{ file: File; preview: s
  * Validate image files before upload
  * Same validation logic as DAL but for client-side
  */
-export function validateImageFiles(files: File[]): { valid: File[]; invalid: Array<{ file: File; reason: string }> } {
+export function validateImageFiles(files: File[]): {
+  valid: File[];
+  invalid: Array<{ file: File; reason: string }>;
+} {
   const valid: File[] = [];
   const invalid: Array<{ file: File; reason: string }> = [];
 
   const maxSize = 10 * 1024 * 1024; // 10MB
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/avif'];
+  const allowedTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/avif",
+  ];
 
   for (const file of files) {
     if (file.size > maxSize) {
-      invalid.push({ file, reason: `File size exceeds maximum allowed size of ${Math.round(file.size / (1024 * 1024))}MB` });
+      invalid.push({
+        file,
+        reason: `File size exceeds maximum allowed size of ${Math.round(file.size / (1024 * 1024))}MB`,
+      });
       continue;
     }
 

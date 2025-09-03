@@ -1,16 +1,21 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import { Icon, LatLng } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useCallback, useEffect, useState } from "react";
+
+import { Icon } from "leaflet";
+import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+
+import "leaflet/dist/leaflet.css";
 
 // Fix for default markers in Next.js
 delete (Icon.Default.prototype as any)._getIconUrl;
 Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 interface MapSelectorProps {
@@ -47,17 +52,17 @@ function LocationMarker({ position, onPositionChange }: LocationMarkerProps) {
   return position ? <Marker position={position} /> : null;
 }
 
-export const MapSelector: React.FC<MapSelectorProps> = ({
+export function MapSelector({
   latitude,
   longitude,
   address,
   onChange,
   disabled = false,
-}) => {
+}: MapSelectorProps) {
   const [mounted, setMounted] = useState(false);
-  const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(
-    latitude && longitude ? [latitude, longitude] : null
-  );
+  const [currentPosition, setCurrentPosition] = useState<
+    [number, number] | null
+  >(latitude && longitude ? [latitude, longitude] : null);
 
   useEffect(() => {
     setMounted(true);
@@ -69,10 +74,13 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
     }
   }, [latitude, longitude]);
 
-  const handlePositionChange = useCallback((lat: number, lng: number) => {
-    setCurrentPosition([lat, lng]);
-    onChange(lat, lng);
-  }, [onChange]);
+  const handlePositionChange = useCallback(
+    (lat: number, lng: number) => {
+      setCurrentPosition([lat, lng]);
+      onChange(lat, lng);
+    },
+    [onChange],
+  );
 
   const clearLocation = () => {
     setCurrentPosition(null);
@@ -86,25 +94,28 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          address + ', Montevideo, Uruguay'
-        )}&limit=1`
+          address + ", Montevideo, Uruguay",
+        )}&limit=1`,
       );
       const results = await response.json();
-      
+
       if (results.length > 0) {
         const { lat, lon } = results[0];
-        const newPosition: [number, number] = [parseFloat(lat), parseFloat(lon)];
+        const newPosition: [number, number] = [
+          parseFloat(lat),
+          parseFloat(lon),
+        ];
         setCurrentPosition(newPosition);
         onChange(parseFloat(lat), parseFloat(lon));
       }
     } catch (error) {
-      console.error('Error geocoding address:', error);
+      console.error("Error geocoding address:", error);
     }
   }, [address, onChange]);
 
   if (!mounted) {
     return (
-      <div className="h-96 w-full rounded-lg bg-gray-200 flex items-center justify-center">
+      <div className="flex h-96 w-full items-center justify-center rounded-lg bg-gray-200">
         <p className="text-gray-500">Cargando mapa...</p>
       </div>
     );
@@ -124,7 +135,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
             Buscar por Dirección
           </button>
         )}
-        
+
         {currentPosition && (
           <button
             type="button"
@@ -141,7 +152,8 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
       {currentPosition && (
         <div className="rounded-lg bg-gray-50 p-3">
           <p className="text-sm text-gray-600">
-            <strong>Coordenadas:</strong> {currentPosition[0].toFixed(6)}, {currentPosition[1].toFixed(6)}
+            <strong>Coordenadas:</strong> {currentPosition[0].toFixed(6)},{" "}
+            {currentPosition[1].toFixed(6)}
           </p>
         </div>
       )}
@@ -151,19 +163,19 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
         <MapContainer
           center={currentPosition || MONTEVIDEO_CENTER}
           zoom={currentPosition ? 15 : 12}
-          style={{ height: '400px', width: '100%' }}
+          style={{ height: "400px", width: "100%" }}
           className="rounded-lg"
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
-          <LocationMarker 
-            position={currentPosition} 
+          <LocationMarker
+            position={currentPosition}
             onPositionChange={handlePositionChange}
           />
         </MapContainer>
-        
+
         {/* Overlay de ayuda */}
         {!disabled && (
           <div className="absolute top-2 left-2 z-[1000] rounded-lg bg-white p-2 shadow-md">
@@ -172,13 +184,13 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
             </p>
           </div>
         )}
-        
+
         {disabled && (
-          <div className="absolute inset-0 bg-gray-200 bg-opacity-75 flex items-center justify-center z-[1000]">
+          <div className="bg-opacity-75 absolute inset-0 z-[1000] flex items-center justify-center bg-gray-200">
             <p className="text-gray-500">Mapa deshabilitado</p>
           </div>
         )}
       </div>
     </div>
   );
-};
+}

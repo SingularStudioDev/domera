@@ -1,34 +1,34 @@
-'use client';
+"use client";
 
 import {
+  CalendarIcon,
   CircleDollarSignIcon,
+  HomeIcon,
   ListChecksIcon,
   MousePointerIcon,
-  HomeIcon,
-  CalendarIcon,
-} from 'lucide-react';
+} from "lucide-react";
 
 const Process = () => {
   const steps = [
     {
       icon: HomeIcon,
-      title: 'Selecciona tu propiedad',
+      title: "Selecciona tu propiedad",
     },
     {
       icon: MousePointerIcon,
-      title: 'Hacé click en comprar',
+      title: "Hacé click en comprar",
     },
     {
       icon: ListChecksIcon,
-      title: 'Completa tu boleto de reserva',
+      title: "Completa tu boleto de reserva",
     },
     {
       icon: CircleDollarSignIcon,
-      title: 'Hacé el deposito a tu escribana',
+      title: "Hacé el deposito a tu escribana",
     },
     {
       icon: CalendarIcon,
-      title: 'En 30 días recibirás el boleto de compra ',
+      title: "En 30 días recibirás el boleto de compra ",
     },
   ];
 

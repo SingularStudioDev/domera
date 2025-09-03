@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Header from '@/components/header/Header';
-import Footer from '@/components/Footer';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import Footer from "@/components/Footer";
+import Header from "@/components/header/Header";
 
 export default function CreateProjectLayout({
   children,
@@ -16,14 +17,14 @@ export default function CreateProjectLayout({
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch('/api/auth/super-admin/session-check');
-        
+        const response = await fetch("/api/auth/super-admin/session-check");
+
         if (!response.ok) {
-          router.push('/super');
+          router.push("/super");
           return;
         }
       } catch (error) {
-        router.push('/super');
+        router.push("/super");
       } finally {
         setIsLoading(false);
       }
@@ -47,9 +48,7 @@ export default function CreateProjectLayout({
   return (
     <div className="min-h-screen w-full bg-white">
       <Header />
-      <main className="w-full">
-        {children}
-      </main>
+      <main className="w-full">{children}</main>
       <Footer />
     </div>
   );

@@ -3,27 +3,28 @@
 // Integrated with Supabase and custom role-based authentication
 // =============================================================================
 
-import { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import GoogleProvider from 'next-auth/providers/google';
-import { prisma } from '@/lib/prisma';
-import { verifyPassword } from '@/lib/auth/password';
-import { LoginSchema } from '@/lib/validations/schemas';
-import type { UserRoleData } from '@/types/next-auth';
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+
+import type { UserRoleData } from "@/types/next-auth";
+import { verifyPassword } from "@/lib/auth/password";
+import { prisma } from "@/lib/prisma";
+import { LoginSchema } from "@/lib/validations/schemas";
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      id: 'credentials',
-      name: 'Email and Password',
+      id: "credentials",
+      name: "Email and Password",
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-        rememberMe: { label: 'Remember Me', type: 'text' },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+        rememberMe: { label: "Remember Me", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email y contraseña son requeridos');
+          throw new Error("Email y contraseña son requeridos");
         }
 
         try {
@@ -31,8 +32,8 @@ export const authOptions: NextAuthOptions = {
           const validatedCredentials = LoginSchema.parse(credentials);
 
           // Get user from database using singleton Prisma client
-          console.log('🔍 Attempting to connect to database...');
-          console.log('validatedCredentials', validatedCredentials);
+          console.log("🔍 Attempting to connect to database...");
+          console.log("validatedCredentials", validatedCredentials);
           const user = await prisma.user.findFirst({
             where: {
               email: validatedCredentials.email,
@@ -64,23 +65,23 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!user) {
-            console.error('User not found in database');
-            throw new Error('Credenciales inválidas');
+            console.error("User not found in database");
+            throw new Error("Credenciales inválidas");
           }
 
           // Verify password
           const isValidPassword = await verifyPassword(
             validatedCredentials.password,
-            user.password
+            user.password,
           );
 
           if (!isValidPassword) {
-            console.error('Invalid password for user:', user.email);
-            throw new Error('Credenciales inválidas');
+            console.error("Invalid password for user:", user.email);
+            throw new Error("Credenciales inválidas");
           }
 
           // Successful authentication
-          console.log('User authenticated successfully:', user.email);
+          console.log("User authenticated successfully:", user.email);
 
           return {
             id: user.id,
@@ -92,20 +93,20 @@ export const authOptions: NextAuthOptions = {
             lastName: user.lastName,
             roles: user.userRoles || [],
             isActive: user.isActive,
-            rememberMe: credentials.rememberMe === 'true',
+            rememberMe: credentials.rememberMe === "true",
           };
         } catch (error) {
-          console.error('Auth error:', error);
+          console.error("Auth error:", error);
 
           // Return user-friendly error messages
           if (error instanceof Error) {
-            if (error.message.includes('validation')) {
-              throw new Error('Formato de email o contraseña inválido');
+            if (error.message.includes("validation")) {
+              throw new Error("Formato de email o contraseña inválido");
             }
             throw new Error(error.message);
           }
 
-          throw new Error('Error de autenticación');
+          throw new Error("Error de autenticación");
         }
       },
     }),
@@ -117,7 +118,7 @@ export const authOptions: NextAuthOptions = {
   ],
 
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days (will be adjusted dynamically)
   },
 
@@ -128,14 +129,14 @@ export const authOptions: NextAuthOptions = {
   // TODO: PABLO -> Revisar la seguridad de esto, mas que nada el password esta raro
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('🔐 SignIn callback triggered:', { 
-        provider: account?.provider, 
+      console.log("🔐 SignIn callback triggered:", {
+        provider: account?.provider,
         userEmail: user?.email,
-        hasProfile: !!profile 
+        hasProfile: !!profile,
       });
 
       // Handle Google OAuth sign in
-      if (account?.provider === 'google' && profile) {
+      if (account?.provider === "google" && profile) {
         try {
           // Check if user already exists
           const existingUser = await prisma.user.findFirst({
@@ -148,15 +149,21 @@ export const authOptions: NextAuthOptions = {
             const newUser = await prisma.user.create({
               data: {
                 email: user.email!,
-                firstName: googleProfile.given_name || user.name?.split(' ')[0] || 'Usuario',
-                lastName: googleProfile.family_name || user.name?.split(' ').slice(1).join(' ') || '',
+                firstName:
+                  googleProfile.given_name ||
+                  user.name?.split(" ")[0] ||
+                  "Usuario",
+                lastName:
+                  googleProfile.family_name ||
+                  user.name?.split(" ").slice(1).join(" ") ||
+                  "",
                 avatarUrl: user.image || null,
-                password: 'oauth_user', // Placeholder for OAuth users
+                password: "oauth_user", // Placeholder for OAuth users
                 isActive: true,
                 // Create default user role
                 userRoles: {
                   create: {
-                    role: 'user',
+                    role: "user",
                     isActive: true,
                   },
                 },
@@ -183,9 +190,25 @@ export const authOptions: NextAuthOptions = {
             const updatedUser = await prisma.user.update({
               where: { id: existingUser.id },
               data: {
-                ...(existingUser.firstName ? {} : { firstName: googleProfile.given_name || user.name?.split(' ')[0] || 'Usuario' }),
-                ...(existingUser.lastName ? {} : { lastName: googleProfile.family_name || user.name?.split(' ').slice(1).join(' ') || '' }),
-                ...(existingUser.avatarUrl ? {} : { avatarUrl: user.image || null }),
+                ...(existingUser.firstName
+                  ? {}
+                  : {
+                      firstName:
+                        googleProfile.given_name ||
+                        user.name?.split(" ")[0] ||
+                        "Usuario",
+                    }),
+                ...(existingUser.lastName
+                  ? {}
+                  : {
+                      lastName:
+                        googleProfile.family_name ||
+                        user.name?.split(" ").slice(1).join(" ") ||
+                        "",
+                    }),
+                ...(existingUser.avatarUrl
+                  ? {}
+                  : { avatarUrl: user.image || null }),
                 lastLogin: new Date(),
               },
               include: {
@@ -206,7 +229,7 @@ export const authOptions: NextAuthOptions = {
             (user as Record<string, any>).isActive = updatedUser.isActive;
           }
         } catch (error) {
-          console.error('Error handling Google sign in:', error);
+          console.error("Error handling Google sign in:", error);
           return false;
         }
       }
@@ -222,14 +245,14 @@ export const authOptions: NextAuthOptions = {
         token.lastName = (user as any).lastName;
         token.roles = (user as any).roles || [];
         token.isActive = (user as any).isActive;
-        
+
         // Set session duration based on remember me preference
         // Check if remember me was set (this would be passed from the client)
         const rememberMe = (user as any).rememberMe;
         if (rememberMe) {
-          token.exp = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days
+          token.exp = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60; // 30 days
         } else {
-          token.exp = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 1 day
+          token.exp = Math.floor(Date.now() / 1000) + 24 * 60 * 60; // 1 day
         }
       }
 
@@ -271,7 +294,7 @@ export const authOptions: NextAuthOptions = {
             token.isActive = user.isActive;
           }
         } catch (error) {
-          console.error('Error refreshing user roles:', error);
+          console.error("Error refreshing user roles:", error);
           // Keep existing token data if refresh fails
         }
       }
@@ -293,7 +316,7 @@ export const authOptions: NextAuthOptions = {
 
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
       // Allows callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url;
       return baseUrl;
@@ -301,13 +324,13 @@ export const authOptions: NextAuthOptions = {
   },
 
   pages: {
-    signIn: '/login',
-    error: '/login',
+    signIn: "/login",
+    error: "/login",
   },
 
   events: {
     async signIn({ user }) {
-      console.log('User signed in:', { user: user.email });
+      console.log("User signed in:", { user: user.email });
 
       // Update last login timestamp
       if (user.id) {
@@ -317,17 +340,17 @@ export const authOptions: NextAuthOptions = {
             data: { lastLogin: new Date() },
           });
         } catch (error) {
-          console.error('Error updating last login:', error);
+          console.error("Error updating last login:", error);
         }
       }
     },
 
     async signOut({ token }) {
-      console.log('User signed out:', token?.email);
+      console.log("User signed out:", token?.email);
     },
   },
 
-  debug: process.env.NODE_ENV === 'development',
+  debug: process.env.NODE_ENV === "development",
 };
 
 // =============================================================================
@@ -340,17 +363,17 @@ export const authOptions: NextAuthOptions = {
 export function hasRole(
   userRoles: any[],
   role: string,
-  organizationId?: string
+  organizationId?: string,
 ): boolean {
   if (!userRoles || userRoles.length === 0) return false;
 
   // Admin role has access to everything
-  if (userRoles.some((ur: any) => ur.role === 'admin')) return true;
+  if (userRoles.some((ur: any) => ur.role === "admin")) return true;
 
   // Check for specific role
   if (organizationId) {
     return userRoles.some(
-      (ur: any) => ur.role === role && ur.organizationId === organizationId
+      (ur: any) => ur.role === role && ur.organizationId === organizationId,
     );
   } else {
     return userRoles.some((ur: any) => ur.role === role);
@@ -361,7 +384,7 @@ export function hasRole(
  * Check if user is admin
  */
 export function isAdmin(userRoles: any[]): boolean {
-  return hasRole(userRoles, 'admin');
+  return hasRole(userRoles, "admin");
 }
 
 /**
@@ -369,7 +392,7 @@ export function isAdmin(userRoles: any[]): boolean {
  */
 export function belongsToOrganization(
   userRoles: any[],
-  organizationId: string
+  organizationId: string,
 ): boolean {
   if (isAdmin(userRoles)) return true;
   return userRoles.some((ur: any) => ur.organizationId === organizationId);
@@ -390,7 +413,7 @@ export function getUserOrganizationIds(userRoles: any[]): string[] {
 export function canAccessResource(
   userRoles: any[],
   requiredRole: string,
-  organizationId?: string
+  organizationId?: string,
 ): boolean {
   // Admin can access everything
   if (isAdmin(userRoles)) return true;

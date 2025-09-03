@@ -3,12 +3,17 @@
 // Secure authentication specifically for Domera super administrators
 // =============================================================================
 
-import { prisma } from '@/lib/prisma';
-import { verifyPassword, hashPassword, hashToken } from '@/lib/auth/password';
-import { LoginSchema } from '@/lib/validations/schemas';
-import { generateSecureToken, generate2FACode, sanitizeUserAgent } from '@/lib/utils/security';
-import { send2FAEmail } from '@/lib/services/email';
-import type { RoleType, User } from '@prisma/client';
+import type { RoleType, User } from "@prisma/client";
+
+import { hashPassword, hashToken, verifyPassword } from "@/lib/auth/password";
+import { prisma } from "@/lib/prisma";
+import { send2FAEmail } from "@/lib/services/email";
+import {
+  generate2FACode,
+  generateSecureToken,
+  sanitizeUserAgent,
+} from "@/lib/utils/security";
+import { LoginSchema } from "@/lib/validations/schemas";
 
 // =============================================================================
 // TYPES
@@ -40,11 +45,14 @@ interface SuperAdminAuthResult {
  * - Admin role with null organizationId (global admin)
  * - Active role assignment
  */
-export async function validateSuperAdmin(email: string, password: string): Promise<SuperAdminAuthResult> {
+export async function validateSuperAdmin(
+  email: string,
+  password: string,
+): Promise<SuperAdminAuthResult> {
   try {
     // Validate input format
     const validatedCredentials = LoginSchema.parse({ email, password });
-    
+
     // Get user with admin role
     const user = await prisma.user.findFirst({
       where: {
@@ -59,10 +67,10 @@ export async function validateSuperAdmin(email: string, password: string): Promi
         lastName: true,
         isActive: true,
         userRoles: {
-          where: { 
+          where: {
             isActive: true,
-            role: 'admin' as RoleType,
-            organizationId: null // Super admin must have null organizationId
+            role: "admin" as RoleType,
+            organizationId: null, // Super admin must have null organizationId
           },
           select: {
             role: true,
@@ -77,36 +85,41 @@ export async function validateSuperAdmin(email: string, password: string): Promi
     if (!user) {
       return {
         success: false,
-        error: 'Usuario no encontrado o no tiene permisos de super administrador'
+        error:
+          "Usuario no encontrado o no tiene permisos de super administrador",
       };
     }
 
     // Check if user has super admin role (admin with null organizationId)
     const hasSuperAdminRole = user.userRoles.some(
-      role => role.role === 'admin' && role.organizationId === null && role.isActive
+      (role) =>
+        role.role === "admin" && role.organizationId === null && role.isActive,
     );
 
     if (!hasSuperAdminRole) {
       return {
         success: false,
-        error: 'Usuario no tiene permisos de super administrador'
+        error: "Usuario no tiene permisos de super administrador",
       };
     }
 
     // Verify password
-    const isValidPassword = await verifyPassword(validatedCredentials.password, user.password);
-    
+    const isValidPassword = await verifyPassword(
+      validatedCredentials.password,
+      user.password,
+    );
+
     if (!isValidPassword) {
       return {
         success: false,
-        error: 'Credenciales incorrectas'
+        error: "Credenciales incorrectas",
       };
     }
 
     // Update last login
     await prisma.user.update({
       where: { id: user.id },
-      data: { lastLogin: new Date() }
+      data: { lastLogin: new Date() },
     });
 
     // Return successful authentication
@@ -118,17 +131,16 @@ export async function validateSuperAdmin(email: string, password: string): Promi
         firstName: user.firstName,
         lastName: user.lastName,
         isActive: user.isActive,
-        hasAdminRole: true
-      }
+        hasAdminRole: true,
+      },
     };
-
   } catch (error) {
-    console.error('Super admin auth error:', error);
-    
+    console.error("Super admin auth error:", error);
+
     // Return generic error to prevent information leakage
     return {
       success: false,
-      error: 'Error de autenticación. Intenta nuevamente.'
+      error: "Error de autenticación. Intenta nuevamente.",
     };
   }
 }
@@ -145,10 +157,10 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
       },
       select: {
         userRoles: {
-          where: { 
+          where: {
             isActive: true,
-            role: 'admin' as RoleType,
-            organizationId: null
+            role: "admin" as RoleType,
+            organizationId: null,
           },
           select: {
             role: true,
@@ -159,12 +171,16 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
       },
     });
 
-    return user?.userRoles.some(
-      role => role.role === 'admin' && role.organizationId === null && role.isActive
-    ) || false;
-
+    return (
+      user?.userRoles.some(
+        (role) =>
+          role.role === "admin" &&
+          role.organizationId === null &&
+          role.isActive,
+      ) || false
+    );
   } catch (error) {
-    console.error('Error checking super admin status:', error);
+    console.error("Error checking super admin status:", error);
     return false;
   }
 }
@@ -172,7 +188,9 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
 /**
  * Get super admin user by ID
  */
-export async function getSuperAdmin(userId: string): Promise<SuperAdminUser | null> {
+export async function getSuperAdmin(
+  userId: string,
+): Promise<SuperAdminUser | null> {
   try {
     const user = await prisma.user.findFirst({
       where: {
@@ -186,10 +204,10 @@ export async function getSuperAdmin(userId: string): Promise<SuperAdminUser | nu
         lastName: true,
         isActive: true,
         userRoles: {
-          where: { 
+          where: {
             isActive: true,
-            role: 'admin' as RoleType,
-            organizationId: null
+            role: "admin" as RoleType,
+            organizationId: null,
           },
           select: {
             role: true,
@@ -203,7 +221,8 @@ export async function getSuperAdmin(userId: string): Promise<SuperAdminUser | nu
     if (!user) return null;
 
     const hasSuperAdminRole = user.userRoles.some(
-      role => role.role === 'admin' && role.organizationId === null && role.isActive
+      (role) =>
+        role.role === "admin" && role.organizationId === null && role.isActive,
     );
 
     if (!hasSuperAdminRole) return null;
@@ -214,11 +233,10 @@ export async function getSuperAdmin(userId: string): Promise<SuperAdminUser | nu
       firstName: user.firstName,
       lastName: user.lastName,
       isActive: user.isActive,
-      hasAdminRole: true
+      hasAdminRole: true,
     };
-
   } catch (error) {
-    console.error('Error getting super admin:', error);
+    console.error("Error getting super admin:", error);
     return null;
   }
 }
@@ -251,10 +269,10 @@ interface EmailVerificationResult {
  * Validate super admin credentials with enhanced security checks
  */
 export async function validateSuperAdminCredentials(
-  email: string, 
+  email: string,
   password: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<SuperAdminValidationResult> {
   try {
     // 1. Find user by email
@@ -263,76 +281,111 @@ export async function validateSuperAdminCredentials(
       include: {
         userRoles: {
           where: { isActive: true },
-          include: { organization: true }
-        }
-      }
+          include: { organization: true },
+        },
+      },
     });
 
     if (!user) {
       // Log failed attempt for security monitoring
-      await logSecurityEvent('SUPER_ADMIN_LOGIN_FAILED', email, 'USER_NOT_FOUND', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Credenciales incorrectas' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_LOGIN_FAILED",
+        email,
+        "USER_NOT_FOUND",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Credenciales incorrectas",
       };
     }
 
     // 2. Verify user is super admin (admin role without organization)
-    const isSuperAdmin = user.userRoles.some(role => 
-      role.role === 'admin' && role.organizationId === null
+    const isSuperAdmin = user.userRoles.some(
+      (role) => role.role === "admin" && role.organizationId === null,
     );
 
     if (!isSuperAdmin) {
-      await logSecurityEvent('SUPER_ADMIN_LOGIN_FAILED', email, 'NOT_SUPER_ADMIN', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Acceso no autorizado' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_LOGIN_FAILED",
+        email,
+        "NOT_SUPER_ADMIN",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Acceso no autorizado",
       };
     }
 
     // 3. Verify password
     const isValidPassword = await verifyPassword(password, user.password);
     if (!isValidPassword) {
-      await logSecurityEvent('SUPER_ADMIN_LOGIN_FAILED', email, 'INVALID_PASSWORD', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Credenciales incorrectas' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_LOGIN_FAILED",
+        email,
+        "INVALID_PASSWORD",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Credenciales incorrectas",
       };
     }
 
     // 4. Check if account is active
     if (!user.isActive) {
-      await logSecurityEvent('SUPER_ADMIN_LOGIN_FAILED', email, 'ACCOUNT_INACTIVE', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Cuenta inactiva' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_LOGIN_FAILED",
+        email,
+        "ACCOUNT_INACTIVE",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Cuenta inactiva",
       };
     }
 
     // 5. Check for recent failed attempts
     const recentFailedAttempts = await getRecentFailedAttempts(email);
     if (recentFailedAttempts >= 5) {
-      await logSecurityEvent('SUPER_ADMIN_LOGIN_FAILED', email, 'TOO_MANY_ATTEMPTS', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Demasiados intentos fallidos. Intenta más tarde.' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_LOGIN_FAILED",
+        email,
+        "TOO_MANY_ATTEMPTS",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Demasiados intentos fallidos. Intenta más tarde.",
       };
     }
 
     // Log successful credential validation
-    await logSecurityEvent('SUPER_ADMIN_CREDENTIALS_VALID', email, 'SUCCESS', ipAddress, userAgent);
+    await logSecurityEvent(
+      "SUPER_ADMIN_CREDENTIALS_VALID",
+      email,
+      "SUCCESS",
+      ipAddress,
+      userAgent,
+    );
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       user,
-      requiresEmailVerification: true 
+      requiresEmailVerification: true,
     };
-
   } catch (error) {
-    console.error('[SUPER_ADMIN] Validation error:', error);
-    return { 
-      success: false, 
-      error: 'Error interno de validación' 
+    console.error("[SUPER_ADMIN] Validation error:", error);
+    return {
+      success: false,
+      error: "Error interno de validación",
     };
   }
 }
@@ -344,7 +397,7 @@ export async function generateAndSend2FAToken(
   userId: string,
   email: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<TwoFactorTokenResult> {
   try {
     // Generate secure 6-digit token
@@ -358,41 +411,52 @@ export async function generateAndSend2FAToken(
         token: await hashToken(token), // Hash the token for security
         expiresAt,
         isUsed: false,
-        attempts: 0
+        attempts: 0,
       },
       create: {
         userId,
         token: await hashToken(token),
         expiresAt,
         isUsed: false,
-        attempts: 0
-      }
+        attempts: 0,
+      },
     });
 
     // Send email with token
     const emailResult = await send2FAEmail(email, token, ipAddress, userAgent);
 
     if (!emailResult.success) {
-      await logSecurityEvent('SUPER_ADMIN_2FA_EMAIL_FAILED', email, 'EMAIL_SEND_ERROR', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Error enviando código de verificación' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_2FA_EMAIL_FAILED",
+        email,
+        "EMAIL_SEND_ERROR",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Error enviando código de verificación",
       };
     }
 
-    await logSecurityEvent('SUPER_ADMIN_2FA_TOKEN_SENT', email, 'SUCCESS', ipAddress, userAgent);
+    await logSecurityEvent(
+      "SUPER_ADMIN_2FA_TOKEN_SENT",
+      email,
+      "SUCCESS",
+      ipAddress,
+      userAgent,
+    );
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       token: token, // Return plain token for testing (remove in production)
-      expiresAt 
+      expiresAt,
     };
-
   } catch (error) {
-    console.error('[SUPER_ADMIN] 2FA token generation error:', error);
-    return { 
-      success: false, 
-      error: 'Error generando código de verificación' 
+    console.error("[SUPER_ADMIN] 2FA token generation error:", error);
+    return {
+      success: false,
+      error: "Error generando código de verificación",
     };
   }
 }
@@ -404,85 +468,123 @@ export async function verify2FAToken(
   userId: string,
   providedToken: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<EmailVerificationResult> {
   try {
     // Get stored token
     const storedTokenRecord = await prisma.twoFactorToken.findUnique({
       where: { userId },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (!storedTokenRecord) {
-      await logSecurityEvent('SUPER_ADMIN_2FA_VERIFY_FAILED', userId, 'NO_TOKEN_FOUND', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Token no encontrado' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_2FA_VERIFY_FAILED",
+        userId,
+        "NO_TOKEN_FOUND",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Token no encontrado",
       };
     }
 
     // Check if token is expired
     if (storedTokenRecord.expiresAt < new Date()) {
-      await logSecurityEvent('SUPER_ADMIN_2FA_VERIFY_FAILED', userId, 'TOKEN_EXPIRED', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Token expirado' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_2FA_VERIFY_FAILED",
+        userId,
+        "TOKEN_EXPIRED",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Token expirado",
       };
     }
 
     // Check if token is already used
     if (storedTokenRecord.isUsed) {
-      await logSecurityEvent('SUPER_ADMIN_2FA_VERIFY_FAILED', userId, 'TOKEN_ALREADY_USED', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Token ya utilizado' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_2FA_VERIFY_FAILED",
+        userId,
+        "TOKEN_ALREADY_USED",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Token ya utilizado",
       };
     }
 
     // Check attempts limit
     if (storedTokenRecord.attempts >= 3) {
-      await logSecurityEvent('SUPER_ADMIN_2FA_VERIFY_FAILED', userId, 'TOO_MANY_ATTEMPTS', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Demasiados intentos. Solicita un nuevo código.' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_2FA_VERIFY_FAILED",
+        userId,
+        "TOO_MANY_ATTEMPTS",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Demasiados intentos. Solicita un nuevo código.",
       };
     }
 
     // Verify token
-    const isValidToken = await verifyPassword(providedToken, storedTokenRecord.token);
-    
+    const isValidToken = await verifyPassword(
+      providedToken,
+      storedTokenRecord.token,
+    );
+
     if (!isValidToken) {
       // Increment attempts
       await prisma.twoFactorToken.update({
         where: { userId },
-        data: { attempts: { increment: 1 } }
+        data: { attempts: { increment: 1 } },
       });
 
-      await logSecurityEvent('SUPER_ADMIN_2FA_VERIFY_FAILED', userId, 'INVALID_TOKEN', ipAddress, userAgent);
-      return { 
-        success: false, 
-        error: 'Código incorrecto' 
+      await logSecurityEvent(
+        "SUPER_ADMIN_2FA_VERIFY_FAILED",
+        userId,
+        "INVALID_TOKEN",
+        ipAddress,
+        userAgent,
+      );
+      return {
+        success: false,
+        error: "Código incorrecto",
       };
     }
 
     // Mark token as used
     await prisma.twoFactorToken.update({
       where: { userId },
-      data: { isUsed: true }
+      data: { isUsed: true },
     });
 
-    await logSecurityEvent('SUPER_ADMIN_2FA_VERIFY_SUCCESS', userId, 'SUCCESS', ipAddress, userAgent);
+    await logSecurityEvent(
+      "SUPER_ADMIN_2FA_VERIFY_SUCCESS",
+      userId,
+      "SUCCESS",
+      ipAddress,
+      userAgent,
+    );
 
-    return { 
-      success: true, 
-      valid: true 
+    return {
+      success: true,
+      valid: true,
     };
-
   } catch (error) {
-    console.error('[SUPER_ADMIN] 2FA verification error:', error);
-    return { 
-      success: false, 
-      error: 'Error verificando código' 
+    console.error("[SUPER_ADMIN] 2FA verification error:", error);
+    return {
+      success: false,
+      error: "Error verificando código",
     };
   }
 }
@@ -493,7 +595,7 @@ export async function verify2FAToken(
 export async function generateSuperAdminSession(
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<{ sessionToken: string; expiresAt: Date }> {
   const sessionToken = generateSecureToken(64);
   const expiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000); // 4 hours
@@ -506,7 +608,7 @@ export async function generateSuperAdminSession(
       ipAddress,
       userAgent: sanitizeUserAgent(userAgent),
       isActive: true,
-      lastUsed: new Date()
+      lastUsed: new Date(),
     },
     create: {
       userId,
@@ -514,11 +616,17 @@ export async function generateSuperAdminSession(
       expiresAt,
       ipAddress,
       userAgent: sanitizeUserAgent(userAgent),
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
-  await logSecurityEvent('SUPER_ADMIN_SESSION_CREATED', userId, 'SUCCESS', ipAddress, userAgent);
+  await logSecurityEvent(
+    "SUPER_ADMIN_SESSION_CREATED",
+    userId,
+    "SUCCESS",
+    ipAddress,
+    userAgent,
+  );
 
   return { sessionToken, expiresAt };
 }
@@ -528,42 +636,49 @@ export async function generateSuperAdminSession(
  */
 export async function validateSuperAdminSession(
   sessionToken: string,
-  ipAddress?: string
+  ipAddress?: string,
 ): Promise<{ valid: boolean; userId?: string; error?: string }> {
   try {
     const sessions = await prisma.superAdminSession.findMany({
       where: {
         isActive: true,
-        expiresAt: { gt: new Date() }
+        expiresAt: { gt: new Date() },
       },
-      include: { user: true }
+      include: { user: true },
     });
 
     for (const session of sessions) {
-      const isValidToken = await verifyPassword(sessionToken, session.sessionToken);
-      
+      const isValidToken = await verifyPassword(
+        sessionToken,
+        session.sessionToken,
+      );
+
       if (isValidToken) {
         // Optional: Validate IP address for additional security
         if (session.ipAddress && ipAddress && session.ipAddress !== ipAddress) {
-          await logSecurityEvent('SUPER_ADMIN_SESSION_IP_MISMATCH', session.userId, 'SECURITY_WARNING', ipAddress);
+          await logSecurityEvent(
+            "SUPER_ADMIN_SESSION_IP_MISMATCH",
+            session.userId,
+            "SECURITY_WARNING",
+            ipAddress,
+          );
           // Could choose to invalidate session or just log warning
         }
 
         // Update last used timestamp
         await prisma.superAdminSession.update({
           where: { userId: session.userId },
-          data: { lastUsed: new Date() }
+          data: { lastUsed: new Date() },
         });
 
         return { valid: true, userId: session.userId };
       }
     }
 
-    return { valid: false, error: 'Sesión inválida' };
-
+    return { valid: false, error: "Sesión inválida" };
   } catch (error) {
-    console.error('[SUPER_ADMIN] Session validation error:', error);
-    return { valid: false, error: 'Error validando sesión' };
+    console.error("[SUPER_ADMIN] Session validation error:", error);
+    return { valid: false, error: "Error validando sesión" };
   }
 }
 
@@ -573,18 +688,23 @@ export async function validateSuperAdminSession(
 export async function invalidateSuperAdminSession(
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<void> {
   try {
     await prisma.superAdminSession.updateMany({
       where: { userId },
-      data: { isActive: false }
+      data: { isActive: false },
     });
 
-    await logSecurityEvent('SUPER_ADMIN_SESSION_INVALIDATED', userId, 'SUCCESS', ipAddress, userAgent);
-
+    await logSecurityEvent(
+      "SUPER_ADMIN_SESSION_INVALIDATED",
+      userId,
+      "SUCCESS",
+      ipAddress,
+      userAgent,
+    );
   } catch (error) {
-    console.error('[SUPER_ADMIN] Session invalidation error:', error);
+    console.error("[SUPER_ADMIN] Session invalidation error:", error);
   }
 }
 
@@ -600,7 +720,7 @@ async function logSecurityEvent(
   userIdentifier: string,
   result: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ) {
   try {
     await prisma.securityLog.create({
@@ -612,13 +732,13 @@ async function logSecurityEvent(
         userAgent: sanitizeUserAgent(userAgent),
         timestamp: new Date(),
         metadata: {
-          source: 'super_admin_auth',
-          severity: eventType.includes('FAILED') ? 'HIGH' : 'MEDIUM'
-        }
-      }
+          source: "super_admin_auth",
+          severity: eventType.includes("FAILED") ? "HIGH" : "MEDIUM",
+        },
+      },
     });
   } catch (error) {
-    console.error('[SUPER_ADMIN] Security logging error:', error);
+    console.error("[SUPER_ADMIN] Security logging error:", error);
   }
 }
 
@@ -632,14 +752,14 @@ async function getRecentFailedAttempts(email: string): Promise<number> {
     const failedAttempts = await prisma.securityLog.count({
       where: {
         userIdentifier: email,
-        eventType: 'SUPER_ADMIN_LOGIN_FAILED',
-        timestamp: { gte: oneHourAgo }
-      }
+        eventType: "SUPER_ADMIN_LOGIN_FAILED",
+        timestamp: { gte: oneHourAgo },
+      },
     });
 
     return failedAttempts;
   } catch (error) {
-    console.error('[SUPER_ADMIN] Failed attempts check error:', error);
+    console.error("[SUPER_ADMIN] Failed attempts check error:", error);
     return 0;
   }
 }

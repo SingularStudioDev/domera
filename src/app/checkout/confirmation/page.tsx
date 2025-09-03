@@ -1,4 +1,4 @@
-import { Ticket } from '../_components/Ticket';
+import { Ticket } from "../_components/Ticket";
 
 export default function ConfirmationPage() {
   return (

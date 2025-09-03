@@ -93,7 +93,7 @@ export function useBatchImageUpload({
       const totalImages = images.length + valid.length;
       if (totalImages > maxImages) {
         const remainingSlots = maxImages - images.length;
-        const errorMessage = `Solo puedes agregar ${remainingSlots} imagen${remainingSlots === 1 ? '' : 'es'} más (${valid.length} seleccionada${valid.length === 1 ? '' : 's'})`;
+        const errorMessage = `Solo puedes agregar ${remainingSlots} imagen${remainingSlots === 1 ? "" : "es"} más (${valid.length} seleccionada${valid.length === 1 ? "" : "s"})`;
         setUploadError(errorMessage);
         onError?.(errorMessage);
         return;
@@ -141,8 +141,8 @@ export function useBatchImageUpload({
   const uploadImages = useCallback(
     async (type: "project" | "organization" | "unit", entityId?: string) => {
       // Filter out images that are already uploaded
-      const imagesToUpload = images.filter(img => img.status === "pending");
-      
+      const imagesToUpload = images.filter((img) => img.status === "pending");
+
       if (imagesToUpload.length === 0 || isUploading) return;
 
       const currentUploadId = generateId();
@@ -153,10 +153,10 @@ export function useBatchImageUpload({
 
       // Update only pending images to uploading status
       setImages((prev) =>
-        prev.map((img) => 
-          img.status === "pending" 
+        prev.map((img) =>
+          img.status === "pending"
             ? { ...img, status: "uploading" as const }
-            : img
+            : img,
         ),
       );
 
@@ -218,11 +218,13 @@ export function useBatchImageUpload({
           // Clear only uploaded images after showing success state briefly
           setTimeout(() => {
             if (uploadIdRef.current === currentUploadId) {
-              setImages((prev) => prev.filter(img => img.status !== "uploaded"));
+              setImages((prev) =>
+                prev.filter((img) => img.status !== "uploaded"),
+              );
               // Cleanup URLs for uploaded images only
               prev
-                .filter(img => img.status === "uploaded")
-                .forEach(img => URL.revokeObjectURL(img.preview));
+                .filter((img) => img.status === "uploaded")
+                .forEach((img) => URL.revokeObjectURL(img.preview));
             }
           }, 1000); // Show success for 1 second, then remove uploaded images
         } else {
@@ -237,14 +239,15 @@ export function useBatchImageUpload({
               result.failedUploads.map((f) => [f.fileName, f.error]),
             );
             setImages((prev) =>
-              prev.map((img) => 
+              prev.map((img) =>
                 img.status === "uploading"
                   ? {
                       ...img,
                       status: "error" as const,
-                      error: failureMap.get(img.file.name) || "Error desconocido",
+                      error:
+                        failureMap.get(img.file.name) || "Error desconocido",
                     }
-                  : img
+                  : img,
               ),
             );
           } else {
@@ -257,7 +260,7 @@ export function useBatchImageUpload({
                       status: "error" as const,
                       error: errorMessage,
                     }
-                  : img
+                  : img,
               ),
             );
           }
@@ -282,7 +285,7 @@ export function useBatchImageUpload({
                   status: "error" as const,
                   error: "Error de conexión",
                 }
-              : img
+              : img,
           ),
         );
       } finally {

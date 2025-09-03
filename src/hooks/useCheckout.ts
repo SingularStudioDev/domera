@@ -1,7 +1,8 @@
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useCheckoutStore, CheckoutItem } from '@/stores/checkoutStore';
-import { toast } from 'react-hot-toast';
+import { useRouter } from "next/navigation";
+
+import { CheckoutItem, useCheckoutStore } from "@/stores/checkoutStore";
+import { useSession } from "next-auth/react";
+import { toast } from "react-hot-toast";
 
 export const useCheckout = () => {
   const { data: session, status } = useSession();
@@ -9,31 +10,33 @@ export const useCheckout = () => {
   const store = useCheckoutStore();
 
   const addItemWithNotification = (item: CheckoutItem) => {
-    if (status === 'loading') {
+    if (status === "loading") {
       return false;
     }
 
     if (!session?.user) {
-      toast.error('Debes iniciar sesión para agregar unidades al checkout');
-      router.push('/login?redirect=/checkout');
+      toast.error("Debes iniciar sesión para agregar unidades al checkout");
+      router.push("/login?redirect=/checkout");
       return false;
     }
 
     const success = store.addItem(item);
-    
+
     if (success) {
       toast.success(`${item.unitTitle} agregada al checkout`);
     } else {
-      toast.error('Solo puedes agregar unidades del mismo proyecto al checkout');
+      toast.error(
+        "Solo puedes agregar unidades del mismo proyecto al checkout",
+      );
     }
-    
+
     return success;
   };
 
   const removeItemWithNotification = (itemId: string) => {
-    const item = store.items.find(i => i.id === itemId);
+    const item = store.items.find((i) => i.id === itemId);
     store.removeItem(itemId);
-    
+
     if (item) {
       toast.success(`${item.unitTitle} removida del checkout`);
     }
@@ -46,12 +49,12 @@ export const useCheckout = () => {
 
     if (store.items.length > 0) {
       const confirmed = window.confirm(
-        '¿Estás seguro de que quieres limpiar el checkout? Se perderán todas las unidades seleccionadas.'
+        "¿Estás seguro de que quieres limpiar el checkout? Se perderán todas las unidades seleccionadas.",
       );
-      
+
       if (confirmed) {
         store.clearCheckout();
-        toast.success('Checkout limpiado');
+        toast.success("Checkout limpiado");
         return true;
       }
       return false;
@@ -65,6 +68,6 @@ export const useCheckout = () => {
     removeItemWithNotification,
     clearCheckoutWithConfirmation,
     isAuthenticated: !!session?.user,
-    isLoading: status === 'loading',
+    isLoading: status === "loading",
   };
 };

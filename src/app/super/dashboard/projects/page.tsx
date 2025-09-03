@@ -1,11 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { Button } from '@/components/ui/button';
-import { Plus, X } from 'lucide-react';
-import ProjectsList from './components/ProjectsList';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { Plus, X } from "lucide-react";
+
+import { useSuperAdmin } from "@/hooks/useSuperAdmin";
+import { Button } from "@/components/ui/button";
+
+import ProjectsList from "./components/ProjectsList";
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -13,12 +16,12 @@ export default function ProjectsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleCreateProject = () => {
-    router.push('/super/create-project');
+    router.push("/super/create-project");
   };
 
   const handleProjectCreated = () => {
     // Trigger refresh of the projects list
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
   };
 
   if (isSessionLoading) {
@@ -41,7 +44,7 @@ export default function ProjectsPage() {
     <div className="min-h-screen">
       <div className="space-y-6">
         {/* Header with Create Button */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h1 className="dashboard-title">Gestión de Proyectos</h1>
           <Button
             onClick={handleCreateProject}

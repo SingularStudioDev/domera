@@ -4,11 +4,12 @@
 // Created: August 2025
 // =============================================================================
 
-'use client';
+"use client";
 
-import { SessionProvider as NextAuthSessionProvider } from 'next-auth/react';
-import type { Session } from 'next-auth';
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
+
+import type { Session } from "next-auth";
+import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
 
 interface SessionProviderProps {
   children: ReactNode;
@@ -17,7 +18,7 @@ interface SessionProviderProps {
 
 export function SessionProvider({ children, session }: SessionProviderProps) {
   return (
-    <NextAuthSessionProvider 
+    <NextAuthSessionProvider
       session={session}
       refetchInterval={5 * 60} // Refetch session every 5 minutes
       refetchOnWindowFocus={true}

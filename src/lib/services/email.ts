@@ -22,38 +22,43 @@ interface EmailResult {
 export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   try {
     const resendApiKey = process.env.RESEND_API_KEY;
-    
+
     if (!resendApiKey) {
-      console.warn('[EMAIL] No RESEND_API_KEY found, using development mode (console log)');
-      
+      console.warn(
+        "[EMAIL] No RESEND_API_KEY found, using development mode (console log)",
+      );
+
       // Development mode - log to console
-      console.log('[EMAIL] === 2FA CODE EMAIL (DEV MODE) ===');
-      console.log('[EMAIL] To:', options.to);
-      console.log('[EMAIL] Subject:', options.subject);
-      console.log('[EMAIL] From:', options.from || 'Domera <noreply@domera.uy>');
-      
+      console.log("[EMAIL] === 2FA CODE EMAIL (DEV MODE) ===");
+      console.log("[EMAIL] To:", options.to);
+      console.log("[EMAIL] Subject:", options.subject);
+      console.log(
+        "[EMAIL] From:",
+        options.from || "Domera <noreply@domera.uy>",
+      );
+
       // Extract the 6-digit code from HTML for easy copying
       const codeMatch = options.html.match(/(\d{6})/);
       if (codeMatch) {
-        console.log('[EMAIL] 🔑 2FA CODE:', codeMatch[1]);
-        console.log('[EMAIL] =====================================');
+        console.log("[EMAIL] 🔑 2FA CODE:", codeMatch[1]);
+        console.log("[EMAIL] =====================================");
       }
-      
+
       return {
         success: true,
-        messageId: `dev_mock_${Date.now()}`
+        messageId: `dev_mock_${Date.now()}`,
       };
     }
 
     // Production mode - send via Resend
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: options.from || 'Domera Security <security@domera.uy>',
+        from: options.from || "Domera Security <security@domera.uy>",
         to: [options.to],
         subject: options.subject,
         html: options.html,
@@ -62,23 +67,22 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('[EMAIL] Resend API error:', errorData);
+      console.error("[EMAIL] Resend API error:", errorData);
       throw new Error(`Resend API error: ${response.status} ${errorData}`);
     }
 
     const data = await response.json();
-    console.log('[EMAIL] Email sent successfully via Resend:', data.id);
+    console.log("[EMAIL] Email sent successfully via Resend:", data.id);
 
     return {
       success: true,
-      messageId: data.id
+      messageId: data.id,
     };
-
   } catch (error) {
-    console.error('[EMAIL] Error sending email:', error);
+    console.error("[EMAIL] Error sending email:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido'
+      error: error instanceof Error ? error.message : "Error desconocido",
     };
   }
 }
@@ -90,11 +94,11 @@ export async function send2FAEmail(
   email: string,
   code: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<EmailResult> {
   return sendEmail({
     to: email,
-    subject: 'Código de verificación - Acceso Super Administrador',
+    subject: "Código de verificación - Acceso Super Administrador",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2563eb;">Código de verificación</h2>
@@ -107,11 +111,11 @@ export async function send2FAEmail(
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
         <p style="color: #6b7280; font-size: 12px;">
           Detalles de seguridad:<br>
-          IP: ${ipAddress || 'No disponible'}<br>
-          Navegador: ${userAgent || 'No disponible'}<br>
-          Fecha: ${new Date().toLocaleString('es-UY')}
+          IP: ${ipAddress || "No disponible"}<br>
+          Navegador: ${userAgent || "No disponible"}<br>
+          Fecha: ${new Date().toLocaleString("es-UY")}
         </p>
       </div>
-    `
+    `,
   });
 }

@@ -1,23 +1,25 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { getOrganizationsAction } from '@/lib/actions/organizations';
-import { checkSlugAvailabilityAction } from '@/lib/actions/projects';
-import Header from '@/components/header/Header';
-import Footer from '@/components/Footer';
-import { ProjectHeroForm } from '@/components/create-project-form/ProjectHeroForm';
-import { ProjectDescriptionForm } from '@/components/create-project-form/ProjectDescriptionForm';
-import { ProjectDetailsForm } from '@/components/create-project-form/ProjectDetailsForm';
-import { ImageCarouselForm } from '@/components/create-project-form/ImageCarouselForm';
-import { LocationFormComponent } from '@/components/create-project-form/LocationForm';
-import { ProgressFormComponent } from '@/components/create-project-form/ProgressForm';
-import { MapSelector } from '@/components/create-project-form/MapSelector';
-import { ProjectFormData } from '@/types/project-form';
-import { projectFormSchema } from '@/lib/validations/project-form';
-import { generateSlug } from '@/lib/utils/slug';
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+import { ProjectFormData } from "@/types/project-form";
+import { getOrganizationsAction } from "@/lib/actions/organizations";
+import { checkSlugAvailabilityAction } from "@/lib/actions/projects";
+import { generateSlug } from "@/lib/utils/slug";
+import { projectFormSchema } from "@/lib/validations/project-form";
+import { ImageCarouselForm } from "@/components/create-project-form/ImageCarouselForm";
+import { LocationFormComponent } from "@/components/create-project-form/LocationForm";
+import { MapSelector } from "@/components/create-project-form/MapSelector";
+import { ProgressFormComponent } from "@/components/create-project-form/ProgressForm";
+import { ProjectDescriptionForm } from "@/components/create-project-form/ProjectDescriptionForm";
+import { ProjectDetailsForm } from "@/components/create-project-form/ProjectDetailsForm";
+import { ProjectHeroForm } from "@/components/create-project-form/ProjectHeroForm";
+import Footer from "@/components/Footer";
+import Header from "@/components/header/Header";
 
 interface ProjectFormMainProps {
   initialData?: Partial<ProjectFormData>;
@@ -35,7 +37,7 @@ interface Organization {
   slug: string;
 }
 
-export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
+export function ProjectFormMain({
   initialData,
   onSubmit,
   isEditing = false,
@@ -43,13 +45,17 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
   hideHeaderFooter = false,
   showBackButton = false,
   onBack,
-}) => {
+}: ProjectFormMainProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrganizations, setLoadingOrganizations] = useState(true);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
-  const [slugCheckResult, setSlugCheckResult] = useState<{ available?: boolean; error?: string; checking?: boolean }>({});
-  
+  const [slugCheckResult, setSlugCheckResult] = useState<{
+    available?: boolean;
+    error?: string;
+    checking?: boolean;
+  }>({});
+
   // Generate temporary project ID for new projects
   const tempProjectId = useMemo(() => {
     if (!isEditing) {
@@ -59,20 +65,20 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
   }, [isEditing]);
 
   const defaultValues: ProjectFormData = {
-    name: '',
-    slug: '',
-    description: '',
-    shortDescription: '',
-    address: '',
-    neighborhood: '',
-    city: '',
+    name: "",
+    slug: "",
+    description: "",
+    shortDescription: "",
+    address: "",
+    neighborhood: "",
+    city: "",
     latitude: null,
     longitude: null,
     basePrice: null,
-    currency: 'USD',
+    currency: "USD",
     estimatedCompletion: null,
     organizationId: organizationId || undefined,
-    status: 'planning',
+    status: "planning",
     images: [],
     masterPlanFiles: [],
     amenities: [],
@@ -110,7 +116,7 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
             setOrganizations(orgs);
           }
         } catch (error) {
-          console.error('Error loading organizations:', error);
+          console.error("Error loading organizations:", error);
         } finally {
           setLoadingOrganizations(false);
         }
@@ -126,36 +132,44 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
     if (!slugManuallyEdited && watchedValues.name && !isEditing) {
       const generatedSlug = generateSlug(watchedValues.name);
       if (generatedSlug !== watchedValues.slug) {
-        setValue('slug', generatedSlug);
+        setValue("slug", generatedSlug);
       }
     }
-  }, [watchedValues.name, slugManuallyEdited, isEditing, setValue, watchedValues.slug]);
+  }, [
+    watchedValues.name,
+    slugManuallyEdited,
+    isEditing,
+    setValue,
+    watchedValues.slug,
+  ]);
 
   // Function to check slug availability
   const handleCheckSlugAvailability = async () => {
     if (!watchedValues.slug?.trim()) {
-      setSlugCheckResult({ error: 'Ingresa un slug para verificar' });
+      setSlugCheckResult({ error: "Ingresa un slug para verificar" });
       return;
     }
 
     setSlugCheckResult({ checking: true });
-    
+
     try {
       const result = await checkSlugAvailabilityAction(
         watchedValues.slug,
-        organizationId || watchedValues.organizationId
+        organizationId || watchedValues.organizationId,
       );
-      
+
       if (result.success) {
-        setSlugCheckResult({ 
+        setSlugCheckResult({
           available: result.available,
-          error: result.error
+          error: result.error,
         });
       } else {
-        setSlugCheckResult({ error: result.error || 'Error al verificar slug' });
+        setSlugCheckResult({
+          error: result.error || "Error al verificar slug",
+        });
       }
     } catch (error) {
-      setSlugCheckResult({ error: 'Error de conexión al verificar slug' });
+      setSlugCheckResult({ error: "Error de conexión al verificar slug" });
     }
   };
 
@@ -165,19 +179,21 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
       // Validate data before sending
       const validation = validateFormData(data);
       if (!validation.isValid) {
-        alert(`Error en el formulario: ${validation.errors.join('\n')}`);
+        alert(`Error en el formulario: ${validation.errors.join("\n")}`);
         return;
       }
 
       await onSubmit(validation.cleanedData);
     } catch (error) {
       // Don't log Next.js redirect "errors" - they are expected behavior
-      if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
         // Let the redirect happen, don't show as error
         return;
       }
       // Show user-friendly error message
-      alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      alert(
+        `Error: ${error instanceof Error ? error.message : "Error desconocido"}`,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -185,64 +201,84 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
 
   const validateFormData = (data: ProjectFormData) => {
     const errors: string[] = [];
-    
+
     // Check required fields
-    if (!data.name?.trim()) errors.push('Nombre del proyecto es requerido');
-    if (!data.slug?.trim()) errors.push('Slug es requerido');
-    if (!data.address?.trim()) errors.push('Dirección es requerida');
-    if (!data.city?.trim()) errors.push('Ciudad es requerida');
-    if (!data.organizationId?.trim()) errors.push('Organización es requerida');
+    if (!data.name?.trim()) errors.push("Nombre del proyecto es requerido");
+    if (!data.slug?.trim()) errors.push("Slug es requerido");
+    if (!data.address?.trim()) errors.push("Dirección es requerida");
+    if (!data.city?.trim()) errors.push("Ciudad es requerida");
+    if (!data.organizationId?.trim()) errors.push("Organización es requerida");
 
     // Validate field lengths
-    if (data.name && data.name.length > 255) errors.push('Nombre no puede exceder 255 caracteres');
-    if (data.slug && data.slug.length > 255) errors.push('Slug no puede exceder 255 caracteres');
-    if (data.description && data.description.length > 5000) errors.push('Descripción no puede exceder 5000 caracteres');
-    if (data.shortDescription && data.shortDescription.length > 500) errors.push('Descripción corta no puede exceder 500 caracteres');
-    if (data.address && data.address.length > 500) errors.push('Dirección no puede exceder 500 caracteres');
-    if (data.neighborhood && data.neighborhood.length > 100) errors.push('Barrio no puede exceder 100 caracteres');
-    if (data.city && data.city.length > 100) errors.push('Ciudad no puede exceder 100 caracteres');
+    if (data.name && data.name.length > 255)
+      errors.push("Nombre no puede exceder 255 caracteres");
+    if (data.slug && data.slug.length > 255)
+      errors.push("Slug no puede exceder 255 caracteres");
+    if (data.description && data.description.length > 5000)
+      errors.push("Descripción no puede exceder 5000 caracteres");
+    if (data.shortDescription && data.shortDescription.length > 500)
+      errors.push("Descripción corta no puede exceder 500 caracteres");
+    if (data.address && data.address.length > 500)
+      errors.push("Dirección no puede exceder 500 caracteres");
+    if (data.neighborhood && data.neighborhood.length > 100)
+      errors.push("Barrio no puede exceder 100 caracteres");
+    if (data.city && data.city.length > 100)
+      errors.push("Ciudad no puede exceder 100 caracteres");
 
     // Check for blob URLs
-    const hasInvalidImages = data.images?.some(img => img.startsWith('blob:'));
+    const hasInvalidImages = data.images?.some((img) =>
+      img.startsWith("blob:"),
+    );
     if (hasInvalidImages) {
-      errors.push('Las imágenes deben ser subidas antes de crear el proyecto');
+      errors.push("Las imágenes deben ser subidas antes de crear el proyecto");
     }
 
     // Validate amenities format
-    const validAmenities = data.amenities?.every(amenity => 
-      typeof amenity === 'object' && 
-      amenity.icon && amenity.text &&
-      amenity.icon.length <= 100 && 
-      amenity.text.length <= 255
+    const validAmenities = data.amenities?.every(
+      (amenity) =>
+        typeof amenity === "object" &&
+        amenity.icon &&
+        amenity.text &&
+        amenity.icon.length <= 100 &&
+        amenity.text.length <= 255,
     );
-    
+
     if (data.amenities?.length > 0 && !validAmenities) {
-      errors.push('Las amenidades tienen un formato incorrecto o exceden los límites');
+      errors.push(
+        "Las amenidades tienen un formato incorrecto o exceden los límites",
+      );
     }
 
     // Clean and format data
     const cleanedData: ProjectFormData = {
       ...data,
-      name: data.name?.trim() || '',
-      slug: data.slug?.trim() || '',
-      description: data.description?.substring(0, 5000)?.trim() || '',
-      shortDescription: data.shortDescription?.substring(0, 500)?.trim() || '',
-      address: data.address?.substring(0, 500)?.trim() || '',
-      neighborhood: data.neighborhood?.substring(0, 100)?.trim() || '',
-      city: data.city?.trim() || '',
+      name: data.name?.trim() || "",
+      slug: data.slug?.trim() || "",
+      description: data.description?.substring(0, 5000)?.trim() || "",
+      shortDescription: data.shortDescription?.substring(0, 500)?.trim() || "",
+      address: data.address?.substring(0, 500)?.trim() || "",
+      neighborhood: data.neighborhood?.substring(0, 100)?.trim() || "",
+      city: data.city?.trim() || "",
       latitude: data.latitude,
       longitude: data.longitude,
-      images: data.images?.filter(img => !img.startsWith('blob:')) || [],
-      amenities: data.amenities?.map(amenity => ({
-        icon: typeof amenity === 'object' ? amenity.icon?.substring(0, 100) || '' : '',
-        text: typeof amenity === 'object' ? amenity.text?.substring(0, 255) || '' : amenity?.substring(0, 255) || ''
-      })) || []
+      images: data.images?.filter((img) => !img.startsWith("blob:")) || [],
+      amenities:
+        data.amenities?.map((amenity) => ({
+          icon:
+            typeof amenity === "object"
+              ? amenity.icon?.substring(0, 100) || ""
+              : "",
+          text:
+            typeof amenity === "object"
+              ? amenity.text?.substring(0, 255) || ""
+              : amenity?.substring(0, 255) || "",
+        })) || [],
     };
 
     return {
       isValid: errors.length === 0,
       errors,
-      cleanedData
+      cleanedData,
     };
   };
 
@@ -283,7 +319,7 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
-      className={hideHeaderFooter ? 'space-y-6' : 'min-h-screen bg-white'}
+      className={hideHeaderFooter ? "space-y-6" : "min-h-screen bg-white"}
     >
       {!hideHeaderFooter && <Header />}
 
@@ -292,12 +328,12 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
         <ProjectHeroForm
           value={heroData}
           onChange={(newHeroData) => {
-            setValue('name', newHeroData.name);
-            setValue('basePrice', newHeroData.basePrice);
-            setValue('neighborhood', newHeroData.neighborhood);
-            setValue('city', newHeroData.city);
-            setValue('estimatedCompletion', newHeroData.estimatedCompletion);
-            setValue('images', newHeroData.images);
+            setValue("name", newHeroData.name);
+            setValue("basePrice", newHeroData.basePrice);
+            setValue("neighborhood", newHeroData.neighborhood);
+            setValue("city", newHeroData.city);
+            setValue("estimatedCompletion", newHeroData.estimatedCompletion);
+            setValue("images", newHeroData.images);
           }}
           currency={watchedValues.currency}
           disabled={isSubmitting}
@@ -320,7 +356,7 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                 </button>
                 <div className="text-gray-500">
                   <span className="text-sm">
-                    {isEditing ? 'Editando Proyecto' : 'Creando Nuevo Proyecto'}
+                    {isEditing ? "Editando Proyecto" : "Creando Nuevo Proyecto"}
                   </span>
                 </div>
               </div>
@@ -355,12 +391,12 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
             <ProjectDescriptionForm
               value={descriptionData}
               onChange={(newDescriptionData) => {
-                setValue('description', newDescriptionData.description);
+                setValue("description", newDescriptionData.description);
                 setValue(
-                  'shortDescription',
-                  newDescriptionData.shortDescription
+                  "shortDescription",
+                  newDescriptionData.shortDescription,
                 );
-                setValue('address', newDescriptionData.address);
+                setValue("address", newDescriptionData.address);
               }}
               disabled={isSubmitting}
               error={errors.description?.message || errors.address?.message}
@@ -370,7 +406,7 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
             <ProjectDetailsForm
               value={detailsData}
               onChange={(newDetailsData) => {
-                setValue('amenities', newDetailsData.amenities);
+                setValue("amenities", newDetailsData.amenities);
               }}
               disabled={isSubmitting}
               error={errors.amenities?.message}
@@ -380,9 +416,9 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
             <ImageCarouselForm
               value={carouselData}
               onChange={(newCarouselData) => {
-                setValue('images', newCarouselData.images);
+                setValue("images", newCarouselData.images);
               }}
-              projectName={watchedValues.name || 'Proyecto'}
+              projectName={watchedValues.name || "Proyecto"}
               disabled={isSubmitting}
               error={errors.images?.message}
               className="py-5 md:py-10"
@@ -400,8 +436,8 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                   longitude={watchedValues.longitude}
                   address={watchedValues.address}
                   onChange={(lat, lng) => {
-                    setValue('latitude', lat);
-                    setValue('longitude', lng);
+                    setValue("latitude", lat);
+                    setValue("longitude", lng);
                   }}
                   disabled={isSubmitting}
                 />
@@ -416,11 +452,11 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
               <LocationFormComponent
                 value={locationData}
                 onChange={(newLocationData) => {
-                  setValue('latitude', newLocationData.latitude);
-                  setValue('longitude', newLocationData.longitude);
-                  setValue('masterPlanFiles', newLocationData.masterPlanFiles);
+                  setValue("latitude", newLocationData.latitude);
+                  setValue("longitude", newLocationData.longitude);
+                  setValue("masterPlanFiles", newLocationData.masterPlanFiles);
                 }}
-                projectName={watchedValues.name || 'Proyecto'}
+                projectName={watchedValues.name || "Proyecto"}
                 disabled={isSubmitting}
                 error={errors.latitude?.message || errors.longitude?.message}
               />
@@ -454,11 +490,11 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
             >
               {isSubmitting
                 ? isEditing
-                  ? 'Actualizando...'
-                  : 'Creando...'
+                  ? "Actualizando..."
+                  : "Creando..."
                 : isEditing
-                  ? 'Actualizar Proyecto'
-                  : 'Crear Proyecto'}
+                  ? "Actualizar Proyecto"
+                  : "Crear Proyecto"}
             </button>
           </div>
         </div>
@@ -477,7 +513,7 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                   </label>
                   <select
                     value={watchedValues.organizationId}
-                    onChange={(e) => setValue('organizationId', e.target.value)}
+                    onChange={(e) => setValue("organizationId", e.target.value)}
                     disabled={isSubmitting || loadingOrganizations}
                     className="focus:ring-primaryColor w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-transparent focus:ring-2 disabled:opacity-50"
                   >
@@ -505,7 +541,7 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                     value={watchedValues.slug}
                     onChange={(e) => {
                       const newValue = e.target.value.substring(0, 255);
-                      setValue('slug', newValue);
+                      setValue("slug", newValue);
                       setSlugManuallyEdited(true);
                       // Clear previous check result when slug changes
                       setSlugCheckResult({});
@@ -518,17 +554,21 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                   <button
                     type="button"
                     onClick={handleCheckSlugAvailability}
-                    disabled={isSubmitting || slugCheckResult.checking || !watchedValues.slug?.trim()}
+                    disabled={
+                      isSubmitting ||
+                      slugCheckResult.checking ||
+                      !watchedValues.slug?.trim()
+                    }
                     className="rounded-lg bg-blue-500 px-3 py-2 text-sm text-white hover:bg-blue-600 disabled:opacity-50"
                   >
-                    {slugCheckResult.checking ? 'Verificando...' : 'Verificar'}
+                    {slugCheckResult.checking ? "Verificando..." : "Verificar"}
                   </button>
                   {watchedValues.name && (
                     <button
                       type="button"
                       onClick={() => {
                         const generatedSlug = generateSlug(watchedValues.name);
-                        setValue('slug', generatedSlug);
+                        setValue("slug", generatedSlug);
                         setSlugManuallyEdited(true);
                         // Clear check result when regenerating
                         setSlugCheckResult({});
@@ -541,16 +581,21 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                   )}
                 </div>
                 {/* Result of slug availability check */}
-                {(slugCheckResult.available !== undefined || slugCheckResult.error) && (
-                  <div className={`mt-2 text-sm ${
-                    slugCheckResult.error 
-                      ? 'text-red-600' 
-                      : slugCheckResult.available 
-                        ? 'text-green-600' 
-                        : 'text-red-600'
-                  }`}>
-                    {slugCheckResult.error || 
-                     (slugCheckResult.available ? '✓ Slug disponible' : '✗ Slug ya está en uso')}
+                {(slugCheckResult.available !== undefined ||
+                  slugCheckResult.error) && (
+                  <div
+                    className={`mt-2 text-sm ${
+                      slugCheckResult.error
+                        ? "text-red-600"
+                        : slugCheckResult.available
+                          ? "text-green-600"
+                          : "text-red-600"
+                    }`}
+                  >
+                    {slugCheckResult.error ||
+                      (slugCheckResult.available
+                        ? "✓ Slug disponible"
+                        : "✗ Slug ya está en uso")}
                   </div>
                 )}
                 {errors.slug && (
@@ -570,13 +615,13 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
                   value={watchedValues.status}
                   onChange={(e) =>
                     setValue(
-                      'status',
+                      "status",
                       e.target.value as
-                        | 'planning'
-                        | 'pre_sale'
-                        | 'construction'
-                        | 'completed'
-                        | 'delivered'
+                        | "planning"
+                        | "pre_sale"
+                        | "construction"
+                        | "completed"
+                        | "delivered",
                     )
                   }
                   disabled={isSubmitting}
@@ -597,4 +642,4 @@ export const ProjectFormMain: React.FC<ProjectFormMainProps> = ({
       {!hideHeaderFooter && <Footer />}
     </form>
   );
-};
+}

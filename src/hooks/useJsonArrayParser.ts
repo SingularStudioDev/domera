@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
 /**
  * Hook genérico para parsear arrays JSON desde diferentes formatos
@@ -6,31 +6,35 @@ import { useMemo } from 'react';
  */
 export const useJsonArrayParser = (
   data: string[] | string | undefined | null,
-  itemValidator?: (item: any) => boolean
+  itemValidator?: (item: any) => boolean,
 ) => {
   const parsedArray = useMemo(() => {
     if (!data) return [];
 
     // Si ya es un array, filtrarlo y retornarlo
     if (Array.isArray(data)) {
-      return data.filter(item => {
+      return data.filter((item) => {
         if (!item) return false;
-        return itemValidator ? itemValidator(item) : typeof item === 'string';
+        return itemValidator ? itemValidator(item) : typeof item === "string";
       });
     }
 
     // Si es string, intentar parsearlo como JSON
-    if (typeof data === 'string') {
+    if (typeof data === "string") {
       try {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed)) {
-          return parsed.filter(item => {
+          return parsed.filter((item) => {
             if (!item) return false;
-            return itemValidator ? itemValidator(item) : typeof item === 'string';
+            return itemValidator
+              ? itemValidator(item)
+              : typeof item === "string";
           });
         }
         // Si no es array, tratarlo como item único si es válido
-        if (itemValidator ? itemValidator(parsed) : typeof parsed === 'string') {
+        if (
+          itemValidator ? itemValidator(parsed) : typeof parsed === "string"
+        ) {
           return [parsed];
         }
         return [];
@@ -54,9 +58,12 @@ export const useJsonArrayParser = (
 /**
  * Hook específico para parsear imágenes
  */
-export const useImageParser = (images: string[] | string | undefined | null) => {
-  const result = useJsonArrayParser(images, (item) => 
-    typeof item === 'string' && item.trim().length > 0
+export const useImageParser = (
+  images: string[] | string | undefined | null,
+) => {
+  const result = useJsonArrayParser(
+    images,
+    (item) => typeof item === "string" && item.trim().length > 0,
   );
 
   return {
@@ -70,9 +77,12 @@ export const useImageParser = (images: string[] | string | undefined | null) => 
 /**
  * Hook específico para parsear features
  */
-export const useFeatureParser = (features: string[] | string | undefined | null) => {
-  const result = useJsonArrayParser(features, (item) => 
-    typeof item === 'string' && item.trim().length > 0
+export const useFeatureParser = (
+  features: string[] | string | undefined | null,
+) => {
+  const result = useJsonArrayParser(
+    features,
+    (item) => typeof item === "string" && item.trim().length > 0,
   );
 
   return {

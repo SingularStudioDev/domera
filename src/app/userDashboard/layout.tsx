@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { FloatingSidebar } from '@/components/dashboard/FloatingSidebar';
-import { DashboardUserMenuItems } from '@/components/header/headerItems';
-import Header from '@/components/header/Header';
-import Footer from '@/components/Footer';
+import { FloatingSidebar } from "@/components/dashboard/FloatingSidebar";
+import Footer from "@/components/Footer";
+import Header from "@/components/header/Header";
+import { DashboardUserMenuItems } from "@/components/header/headerItems";
 
 export default function UserDashboardLayout({
   children,

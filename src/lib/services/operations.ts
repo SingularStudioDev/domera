@@ -4,9 +4,23 @@
 // Handles complex operations that involve multiple models
 // =============================================================================
 
-import { validateUnitsAvailability, getUnitsWithOrganization, updateUnitsStatus } from '@/lib/dal/units';
-import { hasActiveOperation, createOperation as createOperationDAL, type CreateOperationInput } from '@/lib/dal/operations';
-import { ValidationError, ConflictError, type Result, success, failure } from '@/lib/dal/base';
+import {
+  ConflictError,
+  failure,
+  success,
+  ValidationError,
+  type Result,
+} from "@/lib/dal/base";
+import {
+  createOperation as createOperationDAL,
+  hasActiveOperation,
+  type CreateOperationInput,
+} from "@/lib/dal/operations";
+import {
+  getUnitsWithOrganization,
+  updateUnitsStatus,
+  validateUnitsAvailability,
+} from "@/lib/dal/units";
 
 // =============================================================================
 // BUSINESS LOGIC FUNCTIONS
@@ -16,23 +30,29 @@ import { ValidationError, ConflictError, type Result, success, failure } from '@
  * Validate units belong to same organization
  * This is business logic that coordinates between units and projects
  */
-export async function validateUnitsSameOrganization(unitIds: string[]): Promise<Result<string>> {
+export async function validateUnitsSameOrganization(
+  unitIds: string[],
+): Promise<Result<string>> {
   try {
     const unitsResult = await getUnitsWithOrganization(unitIds);
     if (!unitsResult.data) {
-      return failure(unitsResult.error || 'Error al obtener unidades');
+      return failure(unitsResult.error || "Error al obtener unidades");
     }
 
     const units = unitsResult.data;
-    const organizationIds = [...new Set(units.map(u => u.organizationId))];
-    
+    const organizationIds = [...new Set(units.map((u) => u.organizationId))];
+
     if (organizationIds.length > 1) {
-      throw new ValidationError('Todas las unidades deben pertenecer a la misma organización');
+      throw new ValidationError(
+        "Todas las unidades deben pertenecer a la misma organización",
+      );
     }
 
     return success(organizationIds[0]);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
@@ -44,7 +64,7 @@ export async function createOperationWithValidation(
   userId: string,
   input: { unitIds: string[]; notes?: string },
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<any>> {
   try {
     // Check if user already has an active operation
@@ -53,7 +73,9 @@ export async function createOperationWithValidation(
       return failure(hasActiveResult.error);
     }
     if (hasActiveResult.data) {
-      throw new ConflictError('Ya tienes una operación activa. Completa o cancela la operación actual antes de iniciar una nueva.');
+      throw new ConflictError(
+        "Ya tienes una operación activa. Completa o cancela la operación actual antes de iniciar una nueva.",
+      );
     }
 
     // Validate units availability
@@ -63,7 +85,9 @@ export async function createOperationWithValidation(
     }
 
     // Validate units belong to same organization
-    const organizationResult = await validateUnitsSameOrganization(input.unitIds);
+    const organizationResult = await validateUnitsSameOrganization(
+      input.unitIds,
+    );
     if (!organizationResult.data && organizationResult.error) {
       return failure(organizationResult.error);
     }
@@ -73,7 +97,9 @@ export async function createOperationWithValidation(
     // Get units with pricing info
     const unitsResult = await getUnitsWithOrganization(input.unitIds);
     if (!unitsResult.data) {
-      return failure(unitsResult.error || 'Error al obtener información de unidades');
+      return failure(
+        unitsResult.error || "Error al obtener información de unidades",
+      );
     }
 
     const units = unitsResult.data;
@@ -84,31 +110,38 @@ export async function createOperationWithValidation(
       unitIds: input.unitIds,
       organizationId,
       totalAmount,
-      notes: input.notes
+      notes: input.notes,
     };
 
-    const operationResult = await createOperationDAL(userId, operationInput, ipAddress, userAgent);
+    const operationResult = await createOperationDAL(
+      userId,
+      operationInput,
+      ipAddress,
+      userAgent,
+    );
     if (!operationResult.data) {
-      return failure(operationResult.error || 'Error al crear operación');
+      return failure(operationResult.error || "Error al crear operación");
     }
 
     // Update units status to 'in_process'
     const statusUpdateResult = await updateUnitsStatus(
       input.unitIds,
-      'in_process',
+      "in_process",
       userId,
       ipAddress,
-      userAgent
+      userAgent,
     );
 
     if (!statusUpdateResult.data) {
-      console.error('Error updating unit status:', statusUpdateResult.error);
+      console.error("Error updating unit status:", statusUpdateResult.error);
       // Don't fail the operation creation if status update fails
     }
 
     return success(operationResult.data);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }
 
@@ -121,21 +154,23 @@ export async function cancelOperationWithUnitsRelease(
   userId: string,
   reason: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<any>> {
   try {
     // First, get the operation to find associated units
     // This should be done through the operations DAL
     // ... implementation would use operations DAL methods
-    
+
     // Then release units back to available status
     // This would use the units DAL
-    
+
     // This is a placeholder - the actual implementation would coordinate
     // between the operations DAL and units DAL
-    
+
     return success(true);
   } catch (error) {
-    return failure(error instanceof Error ? error.message : 'Error desconocido');
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
   }
 }

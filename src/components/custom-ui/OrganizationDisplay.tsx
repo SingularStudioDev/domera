@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { hasOrganizationLogo } from '@/lib/utils/organization';
+import Image from "next/image";
+
+import { hasOrganizationLogo } from "@/lib/utils/organization";
 
 interface Organization {
   id: string;
@@ -22,7 +23,7 @@ export default function OrganizationDisplay({
   className = "h-7 w-auto md:h-8",
   width = 154,
   height = 30,
-  showFallback = true
+  showFallback = true,
 }: OrganizationDisplayProps) {
   const hasLogo = hasOrganizationLogo(organization);
 
@@ -39,11 +40,11 @@ export default function OrganizationDisplay({
           if (showFallback) {
             const target = e.target as HTMLImageElement;
             // Hide the image and show fallback
-            target.style.display = 'none';
+            target.style.display = "none";
             const parent = target.parentElement;
-            if (parent && !parent.querySelector('.org-name-fallback')) {
-              const nameElement = document.createElement('span');
-              nameElement.className = 'org-name-fallback font-bold text-black';
+            if (parent && !parent.querySelector(".org-name-fallback")) {
+              const nameElement = document.createElement("span");
+              nameElement.className = "org-name-fallback font-bold text-black";
               nameElement.textContent = organization.name;
               parent.appendChild(nameElement);
             }
@@ -55,11 +56,7 @@ export default function OrganizationDisplay({
 
   // Fallback to organization name
   if (showFallback) {
-    return (
-      <span className="font-bold text-black">
-        {organization.name}
-      </span>
-    );
+    return <span className="font-bold text-black">{organization.name}</span>;
   }
 
   return null;

@@ -3,28 +3,30 @@
 // Database operations for projects
 // =============================================================================
 
-import {
-  getDbClient,
-  DatabaseError,
-  ValidationError,
-  NotFoundError,
-  ConflictError,
-  logAudit,
-  type Result,
-  type PaginatedResult,
-  success,
-  failure,
-  formatPaginatedResult,
-  buildPaginationOptions,
-  buildTextSearchFilter,
-  buildDateRangeFilter,
-} from './base';
+import type { Project, ProjectStatus } from "@prisma/client";
+
 import {
   CreateProjectSchema,
-  UpdateProjectSchema,
   ProjectFiltersSchema,
-} from '@/lib/validations/schemas';
-import type { Project, ProjectStatus } from '@prisma/client';
+  UpdateProjectSchema,
+} from "@/lib/validations/schemas";
+
+import {
+  buildDateRangeFilter,
+  buildPaginationOptions,
+  buildTextSearchFilter,
+  ConflictError,
+  DatabaseError,
+  failure,
+  formatPaginatedResult,
+  getDbClient,
+  logAudit,
+  NotFoundError,
+  success,
+  ValidationError,
+  type PaginatedResult,
+  type Result,
+} from "./base";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -91,7 +93,7 @@ interface UpdateProjectInput {
  * Get all projects with filters and pagination
  */
 export async function getProjects(
-  filters: ProjectFiltersInput = { page: 1, pageSize: 20 }
+  filters: ProjectFiltersInput = { page: 1, pageSize: 20 },
 ): Promise<Result<PaginatedResult<Project>>> {
   try {
     const validFilters = ProjectFiltersSchema.parse(filters);
@@ -128,27 +130,27 @@ export async function getProjects(
         {
           name: {
             contains: validFilters.search,
-            mode: 'insensitive'
-          }
+            mode: "insensitive",
+          },
         },
         {
           address: {
             contains: validFilters.search,
-            mode: 'insensitive'
-          }
+            mode: "insensitive",
+          },
         },
         {
           neighborhood: {
             contains: validFilters.search,
-            mode: 'insensitive'
-          }
+            mode: "insensitive",
+          },
         },
         {
           city: {
             contains: validFilters.search,
-            mode: 'insensitive'
-          }
-        }
+            mode: "insensitive",
+          },
+        },
       ];
     }
 
@@ -158,7 +160,7 @@ export async function getProjects(
     // Apply pagination
     const paginationOptions = buildPaginationOptions(
       validFilters.page,
-      validFilters.pageSize
+      validFilters.pageSize,
     );
 
     // Get projects with relations
@@ -176,7 +178,7 @@ export async function getProjects(
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       ...paginationOptions,
     });
@@ -185,13 +187,13 @@ export async function getProjects(
       projects,
       totalCount,
       validFilters.page,
-      validFilters.pageSize
+      validFilters.pageSize,
     );
 
     return success(result);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -200,10 +202,10 @@ export async function getProjects(
  * Get public projects (for non-authenticated users)
  */
 export async function getPublicProjects(
-  filters: Omit<ProjectFiltersInput, 'organizationId'> = {
+  filters: Omit<ProjectFiltersInput, "organizationId"> = {
     page: 1,
     pageSize: 20,
-  }
+  },
 ): Promise<Result<PaginatedResult<Project>>> {
   try {
     const validFilters = ProjectFiltersSchema.omit({
@@ -214,7 +216,7 @@ export async function getPublicProjects(
     // Build where clause - only show active projects
     const where: any = {
       status: {
-        in: ['pre_sale', 'construction'],
+        in: ["pre_sale", "construction"],
       },
     };
 
@@ -244,7 +246,7 @@ export async function getPublicProjects(
     // Apply pagination
     const paginationOptions = buildPaginationOptions(
       validFilters.page,
-      validFilters.pageSize
+      validFilters.pageSize,
     );
 
     // Get public projects with limited organization info
@@ -269,7 +271,7 @@ export async function getPublicProjects(
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       ...paginationOptions,
     });
@@ -278,13 +280,13 @@ export async function getPublicProjects(
       projects,
       totalCount,
       validFilters.page,
-      validFilters.pageSize
+      validFilters.pageSize,
     );
 
     return success(result);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -293,7 +295,7 @@ export async function getPublicProjects(
  * Get project by ID
  */
 export async function getProjectById(
-  projectId: string
+  projectId: string,
 ): Promise<Result<Project>> {
   try {
     const client = getDbClient();
@@ -307,13 +309,13 @@ export async function getProjectById(
     });
 
     if (!project) {
-      throw new NotFoundError('Proyecto', projectId);
+      throw new NotFoundError("Proyecto", projectId);
     }
 
     return success(project);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -322,7 +324,7 @@ export async function getProjectById(
  * Get project by slug
  */
 export async function getProjectBySlug(
-  projectSlug: string
+  projectSlug: string,
 ): Promise<Result<Project>> {
   try {
     const client = getDbClient();
@@ -330,7 +332,6 @@ export async function getProjectBySlug(
     const project = await client.project.findFirst({
       where: {
         slug: projectSlug,
-
       },
       include: {
         organization: true,
@@ -339,13 +340,13 @@ export async function getProjectBySlug(
     });
 
     if (!project) {
-      throw new NotFoundError('Proyecto');
+      throw new NotFoundError("Proyecto");
     }
 
     return success(project);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -357,7 +358,7 @@ export async function createProject(
   input: CreateProjectInput,
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<Project>> {
   try {
     const client = getDbClient();
@@ -372,7 +373,7 @@ export async function createProject(
 
     if (existingProject) {
       throw new ConflictError(
-        'Ya existe un proyecto con este slug en la organización'
+        "Ya existe un proyecto con este slug en la organización",
       );
     }
 
@@ -390,15 +391,20 @@ export async function createProject(
         latitude: input.latitude,
         longitude: input.longitude,
         status: input.status,
-        startDate: input.startDate ? new Date(input.startDate.toISOString().split('T')[0]) : null,
-        estimatedCompletion: input.estimatedCompletion ? new Date(input.estimatedCompletion.toISOString().split('T')[0]) : null,
+        startDate: input.startDate
+          ? new Date(input.startDate.toISOString().split("T")[0])
+          : null,
+        estimatedCompletion: input.estimatedCompletion
+          ? new Date(input.estimatedCompletion.toISOString().split("T")[0])
+          : null,
         basePrice: input.basePrice,
         currency: input.currency,
         images: input.images || [],
-        amenities: input.amenities?.map(amenityText => ({
-          icon: '🏢',
-          text: amenityText
-        })) || [],
+        amenities:
+          input.amenities?.map((amenityText) => ({
+            icon: "🏢",
+            text: amenityText,
+          })) || [],
         masterPlanFiles: [],
         createdBy: userId,
       },
@@ -411,9 +417,9 @@ export async function createProject(
     await logAudit(client, {
       userId,
       organizationId: project.organizationId,
-      tableName: 'projects',
+      tableName: "projects",
       recordId: project.id,
-      action: 'INSERT',
+      action: "INSERT",
       newValues: project,
       ipAddress,
       userAgent,
@@ -422,7 +428,7 @@ export async function createProject(
     return success(project);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -435,7 +441,7 @@ export async function updateProject(
   input: UpdateProjectInput,
   userId: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<Result<Project>> {
   try {
     const validInput = UpdateProjectSchema.parse(input);
@@ -444,7 +450,7 @@ export async function updateProject(
     // Get current project for audit
     const currentResult = await getProjectById(projectId);
     if (!currentResult.data) {
-      return failure(currentResult.error || 'Proyecto no encontrado');
+      return failure(currentResult.error || "Proyecto no encontrado");
     }
 
     const currentProject = currentResult.data;
@@ -463,7 +469,7 @@ export async function updateProject(
 
       if (existingProject) {
         throw new ConflictError(
-          'Ya existe un proyecto con este slug en la organización'
+          "Ya existe un proyecto con este slug en la organización",
         );
       }
     }
@@ -481,9 +487,9 @@ export async function updateProject(
     await logAudit(client, {
       userId,
       organizationId: project.organizationId,
-      tableName: 'projects',
+      tableName: "projects",
       recordId: projectId,
-      action: 'UPDATE',
+      action: "UPDATE",
       oldValues: currentProject,
       newValues: validInput,
       ipAddress,
@@ -493,7 +499,7 @@ export async function updateProject(
     return success(project);
   } catch (error) {
     return failure(
-      error instanceof Error ? error.message : 'Error desconocido'
+      error instanceof Error ? error.message : "Error desconocido",
     );
   }
 }
@@ -507,7 +513,7 @@ export async function updateProject(
  * NOTE: This function coordinates with units DAL to get unit counts
  */
 export async function updateProjectUnitCounts(
-  projectId: string
+  projectId: string,
 ): Promise<Result<boolean>> {
   try {
     const client = getDbClient();
@@ -518,7 +524,7 @@ export async function updateProjectUnitCounts(
     });
 
     const totalUnits = units.length;
-    const availableUnits = units.filter((u) => u.status === 'available').length;
+    const availableUnits = units.filter((u) => u.status === "available").length;
 
     await client.project.update({
       where: { id: projectId },
@@ -530,11 +536,11 @@ export async function updateProjectUnitCounts(
 
     return success(true);
   } catch (error) {
-    console.error('Error updating project unit counts:', error);
+    console.error("Error updating project unit counts:", error);
     return failure(
       error instanceof Error
         ? error.message
-        : 'Error actualizando conteos de unidades'
+        : "Error actualizando conteos de unidades",
     );
   }
 }
@@ -555,22 +561,22 @@ export async function getProjectFilterOptions(): Promise<
     const projects = await client.project.findMany({
       where: {
         status: {
-          in: ['pre_sale', 'construction'],
+          in: ["pre_sale", "construction"],
         },
       },
       select: {
         city: true,
         neighborhood: true,
       },
-      distinct: ['city', 'neighborhood'],
+      distinct: ["city", "neighborhood"],
     });
 
     const cities = Array.from(
-      new Set(projects.map(p => p.city).filter(Boolean))
+      new Set(projects.map((p) => p.city).filter(Boolean)),
     ).sort();
 
     const neighborhoods = Array.from(
-      new Set(projects.map(p => p.neighborhood).filter(Boolean) as string[])
+      new Set(projects.map((p) => p.neighborhood).filter(Boolean) as string[]),
     ).sort();
 
     return success({ cities, neighborhoods });
@@ -578,7 +584,7 @@ export async function getProjectFilterOptions(): Promise<
     return failure(
       error instanceof Error
         ? error.message
-        : 'Error obteniendo opciones de filtro'
+        : "Error obteniendo opciones de filtro",
     );
   }
 }
@@ -608,11 +614,11 @@ export async function getProjectStats(projectId: string): Promise<
 
     const stats = {
       totalUnits: units.length,
-      availableUnits: units.filter((u) => u.status === 'available').length,
-      soldUnits: units.filter((u) => u.status === 'sold').length,
-      reservedUnits: units.filter((u) => u.status === 'reserved').length,
+      availableUnits: units.filter((u) => u.status === "available").length,
+      soldUnits: units.filter((u) => u.status === "sold").length,
+      reservedUnits: units.filter((u) => u.status === "reserved").length,
       totalRevenue: units
-        .filter((u) => u.status === 'sold')
+        .filter((u) => u.status === "sold")
         .reduce((sum, unit) => sum + unit.price.toNumber(), 0),
     };
 
@@ -621,7 +627,7 @@ export async function getProjectStats(projectId: string): Promise<
     return failure(
       error instanceof Error
         ? error.message
-        : 'Error obteniendo estadísticas del proyecto'
+        : "Error obteniendo estadísticas del proyecto",
     );
   }
 }

@@ -4,25 +4,33 @@
 // Only handles project-related operations
 // =============================================================================
 
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
-import { validateSession, requireRole, requireOrganizationAccess, validateProjectAccess } from '@/lib/auth/validation';
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+
+import type { ProjectStatus } from "@prisma/client";
+
 import {
-  getProjects,
-  getPublicProjects,
+  requireOrganizationAccess,
+  requireRole,
+  validateProjectAccess,
+  validateSession,
+} from "@/lib/auth/validation";
+import { getDbClient } from "@/lib/dal/base";
+import {
+  createProject,
   getProjectById,
   getProjectBySlug,
-  createProject,
+  getProjects,
+  getProjectStats,
+  getPublicProjects,
   updateProject,
-  getProjectStats
-} from '@/lib/dal/projects';
-import { getDbClient } from '@/lib/dal/base';
-import type { ProjectStatus } from '@prisma/client';
-import { headers } from 'next/headers';
-import { extractRealIP } from '../utils/security';
-import { validateSuperAdminSession } from '../auth/super-admin';
-import { serializeProject } from '../utils/serialization';
+} from "@/lib/dal/projects";
+
+import { validateSuperAdminSession } from "../auth/super-admin";
+import { extractRealIP } from "../utils/security";
+import { serializeProject } from "../utils/serialization";
 
 // Input types
 interface ProjectFiltersInput {
@@ -98,15 +106,15 @@ interface ProjectActionResult {
  */
 export async function checkSlugAvailabilityAction(
   slug: string,
-  organizationId?: string
+  organizationId?: string,
 ): Promise<{ success: boolean; available: boolean; error?: string }> {
   try {
     if (!slug?.trim()) {
-      return { success: false, available: false, error: 'Slug es requerido' };
+      return { success: false, available: false, error: "Slug es requerido" };
     }
 
     const client = getDbClient();
-    
+
     // Check if slug exists in the same organization (if specified)
     const whereClause: any = { slug: slug.trim() };
     if (organizationId) {
@@ -115,40 +123,42 @@ export async function checkSlugAvailabilityAction(
 
     const existingProject = await client.project.findFirst({
       where: whereClause,
-      select: { id: true, name: true }
+      select: { id: true, name: true },
     });
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       available: !existingProject,
-      error: existingProject ? `Slug ya está en uso por el proyecto "${existingProject.name}"` : undefined
+      error: existingProject
+        ? `Slug ya está en uso por el proyecto "${existingProject.name}"`
+        : undefined,
     };
   } catch (error) {
-    console.error('Error checking slug availability:', error);
-    return { 
-      success: false, 
-      available: false, 
-      error: 'Error al verificar disponibilidad del slug' 
+    console.error("Error checking slug availability:", error);
+    return {
+      success: false,
+      available: false,
+      error: "Error al verificar disponibilidad del slug",
     };
   }
 }
 
 export async function getProjectsAction(
-  filters: ProjectFiltersInput = { page: 1, pageSize: 20 }
+  filters: ProjectFiltersInput = { page: 1, pageSize: 20 },
 ): Promise<ProjectActionResult> {
   try {
     // Try super admin authentication first (for /super routes)
     const headersList = await headers();
-    const cookieHeader = headersList.get('cookie');
+    const cookieHeader = headersList.get("cookie");
 
     let isAuthenticated = false;
     let user: any = null;
 
     // Check for super admin session
     const sessionCookies = cookieHeader
-      ?.split(';')
-      .filter((c) => c.trim().startsWith('super-admin-session='))
-      .map((c) => c.split('=')[1]);
+      ?.split(";")
+      .filter((c) => c.trim().startsWith("super-admin-session="))
+      .map((c) => c.split("=")[1]);
 
     const sessionCookie = sessionCookies?.pop();
 
@@ -156,7 +166,7 @@ export async function getProjectsAction(
       const ipAddress = extractRealIP(headersList);
       const sessionValidation = await validateSuperAdminSession(
         sessionCookie,
-        ipAddress
+        ipAddress,
       );
 
       if (sessionValidation.valid && sessionValidation.userId) {
@@ -168,16 +178,16 @@ export async function getProjectsAction(
     // If super admin auth failed, try regular NextAuth
     if (!isAuthenticated) {
       const authResult = await validateSession();
-      
+
       if (authResult.success && authResult.user) {
         isAuthenticated = true;
         user = authResult.user;
 
         // Filter by organization if user is not admin
-        const isAdmin = user.userRoles.some(role => role.role === 'admin');
+        const isAdmin = user.userRoles.some((role) => role.role === "admin");
         if (!isAdmin && !filters.organizationId) {
           // Get user's organization
-          const userOrg = user.userRoles.find(role => role.organizationId);
+          const userOrg = user.userRoles.find((role) => role.organizationId);
           if (userOrg) {
             filters.organizationId = userOrg.organizationId!;
           }
@@ -185,7 +195,7 @@ export async function getProjectsAction(
       } else {
         return {
           success: false,
-          error: authResult.error || 'Usuario no autenticado',
+          error: authResult.error || "Usuario no autenticado",
         };
       }
     }
@@ -199,15 +209,16 @@ export async function getProjectsAction(
     // Serialize the data to handle Decimal fields
     const serializedData = {
       ...result.data,
-      data: result.data.data.map(project => serializeProject(project))
+      data: result.data.data.map((project) => serializeProject(project)),
     };
 
     return { success: true, data: serializedData };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting projects:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error obteniendo proyectos' 
+    console.error("[SERVER_ACTION] Error getting projects:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error obteniendo proyectos",
     };
   }
 }
@@ -217,14 +228,19 @@ export async function getProjectsAction(
  * No authentication required
  */
 export async function getPublicProjectsAction(
-  filters: Omit<ProjectFiltersInput, 'organizationId'> = { page: 1, pageSize: 20 }
+  filters: Omit<ProjectFiltersInput, "organizationId"> = {
+    page: 1,
+    pageSize: 20,
+  },
 ): Promise<ProjectActionResult> {
   try {
     // Clean undefined values that might cause validation issues
     const cleanFilters = Object.fromEntries(
-      Object.entries(filters).filter(([, value]) => value !== undefined && value !== null)
+      Object.entries(filters).filter(
+        ([, value]) => value !== undefined && value !== null,
+      ),
     );
-    
+
     const result = await getPublicProjects(cleanFilters as typeof filters);
     if (!result.data) {
       return { success: false, error: result.error };
@@ -233,15 +249,18 @@ export async function getPublicProjectsAction(
     // Serialize the data to handle Decimal fields
     const serializedData = {
       ...result.data,
-      data: result.data.data.map(project => serializeProject(project))
+      data: result.data.data.map((project) => serializeProject(project)),
     };
 
     return { success: true, data: serializedData };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting public projects:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error obteniendo proyectos públicos' 
+    console.error("[SERVER_ACTION] Error getting public projects:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo proyectos públicos",
     };
   }
 }
@@ -251,7 +270,7 @@ export async function getPublicProjectsAction(
  * Public access for browsing
  */
 export async function getProjectByIdAction(
-  projectId: string
+  projectId: string,
 ): Promise<ProjectActionResult> {
   try {
     const result = await getProjectById(projectId);
@@ -261,10 +280,11 @@ export async function getProjectByIdAction(
 
     return { success: true, data: serializeProject(result.data) };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting project:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error obteniendo proyecto' 
+    console.error("[SERVER_ACTION] Error getting project:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error obteniendo proyecto",
     };
   }
 }
@@ -275,7 +295,7 @@ export async function getProjectByIdAction(
  */
 export async function getProjectBySlugAction(
   organizationSlug: string,
-  projectSlug: string
+  projectSlug: string,
 ): Promise<ProjectActionResult> {
   try {
     const result = await getProjectBySlug(organizationSlug, projectSlug);
@@ -285,10 +305,11 @@ export async function getProjectBySlugAction(
 
     return { success: true, data: serializeProject(result.data) };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting project by slug:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error obteniendo proyecto' 
+    console.error("[SERVER_ACTION] Error getting project by slug:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error obteniendo proyecto",
     };
   }
 }
@@ -300,11 +321,13 @@ export async function getProjectBySlugAction(
 export async function createProjectAction(
   input: CreateProjectInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<ProjectActionResult> {
   try {
     // Validate organization access
-    const orgAccessResult = await requireOrganizationAccess(input.organizationId);
+    const orgAccessResult = await requireOrganizationAccess(
+      input.organizationId,
+    );
     if (!orgAccessResult.success) {
       return { success: false, error: orgAccessResult.error };
     }
@@ -316,14 +339,14 @@ export async function createProjectAction(
     }
 
     const user = authResult.user!;
-    const hasPermission = user.userRoles.some(role => 
-      ['admin', 'organization_owner', 'sales_manager'].includes(role.role)
+    const hasPermission = user.userRoles.some((role) =>
+      ["admin", "organization_owner", "sales_manager"].includes(role.role),
     );
 
     if (!hasPermission) {
-      return { 
-        success: false, 
-        error: 'No tienes permisos para crear proyectos' 
+      return {
+        success: false,
+        error: "No tienes permisos para crear proyectos",
       };
     }
 
@@ -334,15 +357,15 @@ export async function createProjectAction(
     }
 
     // Revalidate relevant paths
-    revalidatePath('/projects');
-    revalidatePath('/dashboard');
+    revalidatePath("/projects");
+    revalidatePath("/dashboard");
 
     return { success: true, data: serializeProject(result.data) };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error creating project:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error creando proyecto' 
+    console.error("[SERVER_ACTION] Error creating project:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error creando proyecto",
     };
   }
 }
@@ -355,7 +378,7 @@ export async function updateProjectAction(
   projectId: string,
   input: UpdateProjectInput,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<ProjectActionResult> {
   try {
     // Validate project access
@@ -371,34 +394,41 @@ export async function updateProjectAction(
     }
 
     const user = authResult.user!;
-    const hasPermission = user.userRoles.some(role => 
-      ['admin', 'organization_owner', 'sales_manager'].includes(role.role)
+    const hasPermission = user.userRoles.some((role) =>
+      ["admin", "organization_owner", "sales_manager"].includes(role.role),
     );
 
     if (!hasPermission) {
-      return { 
-        success: false, 
-        error: 'No tienes permisos para actualizar proyectos' 
+      return {
+        success: false,
+        error: "No tienes permisos para actualizar proyectos",
       };
     }
 
     // Update project
-    const result = await updateProject(projectId, input, user.id, ipAddress, userAgent);
+    const result = await updateProject(
+      projectId,
+      input,
+      user.id,
+      ipAddress,
+      userAgent,
+    );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // Revalidate relevant paths
-    revalidatePath('/projects');
+    revalidatePath("/projects");
     revalidatePath(`/projects/${projectId}`);
-    revalidatePath('/dashboard');
+    revalidatePath("/dashboard");
 
     return { success: true, data: serializeProject(result.data) };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error updating project:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error actualizando proyecto' 
+    console.error("[SERVER_ACTION] Error updating project:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error actualizando proyecto",
     };
   }
 }
@@ -408,7 +438,7 @@ export async function updateProjectAction(
  * Requires project access
  */
 export async function getProjectStatsAction(
-  projectId: string
+  projectId: string,
 ): Promise<ProjectActionResult> {
   try {
     // Validate project access
@@ -424,10 +454,13 @@ export async function getProjectStatsAction(
 
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('[SERVER_ACTION] Error getting project stats:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error obteniendo estadísticas del proyecto' 
+    console.error("[SERVER_ACTION] Error getting project stats:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo estadísticas del proyecto",
     };
   }
 }

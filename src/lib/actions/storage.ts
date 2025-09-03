@@ -4,11 +4,15 @@
 // Following project patterns: simple functions, not classes
 // =============================================================================
 
-'use server';
+"use server";
 
-import { validateSession, requireRole } from '@/lib/auth/validation';
-import { uploadProjectImages as dalUploadProjectImages, uploadOrganizationImages as dalUploadOrganizationImages, STORAGE_BUCKETS } from '@/lib/dal/storage';
-import type { StorageFile, BatchUploadResult } from '@/lib/dal/storage';
+import { requireRole, validateSession } from "@/lib/auth/validation";
+import {
+  uploadOrganizationImages as dalUploadOrganizationImages,
+  uploadProjectImages as dalUploadProjectImages,
+  STORAGE_BUCKETS,
+} from "@/lib/dal/storage";
+import type { BatchUploadResult, StorageFile } from "@/lib/dal/storage";
 
 // =============================================================================
 // TYPES
@@ -35,39 +39,39 @@ interface ImageUploadResult {
 
 export async function uploadProjectImages(
   formData: FormData,
-  projectId?: string
+  projectId?: string,
 ): Promise<ImageUploadResult> {
   try {
     // Validate session
     const session = await validateSession();
     if (!session.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+      return { success: false, error: "Usuario no autenticado" };
     }
 
     // Extract files from FormData
     const files: File[] = [];
     for (const [key, value] of formData.entries()) {
-      if (key.startsWith('image-') && value instanceof File && value.size > 0) {
+      if (key.startsWith("image-") && value instanceof File && value.size > 0) {
         files.push(value);
       }
     }
 
     if (files.length === 0) {
-      return { success: false, error: 'No se encontraron imágenes válidas' };
+      return { success: false, error: "No se encontraron imágenes válidas" };
     }
 
     // Validate file count
     if (files.length > 20) {
-      return { success: false, error: 'Máximo 20 imágenes permitidas' };
+      return { success: false, error: "Máximo 20 imágenes permitidas" };
     }
 
     // Upload images using DAL
     const result = await dalUploadProjectImages(files, projectId);
 
     if (!result.data) {
-      return { 
-        success: false, 
-        error: result.error || 'Error desconocido en la subida' 
+      return {
+        success: false,
+        error: result.error || "Error desconocido en la subida",
       };
     }
 
@@ -77,22 +81,22 @@ export async function uploadProjectImages(
       // All failed
       return {
         success: false,
-        error: 'Error en la subida de todas las imágenes',
-        failedUploads: batchResult.failed
+        error: "Error en la subida de todas las imágenes",
+        failedUploads: batchResult.failed,
       };
     }
 
     // Convert to expected format
-    const images = batchResult.successful.map(img => ({
+    const images = batchResult.successful.map((img) => ({
       id: img.id,
       name: img.name,
       url: img.url,
-      path: img.path
+      path: img.path,
     }));
 
     const response: ImageUploadResult = {
       success: true,
-      images
+      images,
     };
 
     // Include failed uploads if any
@@ -101,12 +105,11 @@ export async function uploadProjectImages(
     }
 
     return response;
-
   } catch (error) {
-    console.error('Error uploading project images:', error);
+    console.error("Error uploading project images:", error);
     return {
       success: false,
-      error: `Error interno del servidor: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error interno del servidor: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
 }
@@ -117,44 +120,53 @@ export async function uploadProjectImages(
 
 export async function uploadOrganizationImages(
   formData: FormData,
-  organizationId?: string
+  organizationId?: string,
 ): Promise<ImageUploadResult> {
   try {
     // Validate session and admin role
     const session = await validateSession();
     if (!session.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+      return { success: false, error: "Usuario no autenticado" };
     }
 
     // Check role - only admins can upload organization images
-    if (session.user.role !== 'super_admin' && session.user.role !== 'domera_admin') {
-      return { success: false, error: 'No tienes permisos para subir imágenes de organización' };
+    if (
+      session.user.role !== "super_admin" &&
+      session.user.role !== "domera_admin"
+    ) {
+      return {
+        success: false,
+        error: "No tienes permisos para subir imágenes de organización",
+      };
     }
 
     // Extract files from FormData
     const files: File[] = [];
     for (const [key, value] of formData.entries()) {
-      if (key.startsWith('image-') && value instanceof File && value.size > 0) {
+      if (key.startsWith("image-") && value instanceof File && value.size > 0) {
         files.push(value);
       }
     }
 
     if (files.length === 0) {
-      return { success: false, error: 'No se encontraron imágenes válidas' };
+      return { success: false, error: "No se encontraron imágenes válidas" };
     }
 
     // Validate file count
     if (files.length > 10) {
-      return { success: false, error: 'Máximo 10 imágenes permitidas para organizaciones' };
+      return {
+        success: false,
+        error: "Máximo 10 imágenes permitidas para organizaciones",
+      };
     }
 
     // Upload images using DAL
     const result = await dalUploadOrganizationImages(files, organizationId);
 
     if (!result.data) {
-      return { 
-        success: false, 
-        error: result.error || 'Error desconocido en la subida' 
+      return {
+        success: false,
+        error: result.error || "Error desconocido en la subida",
       };
     }
 
@@ -164,22 +176,22 @@ export async function uploadOrganizationImages(
       // All failed
       return {
         success: false,
-        error: 'Error en la subida de todas las imágenes',
-        failedUploads: batchResult.failed
+        error: "Error en la subida de todas las imágenes",
+        failedUploads: batchResult.failed,
       };
     }
 
     // Convert to expected format
-    const images = batchResult.successful.map(img => ({
+    const images = batchResult.successful.map((img) => ({
       id: img.id,
       name: img.name,
       url: img.url,
-      path: img.path
+      path: img.path,
     }));
 
     const response: ImageUploadResult = {
       success: true,
-      images
+      images,
     };
 
     // Include failed uploads if any
@@ -188,12 +200,11 @@ export async function uploadOrganizationImages(
     }
 
     return response;
-
   } catch (error) {
-    console.error('Error uploading organization images:', error);
+    console.error("Error uploading organization images:", error);
     return {
       success: false,
-      error: `Error interno del servidor: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error interno del servidor: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
 }
@@ -204,41 +215,44 @@ export async function uploadOrganizationImages(
 
 export async function uploadUnitImages(
   formData: FormData,
-  unitId?: string
+  unitId?: string,
 ): Promise<ImageUploadResult> {
   try {
     // Validate session
     const session = await validateSession();
     if (!session.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+      return { success: false, error: "Usuario no autenticado" };
     }
 
     // Extract files from FormData
     const files: File[] = [];
     for (const [key, value] of formData.entries()) {
-      if (key.startsWith('image-') && value instanceof File && value.size > 0) {
+      if (key.startsWith("image-") && value instanceof File && value.size > 0) {
         files.push(value);
       }
     }
 
     if (files.length === 0) {
-      return { success: false, error: 'No se encontraron imágenes válidas' };
+      return { success: false, error: "No se encontraron imágenes válidas" };
     }
 
     // Validate file count
     if (files.length > 15) {
-      return { success: false, error: 'Máximo 15 imágenes permitidas por unidad' };
+      return {
+        success: false,
+        error: "Máximo 15 imágenes permitidas por unidad",
+      };
     }
 
     // For now, use same logic as projects with units folder
     // TODO: Create specific uploadUnitImages function in DAL
-    const folder = unitId ? `units/${unitId}` : 'units';
+    const folder = unitId ? `units/${unitId}` : "units";
     const result = await dalUploadProjectImages(files, folder);
 
     if (!result.data) {
-      return { 
-        success: false, 
-        error: result.error || 'Error desconocido en la subida' 
+      return {
+        success: false,
+        error: result.error || "Error desconocido en la subida",
       };
     }
 
@@ -248,22 +262,22 @@ export async function uploadUnitImages(
       // All failed
       return {
         success: false,
-        error: 'Error en la subida de todas las imágenes',
-        failedUploads: batchResult.failed
+        error: "Error en la subida de todas las imágenes",
+        failedUploads: batchResult.failed,
       };
     }
 
     // Convert to expected format
-    const images = batchResult.successful.map(img => ({
+    const images = batchResult.successful.map((img) => ({
       id: img.id,
       name: img.name,
       url: img.url,
-      path: img.path
+      path: img.path,
     }));
 
     const response: ImageUploadResult = {
       success: true,
-      images
+      images,
     };
 
     // Include failed uploads if any
@@ -272,12 +286,11 @@ export async function uploadUnitImages(
     }
 
     return response;
-
   } catch (error) {
-    console.error('Error uploading unit images:', error);
+    console.error("Error uploading unit images:", error);
     return {
       success: false,
-      error: `Error interno del servidor: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error interno del servidor: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
 }
@@ -288,35 +301,42 @@ export async function uploadUnitImages(
 
 export async function deleteImages(
   paths: string[],
-  bucket: string = STORAGE_BUCKETS.IMAGES
-): Promise<{ success: boolean; error?: string; deleted?: string[]; failed?: string[] }> {
+  bucket: string = STORAGE_BUCKETS.IMAGES,
+): Promise<{
+  success: boolean;
+  error?: string;
+  deleted?: string[];
+  failed?: string[];
+}> {
   try {
     // Validate session
     const session = await validateSession();
     if (!session.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+      return { success: false, error: "Usuario no autenticado" };
     }
 
     // Import deleteFiles function
-    const { deleteFiles } = await import('@/lib/dal/storage');
-    
+    const { deleteFiles } = await import("@/lib/dal/storage");
+
     const result = await deleteFiles(paths, bucket);
 
     if (!result.data) {
-      return { success: false, error: result.error || 'Error eliminando archivos' };
+      return {
+        success: false,
+        error: result.error || "Error eliminando archivos",
+      };
     }
 
     return {
       success: true,
       deleted: result.data.deleted,
-      failed: result.data.failed
+      failed: result.data.failed,
     };
-
   } catch (error) {
-    console.error('Error deleting images:', error);
+    console.error("Error deleting images:", error);
     return {
       success: false,
-      error: `Error interno del servidor: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error interno del servidor: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
 }
@@ -326,41 +346,43 @@ export async function deleteImages(
 // =============================================================================
 
 export async function uploadAvatar(
-  formData: FormData
+  formData: FormData,
 ): Promise<ImageUploadResult> {
   try {
     // Validate session
     const session = await validateSession();
     if (!session.user) {
-      return { success: false, error: 'Usuario no autenticado' };
+      return { success: false, error: "Usuario no autenticado" };
     }
 
     // Extract single file from FormData
-    const file = formData.get('avatar') as File;
+    const file = formData.get("avatar") as File;
     if (!file || !(file instanceof File) || file.size === 0) {
-      return { success: false, error: 'No se encontró un archivo válido' };
+      return { success: false, error: "No se encontró un archivo válido" };
     }
 
     // Validate file size (2MB max for avatars)
     if (file.size > 2 * 1024 * 1024) {
-      return { success: false, error: 'El avatar no puede exceder 2MB' };
+      return { success: false, error: "El avatar no puede exceder 2MB" };
     }
 
     // Upload single file using DAL
-    const { uploadFile, STORAGE_BUCKETS, STORAGE_FOLDERS } = await import('@/lib/dal/storage');
-    
+    const { uploadFile, STORAGE_BUCKETS, STORAGE_FOLDERS } = await import(
+      "@/lib/dal/storage"
+    );
+
     const result = await uploadFile(file, {
       bucket: STORAGE_BUCKETS.IMAGES,
       folder: `${STORAGE_FOLDERS.AVATARS}/${session.user.id}`,
       isPublic: true,
       maxSize: 2 * 1024 * 1024,
-      allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      allowedMimeTypes: ["image/jpeg", "image/jpg", "image/png", "image/webp"],
     });
 
     if (!result.data) {
-      return { 
-        success: false, 
-        error: result.error || 'Error subiendo avatar' 
+      return {
+        success: false,
+        error: result.error || "Error subiendo avatar",
       };
     }
 
@@ -368,19 +390,18 @@ export async function uploadAvatar(
       id: result.data.id,
       name: result.data.name,
       url: result.data.url,
-      path: result.data.path
+      path: result.data.path,
     };
 
     return {
       success: true,
-      images: [image]
+      images: [image],
     };
-
   } catch (error) {
-    console.error('Error uploading avatar:', error);
+    console.error("Error uploading avatar:", error);
     return {
       success: false,
-      error: `Error interno del servidor: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Error interno del servidor: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
 }

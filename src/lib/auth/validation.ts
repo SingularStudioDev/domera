@@ -3,15 +3,17 @@
 // Reusable authentication and authorization utilities for Server Actions and Server Components
 // =============================================================================
 
-'use server';
+"use server";
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
-import { prisma } from '@/lib/prisma';
-import { RoleType } from '@prisma/client';
-import { validateSuperAdminSession } from '@/lib/auth/super-admin';
-import { extractRealIP } from '@/lib/utils/security';
-import { headers } from 'next/headers';
+import { headers } from "next/headers";
+
+import { RoleType } from "@prisma/client";
+import { getServerSession } from "next-auth";
+
+import { authOptions } from "@/lib/auth/config";
+import { validateSuperAdminSession } from "@/lib/auth/super-admin";
+import { prisma } from "@/lib/prisma";
+import { extractRealIP } from "@/lib/utils/security";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -104,12 +106,12 @@ export async function validateSession(): Promise<AuthValidationResult> {
 
     // If no NextAuth session, try super admin session
     const headersList = await headers();
-    const cookieHeader = headersList.get('cookie');
+    const cookieHeader = headersList.get("cookie");
 
     const sessionCookies = cookieHeader
-      ?.split(';')
-      .filter((c) => c.trim().startsWith('super-admin-session='))
-      .map((c) => c.split('=')[1]);
+      ?.split(";")
+      .filter((c) => c.trim().startsWith("super-admin-session="))
+      .map((c) => c.split("=")[1]);
 
     const sessionCookie = sessionCookies?.pop(); // Get the last one
 
@@ -117,7 +119,7 @@ export async function validateSession(): Promise<AuthValidationResult> {
       const ipAddress = extractRealIP(headersList);
       const sessionValidation = await validateSuperAdminSession(
         sessionCookie,
-        ipAddress
+        ipAddress,
       );
 
       if (sessionValidation.valid && sessionValidation.userId) {
@@ -159,13 +161,13 @@ export async function validateSession(): Promise<AuthValidationResult> {
 
     return {
       success: false,
-      error: 'Usuario no autenticado',
+      error: "Usuario no autenticado",
     };
   } catch (error) {
-    console.error('Error validating session:', error);
+    console.error("Error validating session:", error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: "Error interno del servidor",
     };
   }
 }
@@ -176,7 +178,7 @@ export async function validateSession(): Promise<AuthValidationResult> {
  */
 export async function requireRole(
   requiredRole: RoleType,
-  organizationId?: string
+  organizationId?: string,
 ): Promise<RoleValidationResult> {
   try {
     const authResult = await validateSession();
@@ -191,7 +193,7 @@ export async function requireRole(
     const user = authResult.user;
 
     // Check for admin role (global access)
-    const isAdmin = user.userRoles.some((role) => role.role === 'admin');
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
     if (isAdmin) {
       return {
         success: true,
@@ -209,12 +211,12 @@ export async function requireRole(
         (role) =>
           role.role === requiredRole &&
           role.organizationId === organizationId &&
-          role.isActive
+          role.isActive,
       );
     } else {
       // Check for role without organization constraint
       hasRole = user.userRoles.some(
-        (role) => role.role === requiredRole && role.isActive
+        (role) => role.role === requiredRole && role.isActive,
       );
     }
 
@@ -223,7 +225,7 @@ export async function requireRole(
         success: false,
         hasRole: false,
         user,
-        error: 'No tienes permisos para realizar esta acción',
+        error: "No tienes permisos para realizar esta acción",
       };
     }
 
@@ -233,10 +235,10 @@ export async function requireRole(
       hasRole: true,
     };
   } catch (error) {
-    console.error('Error validating role:', error);
+    console.error("Error validating role:", error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: "Error interno del servidor",
     };
   }
 }
@@ -246,7 +248,7 @@ export async function requireRole(
  * Use this in Server Actions that operate on organization-specific data
  */
 export async function requireOrganizationAccess(
-  organizationId: string
+  organizationId: string,
 ): Promise<RoleValidationResult> {
   try {
     const authResult = await validateSession();
@@ -261,7 +263,7 @@ export async function requireOrganizationAccess(
     const user = authResult.user;
 
     // Check for admin role (global access)
-    const isAdmin = user.userRoles.some((role) => role.role === 'admin');
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
     if (isAdmin) {
       return {
         success: true,
@@ -272,7 +274,7 @@ export async function requireOrganizationAccess(
 
     // Check if user belongs to organization
     const belongsToOrg = user.userRoles.some(
-      (role) => role.organizationId === organizationId && role.isActive
+      (role) => role.organizationId === organizationId && role.isActive,
     );
 
     if (!belongsToOrg) {
@@ -280,7 +282,7 @@ export async function requireOrganizationAccess(
         success: false,
         hasRole: false,
         user,
-        error: 'No tienes acceso a esta organización',
+        error: "No tienes acceso a esta organización",
       };
     }
 
@@ -290,10 +292,10 @@ export async function requireOrganizationAccess(
       hasRole: true,
     };
   } catch (error) {
-    console.error('Error validating organization access:', error);
+    console.error("Error validating organization access:", error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: "Error interno del servidor",
     };
   }
 }
@@ -313,7 +315,7 @@ export async function getCurrentUserWithRoles(): Promise<AuthenticatedUser | nul
  */
 export async function hasRole(
   requiredRole: RoleType,
-  organizationId?: string
+  organizationId?: string,
 ): Promise<boolean> {
   const result = await requireRole(requiredRole, organizationId);
   return result.success && result.hasRole === true;
@@ -324,7 +326,7 @@ export async function hasRole(
  * Use this for admin-only features
  */
 export async function isAdmin(): Promise<boolean> {
-  return await hasRole('admin');
+  return await hasRole("admin");
 }
 
 /**
@@ -352,7 +354,7 @@ export async function getUserOrganizations(): Promise<string[]> {
  * Use this in project-related Server Actions
  */
 export async function validateProjectAccess(
-  projectId: string
+  projectId: string,
 ): Promise<RoleValidationResult> {
   try {
     const authResult = await validateSession();
@@ -373,17 +375,17 @@ export async function validateProjectAccess(
     if (!project) {
       return {
         success: false,
-        error: 'Proyecto no encontrado',
+        error: "Proyecto no encontrado",
       };
     }
 
     // Validate organization access
     return await requireOrganizationAccess(project.organizationId);
   } catch (error) {
-    console.error('Error validating project access:', error);
+    console.error("Error validating project access:", error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: "Error interno del servidor",
     };
   }
 }
@@ -393,7 +395,7 @@ export async function validateProjectAccess(
  * Use this in operation-related Server Actions
  */
 export async function validateOperationAccess(
-  operationId: string
+  operationId: string,
 ): Promise<RoleValidationResult> {
   try {
     const authResult = await validateSession();
@@ -423,7 +425,7 @@ export async function validateOperationAccess(
     if (!operation) {
       return {
         success: false,
-        error: 'Operación no encontrada',
+        error: "Operación no encontrada",
       };
     }
 
@@ -439,10 +441,10 @@ export async function validateOperationAccess(
     // Check if user has organization access
     return await requireOrganizationAccess(operation.project.organizationId);
   } catch (error) {
-    console.error('Error validating operation access:', error);
+    console.error("Error validating operation access:", error);
     return {
       success: false,
-      error: 'Error interno del servidor',
+      error: "Error interno del servidor",
     };
   }
 }

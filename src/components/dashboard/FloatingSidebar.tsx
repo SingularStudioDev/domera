@@ -1,19 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { DoorOpenIcon, LucideProps } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { ForwardRefExoticComponent, RefAttributes } from 'react';
-import { cn } from '@/utils/utils';
+import {
+  ForwardRefExoticComponent,
+  RefAttributes,
+  useEffect,
+  useState,
+} from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import { cn } from "@/utils/utils";
+import { motion } from "framer-motion";
+import { DoorOpenIcon, LucideProps } from "lucide-react";
 
 interface FloatingSidebarProps {
   menuItems: {
     title: string;
     href: string;
     icon: ForwardRefExoticComponent<
-      Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
+      Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
     >;
   }[];
 }
@@ -29,7 +34,7 @@ export function FloatingSidebar({ menuItems }: FloatingSidebarProps) {
     };
 
     const calculateFooterHeight = () => {
-      const footerElement = document.querySelector('footer');
+      const footerElement = document.querySelector("footer");
       if (footerElement) {
         const footerRect = footerElement.getBoundingClientRect();
         setFooterHeight(footerRect.height);
@@ -38,12 +43,12 @@ export function FloatingSidebar({ menuItems }: FloatingSidebarProps) {
 
     // Calculate footer height on mount and window resize
     calculateFooterHeight();
-    window.addEventListener('resize', calculateFooterHeight);
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("resize", calculateFooterHeight);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', calculateFooterHeight);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", calculateFooterHeight);
     };
   }, []);
 
@@ -53,7 +58,7 @@ export function FloatingSidebar({ menuItems }: FloatingSidebarProps) {
     const baseTranslateY = Math.min(0, Math.max(-88, scrollY * -1));
 
     // Get footer position
-    const footerElement = document.querySelector('footer');
+    const footerElement = document.querySelector("footer");
     if (!footerElement) return baseTranslateY;
 
     const footerRect = footerElement.getBoundingClientRect();
@@ -84,10 +89,10 @@ export function FloatingSidebar({ menuItems }: FloatingSidebarProps) {
   const translateY = calculateTranslateY();
 
   const isMenuItemActive = (itemHref: string) => {
-    const pathSegments = pathname.split('/').filter(Boolean);
+    const pathSegments = pathname.split("/").filter(Boolean);
 
     if (pathSegments.length === 3) {
-      const pathWithoutId = `/${pathSegments.slice(0, 2).join('/')}`;
+      const pathWithoutId = `/${pathSegments.slice(0, 2).join("/")}`;
       return pathWithoutId === itemHref;
     }
 
@@ -97,16 +102,16 @@ export function FloatingSidebar({ menuItems }: FloatingSidebarProps) {
   return (
     <motion.aside
       className={cn(
-        'fixed z-[60] mt-28 w-64',
-        'rounded-2xl border border-[#DCDCDC] bg-white',
-        'flex flex-col'
+        "fixed z-[60] mt-28 w-64",
+        "rounded-2xl border border-[#DCDCDC] bg-white",
+        "flex flex-col",
       )}
       style={{
-        height: 'calc(100vh - 136px)',
+        height: "calc(100vh - 136px)",
         translateY: `${translateY}px`,
       }}
       transition={{
-        type: 'spring',
+        type: "spring",
         stiffness: 400,
         damping: 40,
       }}
@@ -122,10 +127,10 @@ export function FloatingSidebar({ menuItems }: FloatingSidebarProps) {
                 <Link
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-4 py-2 text-base transition-all duration-300',
+                    "flex items-center gap-3 rounded-lg px-4 py-2 text-base transition-all duration-300",
                     isActive
-                      ? 'bg-primaryColor hover:bg-primaryColor-hover font-semibold text-white'
-                      : 'bg-transparent text-gray-700 hover:bg-blue-50 hover:text-[#0004FF]'
+                      ? "bg-primaryColor hover:bg-primaryColor-hover font-semibold text-white"
+                      : "bg-transparent text-gray-700 hover:bg-blue-50 hover:text-[#0004FF]",
                   )}
                 >
                   <item.icon className="h-4 w-4" />

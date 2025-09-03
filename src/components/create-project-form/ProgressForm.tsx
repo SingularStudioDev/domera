@@ -1,8 +1,10 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { OptimizedImageUpload } from './OptimizedImageUpload';
+import React, { useState } from "react";
+
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { OptimizedImageUpload } from "./OptimizedImageUpload";
 
 interface ProgressFormProps {
   progressImages: string[];
@@ -12,13 +14,13 @@ interface ProgressFormProps {
   projectId?: string;
 }
 
-export const ProgressFormComponent: React.FC<ProgressFormProps> = ({
+export function ProgressFormComponent({
   progressImages,
   onProgressImagesChange,
   disabled,
   error,
   projectId,
-}) => {
+}: ProgressFormProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -35,13 +37,13 @@ export const ProgressFormComponent: React.FC<ProgressFormProps> = ({
 
   const goToPrevious = () => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? progressImages.length - 1 : prevIndex - 1
+      prevIndex === 0 ? progressImages.length - 1 : prevIndex - 1,
     );
   };
 
   const goToNext = () => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === progressImages.length - 1 ? 0 : prevIndex + 1
+      prevIndex === progressImages.length - 1 ? 0 : prevIndex + 1,
     );
   };
 
@@ -207,15 +209,15 @@ export const ProgressFormComponent: React.FC<ProgressFormProps> = ({
                         onClick={() => setCurrentIndex(index * 3)}
                         className={`h-2 w-2 rounded-full transition-colors ${
                           Math.floor(currentIndex / 3) === index
-                            ? 'bg-primaryColor'
-                            : 'bg-gray-300'
+                            ? "bg-primaryColor"
+                            : "bg-gray-300"
                         }`}
                         disabled={disabled}
                       />
                     ))}
                   </div>
                   <span className="text-sm text-gray-600">
-                    {Math.min(currentIndex + 3, progressImages.length)} de{' '}
+                    {Math.min(currentIndex + 3, progressImages.length)} de{" "}
                     {progressImages.length} imágenes
                   </span>
                 </div>
@@ -247,4 +249,4 @@ export const ProgressFormComponent: React.FC<ProgressFormProps> = ({
       </div>
     </>
   );
-};
+}

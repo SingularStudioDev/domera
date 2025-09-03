@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import { cn } from '@/utils/utils';
+import dynamic from "next/dynamic";
+
+import { cn } from "@/utils/utils";
 
 interface StaticMapProps {
   latitude: number;
@@ -13,7 +14,7 @@ interface StaticMapProps {
 }
 
 // Dynamically import the static map component to avoid SSR issues
-const LazyStaticMap = dynamic(() => import('./LeafletStaticMap'), {
+const LazyStaticMap = dynamic(() => import("./LeafletStaticMap"), {
   ssr: false,
   loading: () => (
     <div className="flex h-full items-center justify-center bg-gray-50">
@@ -31,13 +32,13 @@ export default function StaticMap({
   zoom = 15,
   height = "200px",
   className,
-  markerPopup = 'Ubicación del proyecto',
+  markerPopup = "Ubicación del proyecto",
 }: StaticMapProps) {
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border border-gray-300',
-        className
+        "overflow-hidden rounded-2xl border border-gray-300",
+        className,
       )}
       style={{ height }}
     >

@@ -1,11 +1,9 @@
-import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { Dispatch, SetStateAction, useState } from 'react';
-import {
-  FileText,
-  BedDoubleIcon,
-  CarFrontIcon,
-} from 'lucide-react';
-import { cancelOperation } from '@/lib/actions/operations';
+import { Dispatch, SetStateAction, useState } from "react";
+
+import { BedDoubleIcon, CarFrontIcon, FileText } from "lucide-react";
+
+import { cancelOperation } from "@/lib/actions/operations";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 // Define operation interface based on the useActiveOperation hook structure
 interface Operation {
@@ -20,7 +18,7 @@ interface Operation {
       id: string;
       unitNumber: string;
       price: number;
-      project: { name: string; slug: string; };
+      project: { name: string; slug: string };
     };
     priceAtReservation: number;
   }>;
@@ -60,17 +58,17 @@ export function ShoppingSheet({
     try {
       const result = await cancelOperation(
         operation.id,
-        'Cancelada por el usuario desde dashboard de compras'
+        "Cancelada por el usuario desde dashboard de compras",
       );
 
       if (result.success) {
         await onOperationUpdate();
         setIsSheetOpen(false);
       } else {
-        setCancelError(result.error || 'Error al cancelar operación');
+        setCancelError(result.error || "Error al cancelar operación");
       }
     } catch {
-      setCancelError('Error interno del servidor');
+      setCancelError("Error interno del servidor");
     } finally {
       setIsCancelling(false);
     }
@@ -79,25 +77,35 @@ export function ShoppingSheet({
   // Helper functions
   const calculateProgress = (): number => {
     if (!operation?.steps) return 0;
-    const completedSteps = operation.steps.filter(step => step.status === 'completed').length;
+    const completedSteps = operation.steps.filter(
+      (step) => step.status === "completed",
+    ).length;
     return Math.round((completedSteps / operation.steps.length) * 100);
   };
 
   const getStepStatusLabel = (status: string): string => {
     switch (status) {
-      case 'completed': return 'Completado';
-      case 'in_progress': return 'En progreso';
-      case 'pending': return 'Pendiente';
-      default: return status;
+      case "completed":
+        return "Completado";
+      case "in_progress":
+        return "En progreso";
+      case "pending":
+        return "Pendiente";
+      default:
+        return status;
     }
   };
 
   const getStepStatusColor = (status: string): string => {
     switch (status) {
-      case 'completed': return 'text-green-700 bg-green-50 border-green-200';
-      case 'in_progress': return 'text-orange-700 bg-orange-50 border-orange-200';
-      case 'pending': return 'text-red-700 bg-red-50 border-red-200';
-      default: return 'text-gray-700 bg-gray-50 border-gray-200';
+      case "completed":
+        return "text-green-700 bg-green-50 border-green-200";
+      case "in_progress":
+        return "text-orange-700 bg-orange-50 border-orange-200";
+      case "pending":
+        return "text-red-700 bg-red-50 border-red-200";
+      default:
+        return "text-gray-700 bg-gray-50 border-gray-200";
     }
   };
 
@@ -111,8 +119,10 @@ export function ShoppingSheet({
         >
           <div className="h-full bg-white">
             <div className="space-y-8 p-8">
-              <div className="text-center py-12">
-                <p className="text-gray-600">No hay información de operación disponible</p>
+              <div className="py-12 text-center">
+                <p className="text-gray-600">
+                  No hay información de operación disponible
+                </p>
               </div>
             </div>
           </div>
@@ -123,7 +133,7 @@ export function ShoppingSheet({
 
   // Get primary operation unit (first one) for display
   const primaryUnit = operation.operationUnits[0];
-  const projectName = primaryUnit?.unit.project.name || 'Proyecto';
+  const projectName = primaryUnit?.unit.project.name || "Proyecto";
   const unitInfo = `Unidad ${primaryUnit?.unit.unitNumber}`;
   const totalAmount = `${operation.currency} $${operation.totalAmount.toLocaleString()}`;
   const progressPercentage = calculateProgress();
@@ -137,7 +147,7 @@ export function ShoppingSheet({
           <div className="space-y-8 p-8">
             {/* Error Display */}
             {cancelError && (
-              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
                 <p className="text-red-700">❌ {cancelError}</p>
               </div>
             )}
@@ -161,7 +171,7 @@ export function ShoppingSheet({
                       {progressPercentage}% completado
                     </span>
                     <a
-                      href={`/projects/${primaryUnit?.unit.project.slug || '#'}`}
+                      href={`/projects/${primaryUnit?.unit.project.slug || "#"}`}
                       className="text-primaryColor text-sm hover:underline"
                     >
                       Ver proyecto
@@ -182,9 +192,12 @@ export function ShoppingSheet({
               <div className="flex w-full items-center justify-between">
                 <div className="mb-3 flex flex-col">
                   <h3 className="text-lg font-bold text-gray-900">
-                    {operation.operationUnits.map((ou) => 
-                      `${ou.unit.project.name} - Unidad ${ou.unit.unitNumber}`
-                    ).join(', ')}
+                    {operation.operationUnits
+                      .map(
+                        (ou) =>
+                          `${ou.unit.project.name} - Unidad ${ou.unit.unitNumber}`,
+                      )
+                      .join(", ")}
                   </h3>
                   <div className="flex items-center gap-7 text-sm">
                     <p>Total: {totalAmount}</p>
@@ -201,20 +214,24 @@ export function ShoppingSheet({
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
                     <FileText className="h-5 w-5 text-blue-600" />
-                    <a href="/operations/documents" className="text-sm text-blue-600 hover:underline">
+                    <a
+                      href="/operations/documents"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
                       Documentos
                     </a>
                   </div>
-                  
-                  {operation.status !== 'completed' && operation.status !== 'cancelled' && (
-                    <button
-                      onClick={handleCancelOperation}
-                      disabled={isCancelling}
-                      className="text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
-                    >
-                      {isCancelling ? 'Cancelando...' : 'Cancelar Operación'}
-                    </button>
-                  )}
+
+                  {operation.status !== "completed" &&
+                    operation.status !== "cancelled" && (
+                      <button
+                        onClick={handleCancelOperation}
+                        disabled={isCancelling}
+                        className="text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
+                      >
+                        {isCancelling ? "Cancelando..." : "Cancelar Operación"}
+                      </button>
+                    )}
                 </div>
               </div>
 
@@ -240,23 +257,27 @@ export function ShoppingSheet({
                     {operation.steps
                       .sort((a, b) => a.stepOrder - b.stepOrder)
                       .map((step) => (
-                      <tr key={step.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-2 text-sm font-medium whitespace-nowrap text-gray-900">
-                          {step.stepName}
-                        </td>
-                        <td className="px-6 py-2 text-sm whitespace-nowrap text-gray-900">
-                          {step.stepOrder}
-                        </td>
-                        <td className="px-6 py-2 text-sm whitespace-nowrap text-gray-900">
-                          {step.startedAt ? new Date(step.startedAt).toLocaleDateString() : '-'}
-                        </td>
-                        <td className="px-6 py-2 whitespace-nowrap">
-                          <span className={`inline-flex rounded-full border px-2 py-1 text-xs font-medium ${getStepStatusColor(step.status)}`}>
-                            {getStepStatusLabel(step.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                        <tr key={step.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-2 text-sm font-medium whitespace-nowrap text-gray-900">
+                            {step.stepName}
+                          </td>
+                          <td className="px-6 py-2 text-sm whitespace-nowrap text-gray-900">
+                            {step.stepOrder}
+                          </td>
+                          <td className="px-6 py-2 text-sm whitespace-nowrap text-gray-900">
+                            {step.startedAt
+                              ? new Date(step.startedAt).toLocaleDateString()
+                              : "-"}
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap">
+                            <span
+                              className={`inline-flex rounded-full border px-2 py-1 text-xs font-medium ${getStepStatusColor(step.status)}`}
+                            >
+                              {getStepStatusLabel(step.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -264,7 +285,9 @@ export function ShoppingSheet({
 
             {/* Sección de documentos y acciones */}
             <div>
-              <h3 className="mb-4 text-lg font-bold text-gray-900">Documentos y Acciones</h3>
+              <h3 className="mb-4 text-lg font-bold text-gray-900">
+                Documentos y Acciones
+              </h3>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <FileText className="text-primaryColor h-5 w-5" />
@@ -275,34 +298,38 @@ export function ShoppingSheet({
                     Gestionar documentos de la operación
                   </a>
                 </div>
-                
+
                 {/* TODO: Add blueprint/document links when document management is implemented */}
                 <div className="text-sm text-gray-500">
-                  Los planos y documentos específicos del proyecto estarán disponibles 
-                  una vez que se implemente el sistema de gestión de documentos.
+                  Los planos y documentos específicos del proyecto estarán
+                  disponibles una vez que se implemente el sistema de gestión de
+                  documentos.
                 </div>
-                
+
                 {/* Operation status specific actions */}
-                {operation.status === 'documents_pending' && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-blue-700 text-sm">
-                      📄 Necesitas subir los documentos requeridos para continuar con la operación.
+                {operation.status === "documents_pending" && (
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                    <p className="text-sm text-blue-700">
+                      📄 Necesitas subir los documentos requeridos para
+                      continuar con la operación.
                     </p>
                   </div>
                 )}
-                
-                {operation.status === 'waiting_signature' && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <p className="text-orange-700 text-sm">
-                      ✍️ Tu operación está esperando firma. Revisa tu email para el enlace de firma digital.
+
+                {operation.status === "waiting_signature" && (
+                  <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+                    <p className="text-sm text-orange-700">
+                      ✍️ Tu operación está esperando firma. Revisa tu email para
+                      el enlace de firma digital.
                     </p>
                   </div>
                 )}
-                
-                {operation.status === 'completed' && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-green-700 text-sm">
-                      ✅ Operación completada exitosamente. Todos los documentos están finalizados.
+
+                {operation.status === "completed" && (
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                    <p className="text-sm text-green-700">
+                      ✅ Operación completada exitosamente. Todos los documentos
+                      están finalizados.
                     </p>
                   </div>
                 )}

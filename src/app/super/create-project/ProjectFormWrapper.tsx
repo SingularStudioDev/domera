@@ -1,18 +1,21 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { ProjectFormMain } from '@/components/create-project-form/ProjectFormMain';
-import { ProjectFormData } from '@/types/project-form';
+import { useRouter } from "next/navigation";
+
+import { ProjectFormData } from "@/types/project-form";
+import { ProjectFormMain } from "@/components/create-project-form/ProjectFormMain";
 
 interface ProjectFormWrapperProps {
   onSubmit: (data: ProjectFormData) => Promise<void>;
 }
 
-export default function ProjectFormWrapper({ onSubmit }: ProjectFormWrapperProps) {
+export default function ProjectFormWrapper({
+  onSubmit,
+}: ProjectFormWrapperProps) {
   const router = useRouter();
 
   const handleGoBack = () => {
-    router.push('/super/dashboard/projects');
+    router.push("/super/dashboard/projects");
   };
 
   return (

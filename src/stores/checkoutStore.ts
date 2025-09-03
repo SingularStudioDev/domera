@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface CheckoutItem {
   id: string;
@@ -20,12 +20,16 @@ export interface CheckoutProject {
   name: string;
 }
 
-export type AddItemResult = 'success' | 'already_exists' | 'different_project' | 'max_units_reached';
+export type AddItemResult =
+  | "success"
+  | "already_exists"
+  | "different_project"
+  | "max_units_reached";
 
 interface CheckoutStore {
   items: CheckoutItem[];
   currentProject: CheckoutProject | null;
-  
+
   // Actions
   addItem: (item: CheckoutItem) => AddItemResult;
   removeItem: (itemId: string) => void;
@@ -43,21 +47,21 @@ export const useCheckoutStore = create<CheckoutStore>()(
 
       addItem: (item: CheckoutItem): AddItemResult => {
         const state = get();
-        
+
         // Verificar si ya existe el item
-        const existingItem = state.items.find(i => i.id === item.id);
+        const existingItem = state.items.find((i) => i.id === item.id);
         if (existingItem) {
-          return 'already_exists';
+          return "already_exists";
         }
-        
+
         // Verificar si se puede agregar el proyecto
         if (!state.canAddProject(item.projectId)) {
-          return 'different_project';
+          return "different_project";
         }
 
         // Verificar límite máximo de 2 unidades
         if (state.items.length >= 2) {
-          return 'max_units_reached';
+          return "max_units_reached";
         }
 
         set((state) => ({
@@ -67,13 +71,13 @@ export const useCheckoutStore = create<CheckoutStore>()(
             name: item.projectName,
           },
         }));
-        
-        return 'success';
+
+        return "success";
       },
 
       removeItem: (itemId: string) => {
         set((state) => {
-          const newItems = state.items.filter(item => item.id !== itemId);
+          const newItems = state.items.filter((item) => item.id !== itemId);
           return {
             items: newItems,
             currentProject: newItems.length === 0 ? null : state.currentProject,
@@ -90,7 +94,9 @@ export const useCheckoutStore = create<CheckoutStore>()(
 
       canAddProject: (projectId: string) => {
         const state = get();
-        return state.currentProject === null || state.currentProject.id === projectId;
+        return (
+          state.currentProject === null || state.currentProject.id === projectId
+        );
       },
 
       getTotalPrice: () => {
@@ -102,8 +108,8 @@ export const useCheckoutStore = create<CheckoutStore>()(
       },
     }),
     {
-      name: 'checkout-storage',
+      name: "checkout-storage",
       version: 1,
-    }
-  )
+    },
+  ),
 );
