@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { getUserActiveOperation } from '@/lib/actions/operations';
+import { getUserActiveOperationAction } from '@/lib/actions/operations';
 
 export interface ActiveOperation {
   id: string;
@@ -59,8 +59,12 @@ export function useActiveOperation() {
         setLoading(true);
         setError(null);
 
-        const operation = await getUserActiveOperation(session.user.id);
-        setActiveOperation(operation);
+        const result = await getUserActiveOperationAction();
+        if (result.success) {
+          setActiveOperation(result.data as ActiveOperation | null);
+        } else {
+          throw new Error(result.error || 'Error obteniendo operación activa');
+        }
       } catch (err) {
         console.error('Error fetching active operation:', err);
         setError('Error al cargar la operación activa');
@@ -77,8 +81,12 @@ export function useActiveOperation() {
 
     try {
       setError(null);
-      const operation = await getUserActiveOperation(session.user.id);
-      setActiveOperation(operation);
+      const result = await getUserActiveOperationAction();
+      if (result.success) {
+        setActiveOperation(result.data as ActiveOperation | null);
+      } else {
+        throw new Error(result.error || 'Error obteniendo operación activa');
+      }
     } catch (err) {
       console.error('Error refreshing active operation:', err);
       setError('Error al actualizar la operación activa');

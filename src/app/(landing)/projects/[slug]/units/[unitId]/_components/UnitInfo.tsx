@@ -127,7 +127,7 @@ const UnitInfo = ({
         router.push('/checkout');
         break;
       case 'already_exists':
-        alert('Esta unidad ya está en tu carrito de compras.');
+        router.push('/checkout');
         break;
       case 'different_project':
         alert('Solo puedes agregar unidades del mismo proyecto al checkout.');

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -8,6 +9,7 @@ import { ChevronDown, ChevronDownIcon, DoorOpenIcon } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +23,8 @@ export default function HeaderDesktop() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const isAdmin = useIsAdmin();
   const pathname = usePathname();
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [loginDropdownOpen, setLoginDropdownOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" });
@@ -77,22 +81,35 @@ export default function HeaderDesktop() {
               </div>
             ) : isAuthenticated && user ? (
               // Dropdown para usuario autenticado
-              <DropdownMenu>
+              <DropdownMenu
+                open={userDropdownOpen}
+                onOpenChange={setUserDropdownOpen}
+              >
                 <DropdownMenuTrigger
                   asChild
                   className="focus:ring-0 focus:outline-none"
                 >
-                  <button className="hover:text-blue-60 flex cursor-pointer items-center space-x-2 rounded-md bg-transparent text-base font-normal transition-colors duration-200 hover:bg-gray-100">
-                    <span className="w-fit max-w-44 truncate">
-                      {user.firstName} {user.lastName}
-                    </span>
-                    <ChevronDownIcon className="h-4 w-4" />
+                  <button className="hover:text-primaryColor-hover flex cursor-pointer items-center space-x-2 rounded-md bg-transparent text-base font-normal transition-colors duration-200 hover:bg-gray-100">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        src={user.image}
+                        alt={`${user.firstName} ${user.lastName}`}
+                      />
+                      <AvatarFallback className="bg-primaryColor text-sm text-white">
+                        {user.firstName?.charAt(0)}
+                        {user.lastName?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <ChevronDownIcon
+                      className={`h-5 w-5 transition-transform duration-300 ${userDropdownOpen ? "rotate-180" : "rotate-0"}`}
+                    />
                   </button>
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent
                   align="center"
-                  className="mt-7 ml-4.5 w-fit rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5] p-2"
+                  className="mt-6 mr-5 w-fit rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5] p-2"
                 >
                   {(isAdmin ? adminMenuItems : HeaderMenuItems).map((item) => {
                     const isActive = item.href === pathname;
@@ -105,7 +122,7 @@ export default function HeaderDesktop() {
                       >
                         <Link
                           href={item.href}
-                          className={`pr-5 ${isActive ? "bg-primaryColor hover:bg-primaryColor-hover text-[#dcdcdc]" : "hover:text-primaryColor text-black"} flex items-center space-x-2 transition-colors duration-200`}
+                          className={`pr-8 ${isActive ? "bg-primaryColor hover:bg-primaryColor-hover text-[#dcdcdc]" : "hover:text-primaryColor text-black"} flex items-center space-x-2 transition-colors duration-200`}
                         >
                           <item.icon className="h-4 w-4" />
                           <span className="text-base font-normal">
@@ -128,11 +145,16 @@ export default function HeaderDesktop() {
               </DropdownMenu>
             ) : (
               // Dropdown para usuario no autenticado
-              <DropdownMenu>
+              <DropdownMenu
+                open={loginDropdownOpen}
+                onOpenChange={setLoginDropdownOpen}
+              >
                 <DropdownMenuTrigger asChild className="w-full">
                   <button className="hover:text-primaryColor flex w-full cursor-pointer items-center justify-between gap-3 text-base font-normal text-black transition-colors duration-200 outline-none hover:bg-gray-100">
                     <span>Login</span>
-                    <ChevronDown className="h-4.5 w-4.5" strokeWidth={1.8} />
+                    <ChevronDown
+                      className={`h-4.5 w-4.5 transition-transform duration-300 ${loginDropdownOpen ? "rotate-180" : "rotate-0"}`}
+                    />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent

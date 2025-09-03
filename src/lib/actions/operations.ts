@@ -13,7 +13,7 @@ import {
   getOperationById,
   getUserActiveOperation,
   updateOperation,
-  cancelOperation
+  cancelOperation as cancelOperationDAL
 } from '@/lib/dal/operations';
 import { 
   validateUnitsSameOrganization,
@@ -256,7 +256,7 @@ export async function cancelOperationAction(
     }
 
     // Cancel operation
-    const result = await cancelOperation(operationId, user.id, reason, ipAddress, userAgent);
+    const result = await cancelOperationDAL(operationId, user.id, reason, ipAddress, userAgent);
     if (!result.data) {
       return { success: false, error: result.error };
     }
@@ -367,3 +367,52 @@ export async function validateUnitsSameOrganizationAction(
     };
   }
 }
+
+/**
+ * Create new operation (simplified) ONLY FOR TEST - DONT USE'IT IN PROD
+ * Only requires unitIds, calculates organizationId and totalAmount internally
+ */
+export async function createOperationSimpleAction(
+  input: { unitIds: string[]; notes?: string },
+  ipAddress?: string,
+  userAgent?: string
+): Promise<OperationActionResult> {
+  try {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+
+    // Use service layer to create operation with full validation
+    const result = await createOperationWithValidation(
+      user.id, 
+      input, 
+      ipAddress, 
+      userAgent
+    );
+    
+    if (!result.data) {
+      return { success: false, error: result.error || 'Error creando operación' };
+    }
+
+    // Revalidate relevant paths
+    revalidatePath('/dashboard');
+    revalidatePath('/userDashboard');
+    revalidatePath('/projects');
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('[SERVER_ACTION] Error creating operation:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error creando operación' 
+    };
+  }
+}
+
+// Export wrappers for compatibility with existing imports
+export const createOperation = createOperationAction;
+export const cancelOperation = cancelOperationAction;

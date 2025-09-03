@@ -123,7 +123,95 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
+  // TODO: PABLO -> Revisar la seguridad de esto, mas que nada el password esta raro
   callbacks: {
+    async signIn({ user, account, profile }) {
+      console.log('🔐 SignIn callback triggered:', { 
+        provider: account?.provider, 
+        userEmail: user?.email,
+        hasProfile: !!profile 
+      });
+
+      // Handle Google OAuth sign in
+      if (account?.provider === 'google' && profile) {
+        try {
+          // Check if user already exists
+          const existingUser = await prisma.user.findFirst({
+            where: { email: user.email! },
+          });
+
+          if (!existingUser) {
+            // Create new user from Google profile
+            const googleProfile = profile as Record<string, any>;
+            const newUser = await prisma.user.create({
+              data: {
+                email: user.email!,
+                firstName: googleProfile.given_name || user.name?.split(' ')[0] || 'Usuario',
+                lastName: googleProfile.family_name || user.name?.split(' ').slice(1).join(' ') || '',
+                avatarUrl: user.image || null,
+                password: 'oauth_user', // Placeholder for OAuth users
+                isActive: true,
+                // Create default user role
+                userRoles: {
+                  create: {
+                    role: 'user',
+                    isActive: true,
+                  },
+                },
+              },
+              include: {
+                userRoles: {
+                  where: { isActive: true },
+                  include: {
+                    organization: true,
+                  },
+                },
+              },
+            });
+
+            // Update user object with database info
+            user.id = newUser.id;
+            (user as Record<string, any>).firstName = newUser.firstName;
+            (user as Record<string, any>).lastName = newUser.lastName;
+            (user as Record<string, any>).roles = newUser.userRoles;
+            (user as Record<string, any>).isActive = newUser.isActive;
+          } else {
+            // Update existing user with Google profile info if missing
+            const googleProfile = profile as Record<string, any>;
+            const updatedUser = await prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                ...(existingUser.firstName ? {} : { firstName: googleProfile.given_name || user.name?.split(' ')[0] || 'Usuario' }),
+                ...(existingUser.lastName ? {} : { lastName: googleProfile.family_name || user.name?.split(' ').slice(1).join(' ') || '' }),
+                ...(existingUser.avatarUrl ? {} : { avatarUrl: user.image || null }),
+                lastLogin: new Date(),
+              },
+              include: {
+                userRoles: {
+                  where: { isActive: true },
+                  include: {
+                    organization: true,
+                  },
+                },
+              },
+            });
+
+            // Update user object with database info
+            user.id = updatedUser.id;
+            (user as Record<string, any>).firstName = updatedUser.firstName;
+            (user as Record<string, any>).lastName = updatedUser.lastName;
+            (user as Record<string, any>).roles = updatedUser.userRoles;
+            (user as Record<string, any>).isActive = updatedUser.isActive;
+          }
+        } catch (error) {
+          console.error('Error handling Google sign in:', error);
+          return false;
+        }
+      }
+
+      return true;
+    },
+
     async jwt({ token, user }) {
       // Initial sign in
       if (user) {

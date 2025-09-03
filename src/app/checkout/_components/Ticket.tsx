@@ -1,20 +1,34 @@
-"use client"
+"use client";
 
-import { ArrowRightIcon, DownloadIcon } from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
+import { useState } from "react";
+import Link from "next/link";
+
+import { useCheckoutStore } from "@/stores/checkoutStore";
+import { ArrowRightIcon, DownloadIcon } from "lucide-react";
+
+import { createOperationSimpleAction } from "@/lib/actions/operations";
 
 interface TicketProps {
   handleFileUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   selectedFile?: File | null;
 }
 
-export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: TicketProps = {}) {
+export function Ticket({
+  handleFileUpload,
+  selectedFile: propSelectedFile,
+}: TicketProps = {}) {
   const [localSelectedFile, setLocalSelectedFile] = useState<File | null>(null);
-  
+  const [isCreatingOperation, setIsCreatingOperation] = useState(false);
+  const [operationError, setOperationError] = useState<string | null>(null);
+
   const selectedFile = propSelectedFile ?? localSelectedFile;
-  
-  const handleLocalFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+
+  // Checkout store
+  const { items, getTotalPrice, clearCheckout } = useCheckoutStore();
+
+  const handleLocalFileUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     if (handleFileUpload) {
       handleFileUpload(event);
     } else {
@@ -22,8 +36,46 @@ export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: Tic
       setLocalSelectedFile(file);
     }
   };
+
+  // Create operation from checkout store data
+  const handleCreateOperation = async () => {
+    if (items.length === 0) {
+      setOperationError("No hay unidades en el carrito");
+      return;
+    }
+
+    setIsCreatingOperation(true);
+    setOperationError(null);
+
+    try {
+      // Transform checkout items to operation input
+      const unitIds = items.map((item) => item.unitId);
+
+      const operationInput = {
+        unitIds,
+        notes: `Operación creada desde checkout con ${items.length} unidades`,
+      };
+
+      const result = await createOperationSimpleAction(operationInput);
+
+      if (result.success) {
+        // Clear checkout store after successful operation creation
+        clearCheckout();
+        setOperationError(null);
+        // TODO: Redirect to success page or dashboard
+        window.location.href = "/userDashboard/shopping";
+      } else {
+        setOperationError(result.error || "Error creando operación");
+      }
+    } catch (error) {
+      setOperationError("Error interno creando operación");
+      console.error("Error creating operation:", error);
+    } finally {
+      setIsCreatingOperation(false);
+    }
+  };
   return (
-    <div className="mb-20 w-full flex gap-20">
+    <div className="mb-20 flex w-full gap-20">
       <div className="max-w-[900px] flex-1">
         <h2 className="mb-8 text-3xl font-bold text-black">
           Descargar boleto de reserva
@@ -36,7 +88,7 @@ export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: Tic
 
         <Link
           href="#"
-          className="mb-8 inline-flex items-center gap-2 text-primaryColor hover:text-blue-800"
+          className="text-primaryColor mb-8 inline-flex items-center gap-2 hover:text-blue-800"
         >
           <DownloadIcon className="h-4 w-4" />
           Descargar boleto de reserva
@@ -51,6 +103,13 @@ export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: Tic
           Una vez subido al sistema tendrás 2 días hábiles para hacer el
           depósito de la seña para mantener la reserva.
         </p>
+
+        {/* Operation Error Display */}
+        {operationError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-red-700">❌ {operationError}</p>
+          </div>
+        )}
 
         {/* Bank Information */}
         <div className="mb-8 grid grid-cols-2 gap-6">
@@ -97,7 +156,7 @@ export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: Tic
             />
             <label
               htmlFor="file-upload"
-              className="cursor-pointer rounded-full border border-primaryColor bg-white px-6 py-2 text-primaryColor transition-colors hover:bg-primaryColor hover:text-white"
+              className="border-primaryColor text-primaryColor hover:bg-primaryColor cursor-pointer rounded-full border bg-white px-6 py-2 transition-colors hover:text-white"
             >
               Cargar archivo
             </label>
@@ -106,14 +165,17 @@ export function Ticket({ handleFileUpload, selectedFile: propSelectedFile }: Tic
 
         {/* Submit Button */}
         <button
+          onClick={handleCreateOperation}
           className={`flex w-fit cursor-pointer items-center justify-center rounded-full px-8 py-3 text-white transition-colors duration-300 ${
-            selectedFile
-              ? 'bg-primaryColor hover:bg-blue-700'
-              : 'cursor-not-allowed bg-gray-300'
+            selectedFile && !isCreatingOperation
+              ? "bg-primaryColor hover:bg-blue-700"
+              : "cursor-not-allowed bg-gray-300"
           }`}
-          disabled={!selectedFile}
+          disabled={!selectedFile || isCreatingOperation}
         >
-          Proceder a la reserva
+          {isCreatingOperation
+            ? "Creando operación..."
+            : "Proceder a la reserva"}
           <ArrowRightIcon className="ml-4 h-4 w-4" />
         </button>
       </div>
