@@ -27,12 +27,12 @@ export default function ProjectDetails({ amenities }: ProjectDetailsProps) {
     if (Array.isArray(amenitiesData)) {
       // Manejar el formato {icon, text} del DAL
       const processedAmenities = amenitiesData.map((item: any) => {
-        if (typeof item === 'object' && item.text) {
+        if (typeof item === "object" && item.text) {
           return item.text; // Extraer solo el texto
         }
         return item.toString(); // Si es string u otro tipo
       });
-      
+
       return {
         detalles: [],
         amenities: processedAmenities,
@@ -64,12 +64,12 @@ export default function ProjectDetails({ amenities }: ProjectDetailsProps) {
       if (Array.isArray(parsed)) {
         // Manejar el formato {icon, text} del DAL
         const processedAmenities = parsed.map((item: any) => {
-          if (typeof item === 'object' && item.text) {
+          if (typeof item === "object" && item.text) {
             return item.text; // Extraer solo el texto
           }
           return item.toString(); // Si es string u otro tipo
         });
-        
+
         return {
           detalles: [],
           amenities: processedAmenities,

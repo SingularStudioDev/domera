@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
+
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { useImageParser } from "@/hooks/useJsonArrayParser";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
-} from '@/components/ui/carousel';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useImageParser } from '@/hooks/useJsonArrayParser';
+} from "@/components/ui/carousel";
 
 interface ProjectProgressProps {
   progressImages: string[] | string;
@@ -69,7 +71,7 @@ export default function ProjectProgress({
       <div className="md:hidden">
         <Carousel
           opts={{
-            align: 'start',
+            align: "start",
             loop: false,
           }}
           className="w-full max-w-sm"
@@ -147,7 +149,7 @@ export default function ProjectProgress({
                   key={index}
                   onClick={() => setCurrentIndex(index)}
                   className={`h-2 w-2 rounded-full ${
-                    index === currentIndex ? 'bg-black' : 'bg-gray-300'
+                    index === currentIndex ? "bg-black" : "bg-gray-300"
                   }`}
                   aria-label={`Ir a imagen ${index + 1}`}
                 />

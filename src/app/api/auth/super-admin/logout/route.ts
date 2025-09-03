@@ -3,9 +3,10 @@
 // Invalidates super admin session and logs security event
 // =============================================================================
 
-import { NextRequest, NextResponse } from 'next/server';
-import { invalidateSuperAdminSession } from '@/lib/auth/super-admin';
-import { extractRealIP, sanitizeUserAgent } from '@/lib/utils/security';
+import { NextRequest, NextResponse } from "next/server";
+
+import { invalidateSuperAdminSession } from "@/lib/auth/super-admin";
+import { extractRealIP, sanitizeUserAgent } from "@/lib/utils/security";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // Extract security metadata
     const ipAddress = extractRealIP(request.headers);
-    const userAgent = sanitizeUserAgent(request.headers.get('user-agent'));
+    const userAgent = sanitizeUserAgent(request.headers.get("user-agent"));
 
     // If userId provided, invalidate that specific session
     if (userId) {
@@ -24,26 +25,25 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       data: {
-        message: 'Sesión cerrada exitosamente'
-      }
+        message: "Sesión cerrada exitosamente",
+      },
     });
 
     // Clear the session cookie
-    response.cookies.set('super-admin-session', '', {
+    response.cookies.set("super-admin-session", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 0,
-      path: '/super'
+      path: "/super",
     });
 
     return response;
-
   } catch (error) {
-    console.error('[API] Super admin logout error:', error);
+    console.error("[API] Super admin logout error:", error);
     return NextResponse.json(
-      { success: false, error: 'Error interno del servidor' },
-      { status: 500 }
+      { success: false, error: "Error interno del servidor" },
+      { status: 500 },
     );
   }
 }

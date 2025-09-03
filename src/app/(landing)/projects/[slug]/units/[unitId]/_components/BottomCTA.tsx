@@ -24,7 +24,7 @@ interface BottomCTAProps {
   };
 }
 
-const BottomCTA = ({ unit }: BottomCTAProps) => {
+export default function BottomCTA({ unit }: BottomCTAProps) {
   const [isMaxUnitsModalOpen, setIsMaxUnitsModalOpen] = useState(false);
   const { addItem } = useCheckoutStore();
   const router = useRouter();
@@ -69,6 +69,4 @@ const BottomCTA = ({ unit }: BottomCTAProps) => {
       />
     </div>
   );
-};
-
-export default BottomCTA;
+}

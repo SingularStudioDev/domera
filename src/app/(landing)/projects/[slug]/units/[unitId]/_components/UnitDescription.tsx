@@ -3,7 +3,10 @@ interface UnitDescriptionProps {
   features: string[];
 }
 
-const UnitDescription = ({ description, features }: UnitDescriptionProps) => {
+export default function UnitDescription({
+  description,
+  features,
+}: UnitDescriptionProps) {
   return (
     <div className="my-16 min-h-[40dvh] rounded-3xl bg-[#F5F5F5] py-10">
       <div className="container mx-auto">
@@ -21,6 +24,4 @@ const UnitDescription = ({ description, features }: UnitDescriptionProps) => {
       </div>
     </div>
   );
-};
-
-export default UnitDescription;
+}

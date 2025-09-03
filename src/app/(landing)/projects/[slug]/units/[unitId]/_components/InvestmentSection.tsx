@@ -3,7 +3,10 @@ interface InvestmentSectionProps {
   status: string;
 }
 
-const InvestmentSection = ({ unitType, status }: InvestmentSectionProps) => {
+export default function InvestmentSection({
+  unitType,
+  status,
+}: InvestmentSectionProps) {
   return (
     <div className="mb-16">
       <div className="grid grid-cols-1 lg:grid-cols-2">
@@ -35,6 +38,4 @@ const InvestmentSection = ({ unitType, status }: InvestmentSectionProps) => {
       </div>
     </div>
   );
-};
-
-export default InvestmentSection;
+}

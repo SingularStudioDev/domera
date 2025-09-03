@@ -3,10 +3,11 @@
 // Resends 2FA verification token via email
 // =============================================================================
 
-import { NextRequest, NextResponse } from 'next/server';
-import { generateAndSend2FAToken } from '@/lib/auth/super-admin';
-import { extractRealIP, sanitizeUserAgent } from '@/lib/utils/security';
-import { getDbClient } from '@/lib/dal/base';
+import { NextRequest, NextResponse } from "next/server";
+
+import { generateAndSend2FAToken } from "@/lib/auth/super-admin";
+import { getDbClient } from "@/lib/dal/base";
+import { extractRealIP, sanitizeUserAgent } from "@/lib/utils/security";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,14 +16,14 @@ export async function POST(request: NextRequest) {
     // Validate input
     if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'ID de usuario es requerido' },
-        { status: 400 }
+        { success: false, error: "ID de usuario es requerido" },
+        { status: 400 },
       );
     }
 
     // Extract security metadata
     const ipAddress = extractRealIP(request.headers);
-    const userAgent = sanitizeUserAgent(request.headers.get('user-agent'));
+    const userAgent = sanitizeUserAgent(request.headers.get("user-agent"));
 
     // Get user information
     const client = getDbClient();
@@ -30,27 +31,27 @@ export async function POST(request: NextRequest) {
       where: { id: userId },
       include: {
         userRoles: {
-          where: { isActive: true }
-        }
-      }
+          where: { isActive: true },
+        },
+      },
     });
 
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Usuario no encontrado' },
-        { status: 404 }
+        { success: false, error: "Usuario no encontrado" },
+        { status: 404 },
       );
     }
 
     // Verify user is super admin
-    const isSuperAdmin = user.userRoles.some(role => 
-      role.role === 'admin' && role.organizationId === null
+    const isSuperAdmin = user.userRoles.some(
+      (role) => role.role === "admin" && role.organizationId === null,
     );
 
     if (!isSuperAdmin) {
       return NextResponse.json(
-        { success: false, error: 'Usuario no autorizado' },
-        { status: 403 }
+        { success: false, error: "Usuario no autorizado" },
+        { status: 403 },
       );
     }
 
@@ -59,15 +60,19 @@ export async function POST(request: NextRequest) {
     const recentResends = await client.securityLog.count({
       where: {
         userIdentifier: user.email,
-        eventType: 'SUPER_ADMIN_2FA_TOKEN_SENT',
-        timestamp: { gte: fifteenMinutesAgo }
-      }
+        eventType: "SUPER_ADMIN_2FA_TOKEN_SENT",
+        timestamp: { gte: fifteenMinutesAgo },
+      },
     });
 
     if (recentResends >= 3) {
       return NextResponse.json(
-        { success: false, error: 'Demasiados intentos. Espera 15 minutos antes de solicitar otro código.' },
-        { status: 429 }
+        {
+          success: false,
+          error:
+            "Demasiados intentos. Espera 15 minutos antes de solicitar otro código.",
+        },
+        { status: 429 },
       );
     }
 
@@ -76,29 +81,28 @@ export async function POST(request: NextRequest) {
       user.id,
       user.email,
       ipAddress,
-      userAgent
+      userAgent,
     );
 
     if (!tokenResult.success) {
       return NextResponse.json(
         { success: false, error: tokenResult.error },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        message: 'Nuevo código de verificación enviado',
-        tokenExpiry: tokenResult.expiresAt?.toISOString()
-      }
+        message: "Nuevo código de verificación enviado",
+        tokenExpiry: tokenResult.expiresAt?.toISOString(),
+      },
     });
-
   } catch (error) {
-    console.error('[API] Super admin resend token error:', error);
+    console.error("[API] Super admin resend token error:", error);
     return NextResponse.json(
-      { success: false, error: 'Error interno del servidor' },
-      { status: 500 }
+      { success: false, error: "Error interno del servidor" },
+      { status: 500 },
     );
   }
 }

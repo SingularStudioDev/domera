@@ -1,5 +1,6 @@
-import { SquareArrowOutUpRightIcon } from 'lucide-react';
-import StaticMap from '@/components/custom-ui/StaticMap';
+import { SquareArrowOutUpRightIcon } from "lucide-react";
+
+import StaticMap from "@/components/custom-ui/StaticMap";
 
 interface ProjectLocationProps {
   planFiles: string[];
@@ -12,7 +13,7 @@ export default function ProjectLocation({
   planFiles,
   latitude,
   longitude,
-  projectName = 'Proyecto',
+  projectName = "Proyecto",
 }: ProjectLocationProps) {
   return (
     <div className="flex w-full flex-col items-start md:flex-row md:gap-10">
@@ -32,7 +33,9 @@ export default function ProjectLocation({
               <div className="text-center text-gray-500">
                 <p className="text-sm">Ubicación no disponible</p>
                 <p className="text-xs">Coordenadas no especificadas</p>
-                <p className="text-xs mt-2">lat: {latitude}, lng: {longitude}</p>
+                <p className="mt-2 text-xs">
+                  lat: {latitude}, lng: {longitude}
+                </p>
               </div>
             </div>
           )}
@@ -47,7 +50,7 @@ export default function ProjectLocation({
             ? planFiles.map((file, index) => (
                 <div
                   key={index}
-                  className={`${index === 0 ? 'border-t' : ''} hover:text-primaryColor flex cursor-pointer items-center justify-between border-b border-gray-300 p-4 text-black transition duration-300`}
+                  className={`${index === 0 ? "border-t" : ""} hover:text-primaryColor flex cursor-pointer items-center justify-between border-b border-gray-300 p-4 text-black transition duration-300`}
                 >
                   <span className="font-medium">{file}</span>
                   <button className="cursor-pointer text-xl">
@@ -55,7 +58,7 @@ export default function ProjectLocation({
                   </button>
                 </div>
               ))
-            : 'Proximamente'}
+            : "Proximamente"}
         </div>
       </div>
     </div>

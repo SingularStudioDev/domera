@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { useCheckoutStore } from "@/stores/checkoutStore";
 import {
-  ArrowRight,
   Bath,
   Bed,
   Calendar,
@@ -13,12 +12,10 @@ import {
   Heart,
   Home,
   Square,
-  StarIcon,
 } from "lucide-react";
 
 import { toggleFavoriteAction } from "@/lib/actions/favourites";
 import MainButton from "@/components/custom-ui/MainButton";
-import { useCheckoutStore } from "@/stores/checkoutStore";
 import { MaxUnitsModal } from "@/components/MaxUnitsModal";
 
 interface UnitInfoProps {
@@ -35,10 +32,9 @@ interface UnitInfoProps {
   isFavorite?: boolean;
   projectId?: string;
   projectName?: string;
-  projectSlug?: string;
 }
 
-const UnitInfo = ({
+export default function UnitInfo({
   unitId,
   unitNumber,
   floor,
@@ -52,8 +48,7 @@ const UnitInfo = ({
   isFavorite,
   projectId,
   projectName,
-  projectSlug,
-}: UnitInfoProps) => {
+}: UnitInfoProps) {
   const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(
     isFavorite || false,
   );
@@ -99,19 +94,19 @@ const UnitInfo = ({
 
   const handleAddToCheckout = () => {
     if (!projectId || !projectName) {
-      alert('Información del proyecto no disponible');
+      alert("Información del proyecto no disponible");
       return;
     }
 
     // Extraer el precio numérico del string formateado
-    const numericPrice = parseInt(formattedPrice.replace(/[^\d]/g, ''));
+    const numericPrice = parseInt(formattedPrice.replace(/[^\d]/g, ""));
 
     const checkoutItem = {
       id: unitId,
       projectId: projectId,
       projectName: projectName,
       unitId: unitId,
-      unitTitle: `Unidad ${unitNumber} - Piso ${floor || 'N/A'}`,
+      unitTitle: `Unidad ${unitNumber} - Piso ${floor || "N/A"}`,
       image: `/images/unit-${unitNumber}-main.png`,
       bathrooms: bathrooms,
       bedrooms: bedrooms,
@@ -121,18 +116,18 @@ const UnitInfo = ({
     };
 
     const result = addItem(checkoutItem);
-    
+
     switch (result) {
-      case 'success':
-        router.push('/checkout');
+      case "success":
+        router.push("/checkout");
         break;
-      case 'already_exists':
-        router.push('/checkout');
+      case "already_exists":
+        router.push("/checkout");
         break;
-      case 'different_project':
-        alert('Solo puedes agregar unidades del mismo proyecto al checkout.');
+      case "different_project":
+        alert("Solo puedes agregar unidades del mismo proyecto al checkout.");
         break;
-      case 'max_units_reached':
+      case "max_units_reached":
         setIsMaxUnitsModalOpen(true);
         break;
     }
@@ -235,13 +230,11 @@ const UnitInfo = ({
           </MainButton>
         </div>
       </div>
-      
-      <MaxUnitsModal 
-        isOpen={isMaxUnitsModalOpen} 
-        onClose={() => setIsMaxUnitsModalOpen(false)} 
+
+      <MaxUnitsModal
+        isOpen={isMaxUnitsModalOpen}
+        onClose={() => setIsMaxUnitsModalOpen(false)}
       />
     </div>
   );
-};
-
-export default UnitInfo;
+}

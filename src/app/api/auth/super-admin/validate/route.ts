@@ -3,9 +3,13 @@
 // Validates super admin credentials and triggers 2FA flow
 // =============================================================================
 
-import { NextRequest, NextResponse } from 'next/server';
-import { validateSuperAdminCredentials, generateAndSend2FAToken } from '@/lib/auth/super-admin';
-import { extractRealIP, sanitizeUserAgent } from '@/lib/utils/security';
+import { NextRequest, NextResponse } from "next/server";
+
+import {
+  generateAndSend2FAToken,
+  validateSuperAdminCredentials,
+} from "@/lib/auth/super-admin";
+import { extractRealIP, sanitizeUserAgent } from "@/lib/utils/security";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,27 +18,27 @@ export async function POST(request: NextRequest) {
     // Validate input
     if (!email || !password) {
       return NextResponse.json(
-        { success: false, error: 'Email y contraseña son requeridos' },
-        { status: 400 }
+        { success: false, error: "Email y contraseña son requeridos" },
+        { status: 400 },
       );
     }
 
     // Extract security metadata
     const ipAddress = extractRealIP(request.headers);
-    const userAgent = sanitizeUserAgent(request.headers.get('user-agent'));
+    const userAgent = sanitizeUserAgent(request.headers.get("user-agent"));
 
     // Validate credentials
     const validationResult = await validateSuperAdminCredentials(
       email.toLowerCase().trim(),
       password,
       ipAddress,
-      userAgent
+      userAgent,
     );
 
     if (!validationResult.success) {
       return NextResponse.json(
         { success: false, error: validationResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -45,13 +49,13 @@ export async function POST(request: NextRequest) {
       user.id,
       user.email,
       ipAddress,
-      userAgent
+      userAgent,
     );
 
     if (!tokenResult.success) {
       return NextResponse.json(
         { success: false, error: tokenResult.error },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -64,15 +68,14 @@ export async function POST(request: NextRequest) {
         firstName: user.firstName,
         lastName: user.lastName,
         requiresEmailVerification: true,
-        tokenExpiry: tokenResult.expiresAt?.toISOString()
-      }
+        tokenExpiry: tokenResult.expiresAt?.toISOString(),
+      },
     });
-
   } catch (error) {
-    console.error('[API] Super admin validation error:', error);
+    console.error("[API] Super admin validation error:", error);
     return NextResponse.json(
-      { success: false, error: 'Error interno del servidor' },
-      { status: 500 }
+      { success: false, error: "Error interno del servidor" },
+      { status: 500 },
     );
   }
 }

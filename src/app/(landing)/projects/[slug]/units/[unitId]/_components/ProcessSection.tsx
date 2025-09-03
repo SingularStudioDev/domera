@@ -1,32 +1,32 @@
 import {
-  Home,
   CircleDollarSign,
-  Wallet,
+  Home,
   ListCheck,
   MousePointer,
-} from 'lucide-react';
+  Wallet,
+} from "lucide-react";
 
-const ProcessSection = () => {
+export default function ProcessSection() {
   const steps = [
     {
       icon: Home,
-      title: 'Selecciona tu propiedad',
+      title: "Selecciona tu propiedad",
     },
     {
       icon: MousePointer,
-      title: 'Hacé click en comprar',
+      title: "Hacé click en comprar",
     },
     {
       icon: ListCheck,
-      title: 'Completa tu boleto de reserva',
+      title: "Completa tu boleto de reserva",
     },
     {
       icon: CircleDollarSign,
-      title: 'Hace el deposito y espera la escritura',
+      title: "Hace el deposito y espera la escritura",
     },
     {
       icon: Wallet,
-      title: 'En 30 días recibirás el boleto de compra',
+      title: "En 30 días recibirás el boleto de compra",
     },
   ];
 
@@ -60,6 +60,4 @@ const ProcessSection = () => {
       </div>
     </section>
   );
-};
-
-export default ProcessSection;
+}

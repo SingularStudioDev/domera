@@ -1,4 +1,4 @@
-import OrganizationDisplay from '@/components/custom-ui/OrganizationDisplay';
+import OrganizationDisplay from "@/components/custom-ui/OrganizationDisplay";
 
 interface Organization {
   id: string;
