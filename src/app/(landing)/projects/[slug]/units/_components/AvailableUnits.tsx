@@ -167,7 +167,7 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
   }));
 
   return (
-    <div className="bg-neutral-100 px-4 py-4 md:px-0 md:py-10">
+    <div className="bg-neutral-100 mt-18 px-4 py-4 md:px-0 md:py-10">
       <div className="container mx-auto py-10">
         <h2 className="mb-2 text-3xl font-bold text-black">
           Unidades disponibles

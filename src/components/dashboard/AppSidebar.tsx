@@ -1,4 +1,11 @@
-'use client';
+"use client";
+
+import { ForwardRefExoticComponent, RefAttributes } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import Logo from "@/assets/Domera.svg";
+import { DoorOpenIcon, LucideProps } from "lucide-react";
 
 import {
   Sidebar,
@@ -10,19 +17,14 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import Logo from '@/assets/Domera.svg';
-import { DoorOpenIcon, LucideProps } from 'lucide-react';
-import { ForwardRefExoticComponent, RefAttributes } from 'react';
+} from "@/components/ui/sidebar";
 
 interface AppSidebarProps {
   menuItems: {
     title: string;
     url: string;
     icon: ForwardRefExoticComponent<
-      Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
+      Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
     >;
   }[];
 }
@@ -31,12 +33,16 @@ export function AppSidebar({ menuItems }: AppSidebarProps) {
   const pathname = usePathname();
 
   const isMenuItemActive = (itemUrl: string) => {
-    const pathSegments = pathname.split('/').filter(Boolean);
-    // const itemSegments = itemUrl.split('/').filter(Boolean);
+    if (pathname.startsWith("/super")) {
+      return pathname === itemUrl;
+    } else {
+      const pathSegments = pathname.split("/").filter(Boolean);
+      // const itemSegments = itemUrl.split('/').filter(Boolean);
 
-    if (pathSegments.length === 3) {
-      const pathWithoutId = `/${pathSegments.slice(0, 2).join('/')}`;
-      return pathWithoutId === itemUrl;
+      if (pathSegments.length === 3) {
+        const pathWithoutId = `/${pathSegments.slice(0, 2).join("/")}`;
+        return pathWithoutId === itemUrl;
+      }
     }
 
     return pathname === itemUrl;
@@ -60,7 +66,7 @@ export function AppSidebar({ menuItems }: AppSidebarProps) {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`py-5 text-base transition-colors duration-300 ${isActive ? 'bg-primaryColor hover:bg-primaryColor-hover font-semibold text-white hover:text-white' : 'bg-transparent hover:bg-blue-50 hover:text-[#0004FF]'}`}
+                      className={`py-5 text-base transition-colors duration-300 ${isActive ? "bg-primaryColor hover:bg-primaryColor-hover font-semibold text-white hover:text-white" : "bg-transparent hover:bg-blue-50 hover:text-[#0004FF]"}`}
                     >
                       <Link
                         href={item.url}

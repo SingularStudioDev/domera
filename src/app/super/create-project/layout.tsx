@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/header/Header';
+import Footer from '@/components/Footer';
 
 export default function CreateProjectLayout({
   children,
@@ -44,9 +46,11 @@ export default function CreateProjectLayout({
   // Layout sin sidebar - pantalla completa
   return (
     <div className="min-h-screen w-full bg-white">
+      <Header />
       <main className="w-full">
         {children}
       </main>
+      <Footer />
     </div>
   );
 }

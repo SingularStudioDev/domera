@@ -122,7 +122,32 @@ export async function getUnitsAction(
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    // Transform Decimal fields to numbers for client serialization
+    const transformedData = {
+      ...result.data,
+      data: result.data.data.map(unit => {
+        // Cast to any to handle the dynamic include types
+        const unitWithProject = unit as any;
+        
+        return {
+          ...unit,
+          totalArea: unit.totalArea ? Number(unit.totalArea) : null,
+          builtArea: unit.builtArea ? Number(unit.builtArea) : null,
+          price: Number(unit.price),
+          // Transform project data if it exists (due to include)
+          ...(unitWithProject.project && {
+            project: {
+              ...unitWithProject.project,
+              basePrice: unitWithProject.project.basePrice ? Number(unitWithProject.project.basePrice) : null,
+              latitude: unitWithProject.project.latitude ? Number(unitWithProject.project.latitude) : null,
+              longitude: unitWithProject.project.longitude ? Number(unitWithProject.project.longitude) : null,
+            }
+          })
+        };
+      })
+    };
+
+    return { success: true, data: transformedData };
   } catch (error) {
     console.error('[SERVER_ACTION] Error getting units:', error);
     return {
