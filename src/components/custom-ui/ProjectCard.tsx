@@ -159,7 +159,7 @@ const ProjectCard = ({
             <h3 className="w-full bg-white text-3xl font-medium">{title}</h3>
 
             {/* Bloque inferior  TODO: Revisar este precio se guarda ya formateado o se trae normal y yo lo formateo*/}
-            <p className="w-full bg-white">Desde: {price}</p>
+            <p className="w-full text-xl bg-white">Desde: {price}</p>
           </div>
         </div>
       </div>
