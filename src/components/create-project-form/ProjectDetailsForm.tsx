@@ -12,7 +12,12 @@ export function ProjectDetailsForm({
   error,
   disabled,
 }: DetailsFormProps) {
-  const [newAmenity, setNewAmenity] = useState({ icon: "", text: "" });
+  const [newAmenity, setNewAmenity] = useState("");
+  const [newDetalle, setNewDetalle] = useState("");
+
+  // Valores por defecto para evitar errores de undefined
+  const amenities = value.amenities || [];
+  const detalles = value.detalles || [];
 
   const handleAmenitiesChange = (
     newAmenities: Array<{ icon: string; text: string }>,
@@ -23,15 +28,24 @@ export function ProjectDetailsForm({
     });
   };
 
+  const handleDetallesChange = (
+    newDetalles: Array<{ text: string }>,
+  ) => {
+    onChange({
+      ...value,
+      detalles: newDetalles,
+    });
+  };
+
   const addAmenity = () => {
-    if (newAmenity.icon.trim() && newAmenity.text.trim()) {
-      handleAmenitiesChange([...value.amenities, { ...newAmenity }]);
-      setNewAmenity({ icon: "", text: "" });
+    if (newAmenity.trim()) {
+      handleAmenitiesChange([...amenities, { icon: "", text: newAmenity }]);
+      setNewAmenity("");
     }
   };
 
   const removeAmenity = (index: number) => {
-    const updatedAmenities = value.amenities.filter((_, i) => i !== index);
+    const updatedAmenities = amenities.filter((_, i) => i !== index);
     handleAmenitiesChange(updatedAmenities);
   };
 
@@ -46,10 +60,30 @@ export function ProjectDetailsForm({
         ? newValue.substring(0, 100)
         : newValue.substring(0, 255);
 
-    const updatedAmenities = value.amenities.map((amenity, i) =>
+    const updatedAmenities = amenities.map((amenity, i) =>
       i === index ? { ...amenity, [field]: limitedValue } : amenity,
     );
     handleAmenitiesChange(updatedAmenities);
+  };
+
+  const addDetalle = () => {
+    if (newDetalle.trim()) {
+      handleDetallesChange([...detalles, { text: newDetalle }]);
+      setNewDetalle("");
+    }
+  };
+
+  const removeDetalle = (index: number) => {
+    const updatedDetalles = detalles.filter((_, i) => i !== index);
+    handleDetallesChange(updatedDetalles);
+  };
+
+  const updateDetalle = (index: number, newValue: string) => {
+    const limitedValue = newValue.substring(0, 255);
+    const updatedDetalles = detalles.map((detalle, i) =>
+      i === index ? { text: limitedValue } : detalle,
+    );
+    handleDetallesChange(updatedDetalles);
   };
 
   return (
@@ -67,22 +101,10 @@ export function ProjectDetailsForm({
               <div className="space-y-3">
                 <input
                   type="text"
-                  value={newAmenity.icon}
-                  onChange={(e) => {
-                    const newValue = e.target.value.substring(0, 100);
-                    setNewAmenity((prev) => ({ ...prev, icon: newValue }));
-                  }}
-                  placeholder="Emoji o ícono (ej: 🏊‍♀️)"
-                  disabled={disabled}
-                  maxLength={100}
-                  className="focus:ring-primaryColor w-full rounded border border-gray-300 p-2 outline-none focus:border-transparent focus:ring-2 disabled:opacity-50"
-                />
-                <input
-                  type="text"
-                  value={newAmenity.text}
+                  value={newAmenity}
                   onChange={(e) => {
                     const newValue = e.target.value.substring(0, 255);
-                    setNewAmenity((prev) => ({ ...prev, text: newValue }));
+                    setNewAmenity(newValue);
                   }}
                   placeholder="Descripción (ej: Piscina)"
                   disabled={disabled}
@@ -92,11 +114,7 @@ export function ProjectDetailsForm({
                 <button
                   type="button"
                   onClick={addAmenity}
-                  disabled={
-                    disabled ||
-                    !newAmenity.icon.trim() ||
-                    !newAmenity.text.trim()
-                  }
+                  disabled={disabled || !newAmenity.trim()}
                   className="bg-primaryColor hover:bg-primaryColor/90 flex w-full items-center justify-center gap-2 rounded px-3 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" />
@@ -107,21 +125,11 @@ export function ProjectDetailsForm({
 
             {/* Lista de amenidades existentes */}
             <div className="space-y-2">
-              {value.amenities.map((amenity, index) => (
+              {amenities.map((amenity, index) => (
                 <div
                   key={index}
                   className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3"
                 >
-                  <input
-                    type="text"
-                    value={amenity.icon}
-                    onChange={(e) =>
-                      updateAmenity(index, "icon", e.target.value)
-                    }
-                    disabled={disabled}
-                    maxLength={100}
-                    className="w-10 border-none bg-transparent text-center outline-none disabled:opacity-50"
-                  />
                   <input
                     type="text"
                     value={amenity.text}
@@ -144,7 +152,7 @@ export function ProjectDetailsForm({
               ))}
             </div>
 
-            {value.amenities.length === 0 && (
+            {amenities.length === 0 && (
               <p className="text-sm text-gray-500 italic">
                 No hay amenidades agregadas. Usa el formulario arriba para
                 agregar.
@@ -156,39 +164,110 @@ export function ProjectDetailsForm({
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <h4 className="mb-3 font-medium text-gray-900">Vista previa:</h4>
             <ul className="space-y-2">
-              {value.amenities.map((amenity, index) => (
+              {amenities.map((amenity, index) => (
                 <li
                   key={index}
                   className="flex items-center gap-3 text-gray-700"
                 >
-                  <span className="text-primaryColor text-lg">
-                    {amenity.icon || "•"}
-                  </span>
+                  <span className="text-primaryColor text-lg">-</span>
                   {amenity.text}
                 </li>
               ))}
-              {value.amenities.length === 0 && (
+              {amenities.length === 0 && (
                 <li className="text-gray-400 italic">Amenidades a confirmar</li>
               )}
             </ul>
           </div>
         </div>
 
-        {/* CARACTERÍSTICAS ADICIONALES - Para futuras expansiones */}
+        {/* CARACTERÍSTICAS ADICIONALES - Sección editable */}
         <div>
-          <h3 className="mb-4 text-xl font-semibold text-gray-900">
-            Características adicionales
-          </h3>
-          <div className="rounded-lg bg-gray-50 p-4">
-            <p className="text-gray-600 italic">
-              Esta sección se expandirá en futuras versiones para incluir
-              características específicas del proyecto.
-            </p>
-            <div className="mt-4 rounded border border-gray-200 bg-white p-3">
-              <p className="text-gray-700">
-                Características adicionales a definir
-              </p>
+          <div className="mb-6">
+            <h3 className="mb-4 text-xl font-semibold text-gray-900">
+              Características adicionales
+            </h3>
+
+            {/* Formulario para nueva característica */}
+            <div className="mb-4 rounded-lg bg-gray-50 p-4">
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={newDetalle}
+                  onChange={(e) => {
+                    const newValue = e.target.value.substring(0, 255);
+                    setNewDetalle(newValue);
+                  }}
+                  placeholder="Característica (ej: Cocina equipada)"
+                  disabled={disabled}
+                  maxLength={255}
+                  className="focus:ring-primaryColor w-full rounded border border-gray-300 p-2 outline-none focus:border-transparent focus:ring-2 disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={addDetalle}
+                  disabled={disabled || !newDetalle.trim()}
+                  className="bg-primaryColor hover:bg-primaryColor/90 flex w-full items-center justify-center gap-2 rounded px-3 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Plus className="h-4 w-4" />
+                  Agregar característica
+                </button>
+              </div>
             </div>
+
+            {/* Lista de características existentes */}
+            <div className="space-y-2">
+              {detalles.map((detalle, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3"
+                >
+                  <input
+                    type="text"
+                    value={detalle.text}
+                    onChange={(e) =>
+                      updateDetalle(index, e.target.value)
+                    }
+                    disabled={disabled}
+                    maxLength={255}
+                    className="flex-1 border-none bg-transparent outline-none disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeDetalle(index)}
+                    disabled={disabled}
+                    className="rounded p-1 text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {detalles.length === 0 && (
+              <p className="text-sm text-gray-500 italic">
+                No hay características adicionales. Usa el formulario arriba para
+                agregar.
+              </p>
+            )}
+          </div>
+
+          {/* Preview de características adicionales */}
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <h4 className="mb-3 font-medium text-gray-900">Vista previa:</h4>
+            <ul className="space-y-2">
+              {detalles.map((detalle, index) => (
+                <li
+                  key={index}
+                  className="flex items-center gap-3 text-gray-700"
+                >
+                  <span className="text-primaryColor text-lg">-</span>
+                  {detalle.text}
+                </li>
+              ))}
+              {detalles.length === 0 && (
+                <li className="text-gray-400 italic">Características adicionales a definir</li>
+              )}
+            </ul>
           </div>
         </div>
 

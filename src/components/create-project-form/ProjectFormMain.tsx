@@ -18,6 +18,8 @@ import { ProgressFormComponent } from "@/components/create-project-form/Progress
 import { ProjectDescriptionForm } from "@/components/create-project-form/ProjectDescriptionForm";
 import { ProjectDetailsForm } from "@/components/create-project-form/ProjectDetailsForm";
 import { ProjectHeroForm } from "@/components/create-project-form/ProjectHeroForm";
+import { ProjectMainImageForm } from "@/components/create-project-form/ProjectMainImageForm";
+import { CoordinatesForm } from "@/components/create-project-form/CoordinatesForm";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
@@ -82,6 +84,7 @@ export function ProjectFormMain({
     images: [],
     masterPlanFiles: [],
     amenities: [],
+    detalles: [],
     isEditing,
     ...initialData,
   };
@@ -179,7 +182,8 @@ export function ProjectFormMain({
       // Validate data before sending
       const validation = validateFormData(data);
       if (!validation.isValid) {
-        alert(`Error en el formulario: ${validation.errors.join("\n")}`);
+        console.error("Form validation errors:", validation.errors);
+        console.log(`Error en el formulario:\n\n${validation.errors.join("\n")}`);
         return;
       }
 
@@ -191,7 +195,7 @@ export function ProjectFormMain({
         return;
       }
       // Show user-friendly error message
-      alert(
+      console.log(
         `Error: ${error instanceof Error ? error.message : "Error desconocido"}`,
       );
     } finally {
@@ -237,15 +241,27 @@ export function ProjectFormMain({
     const validAmenities = data.amenities?.every(
       (amenity) =>
         typeof amenity === "object" &&
-        amenity.icon &&
         amenity.text &&
-        amenity.icon.length <= 100 &&
         amenity.text.length <= 255,
     );
 
     if (data.amenities?.length > 0 && !validAmenities) {
       errors.push(
         "Las amenidades tienen un formato incorrecto o exceden los límites",
+      );
+    }
+
+    // Validate detalles format
+    const validDetalles = data.detalles?.every(
+      (detalle) =>
+        typeof detalle === "object" &&
+        detalle.text &&
+        detalle.text.length <= 255,
+    );
+
+    if (data.detalles?.length > 0 && !validDetalles) {
+      errors.push(
+        "Las características adicionales tienen un formato incorrecto o exceden los límites",
       );
     }
 
@@ -264,14 +280,18 @@ export function ProjectFormMain({
       images: data.images?.filter((img) => !img.startsWith("blob:")) || [],
       amenities:
         data.amenities?.map((amenity) => ({
-          icon:
-            typeof amenity === "object"
-              ? amenity.icon?.substring(0, 100) || ""
-              : "",
+          icon: typeof amenity === "object" ? amenity.icon || "" : "",
           text:
             typeof amenity === "object"
               ? amenity.text?.substring(0, 255) || ""
-              : amenity?.substring(0, 255) || "",
+              : "",
+        })) || [],
+      detalles:
+        data.detalles?.map((detalle) => ({
+          text:
+            typeof detalle === "object"
+              ? detalle.text?.substring(0, 255) || ""
+              : "",
         })) || [],
     };
 
@@ -302,6 +322,7 @@ export function ProjectFormMain({
   // Formatear datos detalles
   const detailsData = {
     amenities: watchedValues.amenities,
+    detalles: watchedValues.detalles,
   };
 
   // Formatear datos ubicación
@@ -314,6 +335,18 @@ export function ProjectFormMain({
   // Formatear datos carousel
   const carouselData = {
     images: watchedValues.images,
+  };
+
+  // Formatear datos coordenadas
+  const coordinatesData = {
+    latitude: watchedValues.latitude,
+    longitude: watchedValues.longitude,
+  };
+
+  // Formatear datos imagen principal
+  const mainImageData = {
+    images: watchedValues.images,
+    name: watchedValues.name,
   };
 
   return (
@@ -343,7 +376,7 @@ export function ProjectFormMain({
 
         {/* PROJECT INFO - Botón de volver para dashboard */}
         {showBackButton && onBack && (
-          <div className="mt-5 mb-20">
+          <div className="mt-5 mb-10">
             <div className="container mx-auto px-4 md:px-0">
               <div className="flex items-center justify-between">
                 <button
@@ -360,6 +393,23 @@ export function ProjectFormMain({
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* IMAGEN PRINCIPAL FORM - Solo para modo dashboard */}
+        {hideHeaderFooter && (
+          <div className="mb-10">
+            <div className="container mx-auto px-4 md:px-0">
+              <ProjectMainImageForm
+                value={mainImageData}
+                onChange={(newMainImageData) => {
+                  setValue("images", newMainImageData.images);
+                }}
+                disabled={isSubmitting}
+                error={errors.images?.message}
+                projectId={tempProjectId || undefined}
+              />
             </div>
           </div>
         )}
@@ -407,6 +457,7 @@ export function ProjectFormMain({
               value={detailsData}
               onChange={(newDetailsData) => {
                 setValue("amenities", newDetailsData.amenities);
+                setValue("detalles", newDetailsData.detalles);
               }}
               disabled={isSubmitting}
               error={errors.amenities?.message}
@@ -468,6 +519,17 @@ export function ProjectFormMain({
               onProgressImagesChange={() => {}}
               disabled={isSubmitting}
               projectId={tempProjectId}
+            />
+
+            {/* COORDINATES FORM - Formulario de coordenadas al final */}
+            <CoordinatesForm
+              value={coordinatesData}
+              onChange={(newCoordinatesData) => {
+                setValue("latitude", newCoordinatesData.latitude);
+                setValue("longitude", newCoordinatesData.longitude);
+              }}
+              disabled={isSubmitting}
+              error={errors.latitude?.message || errors.longitude?.message}
             />
           </div>
         </div>

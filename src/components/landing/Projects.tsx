@@ -42,17 +42,29 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
       })
     : "Fecha TBD";
 
-  // Use first available image from project.images array or fallback
+  // Use second image from project.images array (index 1) for ProjectCard
   const getProjectImage = (project: Project): string => {
-    if (Array.isArray(project.images) && project.images.length > 0) {
-      return project.images[0];
+    if (Array.isArray(project.images)) {
+      // Use second image (index 1) if available, otherwise first image
+      if (project.images.length >= 2 && project.images[1]) {
+        return project.images[1];
+      }
+      if (project.images.length > 0 && project.images[0]) {
+        return project.images[0];
+      }
     }
 
     if (typeof project.images === "string") {
       try {
         const parsed = JSON.parse(project.images);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed[0];
+        if (Array.isArray(parsed)) {
+          // Use second image (index 1) if available, otherwise first image
+          if (parsed.length >= 2 && parsed[1]) {
+            return parsed[1];
+          }
+          if (parsed.length > 0 && parsed[0]) {
+            return parsed[0];
+          }
         }
         return project.images; // If it's a single URL string
       } catch {
@@ -151,7 +163,6 @@ export default async function Projects({
               >
                 <ProjectCard
                   slug={projectData.slug}
-                  id={projectData.id}
                   title={projectData.title}
                   price={projectData.price}
                   image={projectData.image}

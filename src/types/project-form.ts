@@ -21,6 +21,7 @@ export interface ProjectFormData {
 
   // Contenido detallado - respetando el schema del DAL
   amenities: Array<{ icon: string; text: string }>;
+  detalles: Array<{ text: string }>;
 
   // Estados del formulario
   isEditing?: boolean;
@@ -84,6 +85,7 @@ export interface DescriptionFormProps
 export interface DetailsFormProps
   extends FormFieldProps<{
     amenities: Array<{ icon: string; text: string }>;
+    detalles: Array<{ text: string }>;
   }> {}
 
 export interface LocationFormProps
@@ -103,3 +105,9 @@ export interface ImageCarouselFormProps
   className: string;
   projectName: string;
 }
+
+export interface CoordinatesFormProps
+  extends FormFieldProps<{
+    latitude: number | null;
+    longitude: number | null;
+  }> {}

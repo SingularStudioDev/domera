@@ -53,8 +53,15 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
       })
     : "Fecha TBD";
 
-  // Use project slug for main image with fallback
-  const image = `/images/${project.slug}-main.png`;
+  // Use second image from project images array (index 1) for ProjectCard
+  const projectImages = Array.isArray(project.images) 
+    ? project.images.filter((img): img is string => typeof img === 'string') 
+    : [];
+  const image = projectImages.length >= 2 && projectImages[1] 
+    ? projectImages[1] 
+    : projectImages.length > 0 
+      ? projectImages[0] 
+      : `/images/${project.slug}-main.png`;
 
   // Create features array from boolean fields
   const projectWithFeatures = project as Project & {
@@ -222,7 +229,6 @@ export default function ProjectsList({
             >
               <ProjectCard
                 slug={projectData.slug}
-                id={projectData.id}
                 title={projectData.title}
                 price={projectData.price}
                 image={projectData.image}

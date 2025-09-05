@@ -87,7 +87,7 @@ export default function HeaderDesktop() {
                         : "hover:text-primaryColor font-normal text-black"
                     }`}
                   />
-                  {itemCount > 0 && (
+                  {(itemCount > 0 && user) && (
                     <span className="bg-primaryColor-hover absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold text-white">
                       {itemCount}
                     </span>

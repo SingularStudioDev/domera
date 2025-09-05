@@ -30,13 +30,24 @@ export default function EditProjectFormWrapper({
     address: projectData.address,
     neighborhood: projectData.neighborhood || "",
     city: projectData.city,
-    latitude: projectData.latitude || undefined,
-    longitude: projectData.longitude || undefined,
+    latitude: projectData.latitude || null,
+    longitude: projectData.longitude || null,
     status: projectData.status,
     basePrice: projectData.basePrice || undefined,
     currency: projectData.currency || "USD",
     images: projectData.images || [],
-    amenities: projectData.amenities?.map((amenity: string) => ({ text: amenity })) || [],
+    amenities: projectData.amenities?.map((amenity: any) => {
+      if (typeof amenity === 'string') {
+        return { text: amenity, icon: "" };
+      }
+      return { 
+        text: amenity.text || amenity,
+        icon: amenity.icon || ""
+      };
+    }) || [],
+    detalles: projectData.detalles?.map((detalle: any) => ({
+      text: typeof detalle === 'string' ? detalle : detalle.text
+    })) || [],
     estimatedCompletion: projectData.estimatedCompletion ? new Date(projectData.estimatedCompletion) : undefined,
   };
 

@@ -15,6 +15,9 @@ interface EditProjectPageProps {
 }
 
 export default async function EditProjectPage({ params }: EditProjectPageProps) {
+  // Await params before using
+  const { projectId } = await params;
+  
   // Validar sesión de super admin
   const headersList = await headers();
   const cookieHeader = headersList.get("cookie");
@@ -41,7 +44,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
   }
 
   // Obtener datos del proyecto
-  const projectResult = await getProjectByIdAction(params.projectId);
+  const projectResult = await getProjectByIdAction(projectId);
   
   if (!projectResult.success || !projectResult.data) {
     redirect("/super/dashboard/projects");
@@ -89,16 +92,14 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
         basePrice: data.basePrice || undefined,
         currency: data.currency,
         images: data.images || [],
-        amenities:
-          data.amenities?.map((amenity) =>
-            typeof amenity === "string" ? amenity : amenity.text,
-          ) || [],
+        amenities: data.amenities?.map((amenity) => amenity.text) || [],
+        detalles: data.detalles?.map((detalle) => detalle.text) || [],
         startDate: undefined,
         estimatedCompletion: data.estimatedCompletion || undefined,
       };
 
       const result = await updateProjectAction(
-        params.projectId,
+        projectId,
         projectData,
         actionIpAddress,
         userAgent,

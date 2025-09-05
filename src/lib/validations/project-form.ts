@@ -52,14 +52,16 @@ export const projectFormSchema = z.object({
     .min(-90, "Latitud inválida")
     .max(90, "Latitud inválida")
     .nullable()
-    .default(null),
+    .default(null)
+    .optional(),
 
   longitude: z
     .number()
     .min(-180, "Longitud inválida")
     .max(180, "Longitud inválida")
     .nullable()
-    .default(null),
+    .default(null)
+    .optional(),
 
   basePrice: z
     .number()
@@ -89,8 +91,16 @@ export const projectFormSchema = z.object({
   amenities: z
     .array(
       z.object({
-        icon: z.string().min(1, "Icono es requerido"),
+        icon: z.string().default(""), // Allow empty icons for editing
         text: z.string().min(1, "Texto es requerido"),
+      }),
+    )
+    .default([]),
+
+  detalles: z
+    .array(
+      z.object({
+        text: z.string().min(1, "Texto de detalle es requerido"),
       }),
     )
     .default([]),
@@ -137,6 +147,19 @@ export const imageCarouselFormSchema = z.object({
   projectImages: z.array(z.any()),
 });
 
+export const coordinatesFormSchema = z.object({
+  latitude: z
+    .number()
+    .min(-90, "Latitud inválida")
+    .max(90, "Latitud inválida")
+    .nullable(),
+  longitude: z
+    .number()
+    .min(-180, "Longitud inválida")
+    .max(180, "Longitud inválida")
+    .nullable(),
+});
+
 // Validador de archivos de imagen
 export const imageFileSchema = z
   .instanceof(File)
@@ -161,3 +184,4 @@ export type DetailsFormData = z.infer<typeof detailsFormSchema>;
 export type LocationFormData = z.infer<typeof locationFormSchema>;
 export type ProgressFormData = z.infer<typeof progressFormSchema>;
 export type ImageCarouselFormData = z.infer<typeof imageCarouselFormSchema>;
+export type CoordinatesFormData = z.infer<typeof coordinatesFormSchema>;

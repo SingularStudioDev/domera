@@ -233,10 +233,9 @@ export const AssignUserRoleSchema = z.object({
 // PROJECT SCHEMAS
 // =============================================================================
 
-export const ProjectAmenitySchema = z.object({
-  icon: z.string().min(1, "Icono es requerido"),
-  text: z.string().min(1, "Texto es requerido"),
-});
+export const ProjectAmenitySchema = z.string().min(1, "Texto de amenidad es requerido");
+
+export const ProjectDetalleSchema = z.string().min(1, "Texto de característica es requerido");
 
 export const ProjectProgressUpdateSchema = z.object({
   date: DateOnlySchema,
@@ -277,6 +276,7 @@ export const CreateProjectSchema = z.object({
   legal_regime: z.string().max(100, "Régimen legal muy largo").optional(),
   images: z.array(z.string().url("URL de imagen inválida")).default([]),
   amenities: z.array(ProjectAmenitySchema).default([]),
+  detalles: z.array(ProjectDetalleSchema).default([]),
   master_plan_files: z.array(z.string()).default([]),
 });
 

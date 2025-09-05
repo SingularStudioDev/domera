@@ -78,7 +78,6 @@ export function ProjectHeroForm({
                   value={value.images || []}
                   onChange={handleImagesChange}
                   entityType="project"
-                  entityId={projectId}
                   maxImages={5}
                   placeholder="Seleccionar imágenes del proyecto"
                   aspectRatio="aspect-video"
