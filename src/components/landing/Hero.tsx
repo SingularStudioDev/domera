@@ -26,7 +26,7 @@ const Hero = () => {
         {/* Content */}
         <div className="relative z-20 container mx-auto flex h-full flex-col items-start justify-start px-4 pt-6 pb-5 md:justify-between md:px-10 md:pt-10">
           <div className="text-white">
-            <h1 className="mb-4 text-5xl leading-16 font-semibold md:leading-none md:font-[300] lg:text-7xl">
+            <h1 className="mb-4 text-5xl leading-16 font-semibold md:leading-none md:font-[300] lg:text-[80px]">
               Compra propiedades
               <br />
               <span>en pozo</span>

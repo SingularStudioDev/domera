@@ -102,7 +102,7 @@ const ProjectCard = ({
   return (
     <Link
       href={`/projects/${slug}`}
-      className="relative block overflow-hidden rounded-3xl bg-white transition-shadow duration-300 hover:shadow-lg"
+      className="relative block overflow-hidden border rounded-3xl bg-white transition-shadow duration-300 hover:shadow-lg"
     >
       {/* Image */}
       <div className="group relative h-[567px] overflow-hidden md:h-[547px]">
@@ -153,28 +153,13 @@ const ProjectCard = ({
           )}
         </div>
 
-        <div className="absolute right-6 bottom-3 left-3 flex w-full items-end gap-5">
-          <div className="relative flex w-[calc(100%-100px)] max-w-[400px] flex-col">
+        <div className="absolute bottom-0 flex w-full items-end gap-5">
+          <div className="group-hover:text-primaryColor relative flex w-full flex-col gap-2  bg-white py-3 pr-4 pl-6 text-black transition duration-300">
             {/* Bloque superior con curva hacia la derecha */}
-            <span className="group-hover:text-primaryColor relative w-fit rounded-t-2xl bg-white px-3 py-2 text-3xl font-medium text-black transition duration-300">
-              {title.length > 12 ? `${title.slice(0, 12)}...` : title}
-
-              <svg
-                className="absolute -right-5 -bottom-[1px] h-[20px] w-[20px]"
-                width="160"
-                height="160"
-                viewBox="0 0 160 160"
-                xmlns="http://www.w3.org/2000/svg"
-                preserveAspectRatio="none"
-              >
-                <path d="M0 0 Q2 160 160 160 H0 Z" fill="#FFF" />
-              </svg>
-            </span>
+            <h3 className="w-full bg-white text-3xl font-medium">{title}</h3>
 
             {/* Bloque inferior  TODO: Revisar este precio se guarda ya formateado o se trae normal y yo lo formateo*/}
-            <span className="group-hover:text-primaryColor w-fit min-w-[280px] rounded-tr-2xl rounded-b-2xl bg-white px-3 py-2 text-xl text-black transition duration-300">
-              Desde: {price}
-            </span>
+            <p className="w-full bg-white">Desde: {price}</p>
           </div>
         </div>
       </div>

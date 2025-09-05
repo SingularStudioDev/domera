@@ -6,13 +6,6 @@ import Link from "next/link";
 import { Filter, Grid3X3, Heart } from "lucide-react";
 
 import { getUserFavoritesAction } from "@/lib/actions/favourites";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import UnitCard from "@/app/(landing)/projects/[slug]/units/_components/UnitCard";
 
@@ -173,69 +166,6 @@ const FavoritesPage = () => {
         {/* Hero Section */}
         <div className="mb-4 flex w-full items-center justify-between gap-8">
           <h1 className="dashboard-title">Favoritos</h1>
-
-          {/* Filters Section */}
-          <div className="flex w-4/6 flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
-              {/* Rooms Filter */}
-              <div className="w-full space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Habitaciones
-                </label>
-                <Select value={selectedRooms} onValueChange={setSelectedRooms}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar" className="w-full" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="1">1 habitación</SelectItem>
-                    <SelectItem value="2">2 habitaciones</SelectItem>
-                    <SelectItem value="3">3 habitaciones</SelectItem>
-                    <SelectItem value="4+">4+ habitaciones</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* New Construction Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Estreno
-                </label>
-                <Select value={selectedNew} onValueChange={setSelectedNew}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="true">A estrenar</SelectItem>
-                    <SelectItem value="false">Usado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Unit Type Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Tipo de Unidad
-                </label>
-                <Select
-                  value={selectedNeighborhood}
-                  onValueChange={setSelectedNeighborhood}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="Apartamento">Apartamento</SelectItem>
-                    <SelectItem value="Penthouse">Penthouse</SelectItem>
-                    <SelectItem value="Monoambiente">Monoambiente</SelectItem>
-                    <SelectItem value="Dúplex">Dúplex</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Content Section */}

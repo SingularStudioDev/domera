@@ -6,7 +6,7 @@ const Partners = () => {
       <div className="container mx-auto flex flex-col gap-10 md:gap-20">
         {/* Main Message */}
 
-        <h2 className="text-3xl leading-tight text-black lg:text-7xl">
+        <h2 className="text-3xl leading-tight text-black lg:text-6xl">
           Invertí con propósito. <br /> Optimizá tu dinero en lo que te
           interesa.
         </h2>

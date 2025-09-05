@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { formatCurrency } from "@/utils/utils";
 import {
@@ -63,6 +64,7 @@ interface Organization {
 }
 
 export default function ProjectsList() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -402,7 +404,11 @@ export default function ProjectsList() {
 
                   {/* Actions */}
                   <div className="ml-4 flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => router.push(`/super/edit-project/${project.id}`)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
