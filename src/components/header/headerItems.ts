@@ -32,4 +32,5 @@ export const menuItems = [
   { name: "Servicios", href: "/services" },
   { name: "Nosotros", href: "/about" },
   { name: "Preguntas", href: "/faqs" },
+  { name: "Proceso", href: "/process" },
 ];

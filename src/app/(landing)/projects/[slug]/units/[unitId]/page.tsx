@@ -8,6 +8,7 @@ import { formatCurrency } from "@/utils/utils";
 import { checkIsFavoriteAction } from "@/lib/actions/favourites";
 import { getUnitByIdAction } from "@/lib/actions/units";
 import { useFeatureParser, useImageParser } from "@/hooks/useJsonArrayParser";
+import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
@@ -19,6 +20,7 @@ import UnitGallery from "./_components/UnitGallery";
 import UnitHeader from "./_components/UnitHeader";
 import UnitImageDisplay from "./_components/UnitImageDisplay";
 import UnitInfo from "./_components/UnitInfo";
+import { UnitPageSkeleton } from "./_components/UnitPageSkeleton";
 
 interface UnitData {
   id: string;
@@ -101,17 +103,7 @@ const UnitDetailPage = () => {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <main className="pt-20">
-          <div className="container mx-auto flex items-center justify-center py-20">
-            <p className="text-gray-600">Cargando unidad...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
+    return <UnitPageSkeleton />;
   }
 
   // Error state

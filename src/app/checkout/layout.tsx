@@ -68,7 +68,7 @@ export default function CheckoutLayout({ children }: CheckoutLayoutProps) {
                     className="h-[229px] w-full rounded-3xl border border-gray-300 object-cover"
                   />
 
-                  <h2 className="absolute top-3 left-3 rounded-2xl bg-white px-4 py-2 text-3xl font-semibold text-black">
+                  <h2 className="absolute top-3 left-3 rounded-2xl bg-white px-4 py-2 text-2xl font-semibold text-black">
                     {currentProject?.name || "Selecciona un proyecto"}
                   </h2>
                 </div>

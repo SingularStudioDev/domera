@@ -12,6 +12,8 @@ interface MainButtonProps {
   variant?: "outline" | "fill";
   className?: string;
   showArrow?: boolean;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
 }
 
 export default function MainButton({
@@ -21,9 +23,11 @@ export default function MainButton({
   variant = "outline",
   className = "",
   showArrow = false,
+  type = "button",
+  disabled = false,
 }: MainButtonProps) {
   const baseClasses =
-    "flex cursor-pointer items-center gap-5 rounded-full px-8 py-3 font-medium transition-colors duration-200";
+    "flex items-center gap-5 rounded-full px-8 py-3 font-medium transition-colors duration-200";
 
   const variantClasses = {
     outline:
@@ -31,12 +35,16 @@ export default function MainButton({
     fill: "bg-[#0040FF] text-white border border-[#0040FF] hover:bg-[#003acc] hover:border-[#003acc]",
   };
 
-  const combinedClasses = cn(baseClasses, variantClasses[variant], className);
+  const disabledClasses = disabled
+    ? "cursor-not-allowed opacity-50 hover:bg-inherit hover:text-inherit hover:border-inherit"
+    : "cursor-pointer";
+
+  const combinedClasses = cn(baseClasses, variantClasses[variant], disabledClasses, className);
 
   // Si tiene onClick, usar button
   if (onClick) {
     return (
-      <button onClick={onClick} className={combinedClasses}>
+      <button type={type} onClick={disabled ? undefined : onClick} disabled={disabled} className={combinedClasses}>
         {children}
         {showArrow && <ArrowRightIcon className="h-5 w-5" />}
       </button>
@@ -44,7 +52,7 @@ export default function MainButton({
   }
 
   // Si tiene href, usar Link
-  if (href) {
+  if (href && !disabled) {
     return (
       <Link href={href} className={combinedClasses}>
         {children}
@@ -53,9 +61,9 @@ export default function MainButton({
     );
   }
 
-  // Fallback a button si no hay ni href ni onClick
+  // Si está disabled o es fallback, usar button
   return (
-    <button className={combinedClasses}>
+    <button type={type} disabled={disabled} className={combinedClasses}>
       {children}
       {showArrow && <ArrowRightIcon className="h-5 w-5" />}
     </button>

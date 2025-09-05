@@ -4,8 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useCheckoutStore } from "@/stores/checkoutStore";
 import { syne } from "@/utils/Fonts";
-import { ChevronDown, ChevronDownIcon, DoorOpenIcon } from "lucide-react";
+import {
+  BuildingIcon,
+  ChevronDown,
+  ChevronDownIcon,
+  DoorOpenIcon,
+} from "lucide-react";
 import { signOut } from "next-auth/react";
 
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
@@ -25,10 +31,16 @@ export default function HeaderDesktop() {
   const pathname = usePathname();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [loginDropdownOpen, setLoginDropdownOpen] = useState(false);
+  const itemCount = useCheckoutStore((state) => state.getItemCount());
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" });
   };
+
+  const isCheckOutActive =
+    pathname === "/checkout" ||
+    pathname === "/checkout/additional" ||
+    pathname === "/checkout/confirmation";
 
   return (
     <header
@@ -67,6 +79,20 @@ export default function HeaderDesktop() {
                     </Link>
                   );
                 })}
+                <Link href="/checkout" className="relative">
+                  <BuildingIcon
+                    className={`inline-flex h-5 w-5 items-center justify-center rounded-md bg-transparent py-0 text-base transition-colors duration-200 hover:bg-gray-100 ${
+                      isCheckOutActive
+                        ? "text-primaryColor hover:text-primaryColor-hover font-medium"
+                        : "hover:text-primaryColor font-normal text-black"
+                    }`}
+                  />
+                  {itemCount > 0 && (
+                    <span className="bg-primaryColor-hover absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold text-white">
+                      {itemCount}
+                    </span>
+                  )}
+                </Link>
               </div>
             </div>
           </div>

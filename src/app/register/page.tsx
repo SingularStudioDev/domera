@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import Logo from "@/assets/Domera.svg";
+import { signIn } from "next-auth/react";
 
 import { Separator } from "@/components/ui/separator";
 import Footer from "@/components/Footer";
@@ -19,6 +20,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -34,9 +36,13 @@ export default function RegisterPage() {
     console.log("Form submitted:", formData);
   };
 
-  const handleGoogleRegister = () => {
-    // Handle Google registration
-    console.log("Google registration");
+  const handleGoogleRegister = async () => {
+    try {
+      await signIn("google", { callbackUrl: "/" });
+    } catch (error) {
+      console.error("Google registration error:", error);
+      setError("Error al registrarse con Google");
+    }
   };
 
   return (
@@ -89,6 +95,13 @@ export default function RegisterPage() {
             </button>
 
             <Separator className="my-4" />
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
 
             {/* Registration Form */}
             <form onSubmit={handleSubmit} className="space-y-2">

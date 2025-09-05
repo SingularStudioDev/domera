@@ -60,16 +60,18 @@ export default function CheckoutPage() {
       <div className="w-full">
         <div className="flex w-full gap-16">
           <div className="w-1/3" />
-          <div className="container mx-auto flex w-full flex-col items-center justify-center gap-10 py-20">
-            <div className="text-center">
-              <h2 className="mb-4 text-3xl font-bold text-black">
+          <div className="container mx-auto flex w-full flex-col items-start justify-start gap-10 py-5">
+            <div className="flex flex-col items-start justify-center text-left">
+              <h2 className="mb-2 text-3xl font-bold text-black">
                 Tu checkout está vacío
               </h2>
-              <p className="mb-8 text-gray-600">
+              <p className="mb-8 max-w-sm text-gray-600">
                 Agrega unidades desde la página de proyectos para comenzar tu
-                compra
+                proceso compra
               </p>
-              <MainButton href="/projects">Ver proyectos</MainButton>
+              <MainButton href="/projects" showArrow className="w-fit">
+                Ver proyectos
+              </MainButton>
             </div>
           </div>
         </div>
