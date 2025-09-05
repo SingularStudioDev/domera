@@ -62,6 +62,8 @@ interface CreateProjectInput {
   currency: string;
   images: string[];
   amenities: string[];
+  details: string[];
+  priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;
 }
@@ -81,6 +83,8 @@ interface UpdateProjectInput {
   currency?: string;
   images?: string[];
   amenities?: string[];
+  details?: string[];
+  priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;
 }
@@ -177,9 +181,10 @@ export async function getProjects(
           },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [
+        { priority: "desc" },
+        { createdAt: "desc" },
+      ],
       ...paginationOptions,
     });
 
@@ -270,9 +275,10 @@ export async function getPublicProjects(
           },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [
+        { priority: "desc" },
+        { createdAt: "desc" },
+      ],
       ...paginationOptions,
     });
 
@@ -405,6 +411,8 @@ export async function createProject(
             icon: "🏢",
             text: amenityText,
           })) || [],
+        details: input.details || [],
+        priority: input.priority || 0,
         masterPlanFiles: [],
         createdBy: userId,
       },

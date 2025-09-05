@@ -14,10 +14,12 @@ export function ProjectDetailsForm({
 }: DetailsFormProps) {
   const [newAmenity, setNewAmenity] = useState("");
   const [newDetalle, setNewDetalle] = useState("");
+  const [newDetail, setNewDetail] = useState("");
 
   // Valores por defecto para evitar errores de undefined
   const amenities = value.amenities || [];
   const detalles = value.detalles || [];
+  const details = value.details || [];
 
   const handleAmenitiesChange = (
     newAmenities: Array<{ icon: string; text: string }>,
@@ -34,6 +36,13 @@ export function ProjectDetailsForm({
     onChange({
       ...value,
       detalles: newDetalles,
+    });
+  };
+
+  const handleDetailsChange = (newDetails: string[]) => {
+    onChange({
+      ...value,
+      details: newDetails,
     });
   };
 
@@ -73,6 +82,13 @@ export function ProjectDetailsForm({
     }
   };
 
+  const addDetail = () => {
+    if (newDetail.trim() && details.length < 20) {
+      handleDetailsChange([...details, newDetail.substring(0, 255)]);
+      setNewDetail("");
+    }
+  };
+
   const removeDetalle = (index: number) => {
     const updatedDetalles = detalles.filter((_, i) => i !== index);
     handleDetallesChange(updatedDetalles);
@@ -84,6 +100,19 @@ export function ProjectDetailsForm({
       i === index ? { text: limitedValue } : detalle,
     );
     handleDetallesChange(updatedDetalles);
+  };
+
+  const removeDetail = (index: number) => {
+    const updatedDetails = details.filter((_, i) => i !== index);
+    handleDetailsChange(updatedDetails);
+  };
+
+  const updateDetail = (index: number, newValue: string) => {
+    const limitedValue = newValue.substring(0, 255);
+    const updatedDetails = details.map((detail, i) =>
+      i === index ? limitedValue : detail,
+    );
+    handleDetailsChange(updatedDetails);
   };
 
   return (
@@ -271,36 +300,76 @@ export function ProjectDetailsForm({
           </div>
         </div>
 
-        {/* INVERSIÓN - Contenido estático informativo */}
+        {/* DETAILS - Detalles personalizables del proyecto */}
         <div>
-          <h3 className="mb-4 text-xl font-semibold text-gray-900">
-            Inversión
-          </h3>
-          <div className="space-y-4">
-            <div className="rounded-lg border border-gray-200 bg-white p-4">
-              <h4 className="mb-2 font-medium text-gray-900">Ley 18.795</h4>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex items-center gap-2">
-                  <div className="bg-primaryColor h-1.5 w-1.5 rounded-full"></div>
-                  Exoneración de impuestos nacionales
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="bg-primaryColor h-1.5 w-1.5 rounded-full"></div>
-                  Beneficios fiscales por hasta 10 años
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="bg-primaryColor h-1.5 w-1.5 rounded-full"></div>
-                  Inversión mínima desde USD 100.000
-                </li>
-              </ul>
+          <div className="mb-6">
+            <h3 className="mb-4 text-xl font-semibold text-gray-900">
+              Detalles del Proyecto
+            </h3>
+
+            {/* Formulario para nuevo detalle */}
+            <div className="mb-4 rounded-lg bg-gray-50 p-4">
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={newDetail}
+                  onChange={(e) => {
+                    const limitedValue = e.target.value.substring(0, 255);
+                    setNewDetail(limitedValue);
+                  }}
+                  placeholder="Agregar detalle del proyecto..."
+                  disabled={disabled || details.length >= 20}
+                  maxLength={255}
+                  className="focus:ring-primaryColor w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-transparent focus:ring-2 disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={addDetail}
+                  disabled={disabled || !newDetail.trim() || details.length >= 20}
+                  className="bg-primaryColor hover:bg-primaryColor/90 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Plus className="h-4 w-4" />
+                  Agregar Detalle {details.length >= 20 && "(Máximo alcanzado)"}
+                </button>
+                <p className="text-xs text-gray-500">
+                  {details.length}/20 detalles • Máximo 255 caracteres por detalle
+                </p>
+              </div>
             </div>
 
-            <div className="bg-primaryColor/10 border-primaryColor/20 rounded-lg border p-4">
-              <p className="text-sm text-gray-700">
-                <strong>Importante:</strong> Los beneficios fiscales están
-                sujetos a verificación legal y pueden variar según la situación
-                particular de cada inversor.
-              </p>
+            {/* Lista de detalles existentes */}
+            <div className="space-y-3">
+              {details.map((detail, index) => (
+                <div
+                  key={index}
+                  className="group flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3"
+                >
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={detail}
+                      onChange={(e) => updateDetail(index, e.target.value)}
+                      disabled={disabled}
+                      maxLength={255}
+                      className="w-full border-none bg-transparent text-sm outline-none focus:bg-gray-50 disabled:opacity-50"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeDetail(index)}
+                    disabled={disabled}
+                    className="opacity-0 group-hover:opacity-100 rounded-lg p-1 text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 transition-opacity"
+                    title="Eliminar detalle"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              {details.length === 0 && (
+                <div className="text-center text-gray-400 italic py-8">
+                  No hay detalles agregados
+                </div>
+              )}
             </div>
           </div>
         </div>

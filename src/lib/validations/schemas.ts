@@ -277,6 +277,8 @@ export const CreateProjectSchema = z.object({
   images: z.array(z.string().url("URL de imagen inválida")).default([]),
   amenities: z.array(ProjectAmenitySchema).default([]),
   detalles: z.array(ProjectDetalleSchema).default([]),
+  details: z.array(z.string().max(255, "Detalle muy largo")).max(20, "Máximo 20 detalles").default([]),
+  priority: z.number().int().min(0).max(1000, "Prioridad máxima: 1000").default(0),
   master_plan_files: z.array(z.string()).default([]),
 });
 

@@ -22,6 +22,8 @@ export interface ProjectFormData {
   // Contenido detallado - respetando el schema del DAL
   amenities: Array<{ icon: string; text: string }>;
   detalles: Array<{ text: string }>;
+  details: string[];
+  priority?: number;
 
   // Estados del formulario
   isEditing?: boolean;
@@ -86,6 +88,7 @@ export interface DetailsFormProps
   extends FormFieldProps<{
     amenities: Array<{ icon: string; text: string }>;
     detalles: Array<{ text: string }>;
+    details: string[];
   }> {}
 
 export interface LocationFormProps

@@ -63,6 +63,8 @@ interface CreateProjectInput {
   currency: string;
   images: string[];
   amenities: string[];
+  details: string[];
+  priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;
 }
@@ -82,6 +84,8 @@ interface UpdateProjectInput {
   currency?: string;
   images?: string[];
   amenities?: string[];
+  details?: string[];
+  priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;
 }

@@ -263,8 +263,10 @@ model Project {
   legalRegime         String?       @map("legal_regime") @db.VarChar(100)
   images              Json          @default("[]")
   amenities           Json          @default("[]")
+  details             Json          @default("[]")
   masterPlanFiles     Json          @default("[]") @map("master_plan_files")
   progressUpdates     Json          @default("[]") @map("progress_updates")
+  priority            Int           @default(0)
   createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz
   updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz
   createdBy           String?       @map("created_by") @db.Uuid

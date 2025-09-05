@@ -85,6 +85,8 @@ export function ProjectFormMain({
     masterPlanFiles: [],
     amenities: [],
     detalles: [],
+    details: [],
+    priority: 0,
     isEditing,
     ...initialData,
   };
@@ -265,6 +267,26 @@ export function ProjectFormMain({
       );
     }
 
+    // Validate details format
+    const validDetails = data.details?.every(
+      (detail) => typeof detail === "string" && detail.length <= 255,
+    );
+
+    if (data.details?.length > 20) {
+      errors.push("No puedes tener más de 20 detalles");
+    }
+
+    if (data.details?.length > 0 && !validDetails) {
+      errors.push(
+        "Los detalles exceden los límites (255 caracteres por detalle)",
+      );
+    }
+
+    // Validate priority
+    if (data.priority && (data.priority < 0 || data.priority > 1000)) {
+      errors.push("La prioridad debe estar entre 0 y 1000");
+    }
+
     // Clean and format data
     const cleanedData: ProjectFormData = {
       ...data,
@@ -293,6 +315,8 @@ export function ProjectFormMain({
               ? detalle.text?.substring(0, 255) || ""
               : "",
         })) || [],
+      details: data.details?.map((detail) => detail.substring(0, 255)) || [],
+      priority: data.priority || 0,
     };
 
     return {
@@ -323,6 +347,7 @@ export function ProjectFormMain({
   const detailsData = {
     amenities: watchedValues.amenities,
     detalles: watchedValues.detalles,
+    details: watchedValues.details,
   };
 
   // Formatear datos ubicación
@@ -458,6 +483,7 @@ export function ProjectFormMain({
               onChange={(newDetailsData) => {
                 setValue("amenities", newDetailsData.amenities);
                 setValue("detalles", newDetailsData.detalles);
+                setValue("details", newDetailsData.details);
               }}
               disabled={isSubmitting}
               error={errors.amenities?.message}
@@ -695,6 +721,23 @@ export function ProjectFormMain({
                   <option value="completed">Completado</option>
                   <option value="delivered">Entregado</option>
                 </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Prioridad del proyecto
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="1000"
+                  value={watchedValues.priority || 0}
+                  onChange={(e) => setValue("priority", parseInt(e.target.value) || 0)}
+                  disabled={isSubmitting}
+                  className="focus:ring-primaryColor w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-transparent focus:ring-2 disabled:opacity-50"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Mayor número = mayor prioridad en el listado (0-1000)
+                </p>
               </div>
             </div>
           </div>
