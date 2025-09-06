@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { OptimizedImageUpload } from "@/components/create-project-form/OptimizedImageUpload";
+import { OptimizedImageUpload } from "@/components/image-upload/OptimizedImageUpload";
 
 type CreateUnitForm = z.infer<typeof CreateUnitSchema>;
 

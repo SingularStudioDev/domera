@@ -6,8 +6,7 @@ import { cn } from "@/utils/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { ImageCarouselFormProps } from "@/types/project-form";
-
-import { OptimizedImageUpload } from "./OptimizedImageUpload";
+import { OptimizedImageUpload } from "@/components/image-upload";
 
 export function ImageCarouselForm({
   value,

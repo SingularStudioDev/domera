@@ -4,7 +4,7 @@ import React, { useState } from "react";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { OptimizedImageUpload } from "./OptimizedImageUpload";
+import { OptimizedImageUpload } from "@/components/image-upload";
 
 interface ProgressFormProps {
   progressImages: string[];

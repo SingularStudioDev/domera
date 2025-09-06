@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 
-import { OptimizedImageUpload } from "./OptimizedImageUpload";
+import { OptimizedImageUpload } from "@/components/image-upload";
 
 interface ProjectMainImageFormProps {
   value: {

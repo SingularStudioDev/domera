@@ -29,12 +29,13 @@ export function CoordinatesForm({
   };
 
   return (
-    <div className="rounded-lg border bg-white p-6 shadow-sm">
+    <div className="rounded-lg border bg-white p-4 shadow-sm">
       <h3 className="mb-4 text-xl font-semibold text-gray-900">
         Coordenadas del Proyecto
       </h3>
       <p className="mb-6 text-sm text-gray-600">
-        Especifica las coordenadas exactas de latitud y longitud del proyecto para su ubicación precisa en el mapa.
+        Especifica las coordenadas exactas de latitud y longitud del proyecto
+        para su ubicación precisa en el mapa.
       </p>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -104,7 +105,9 @@ export function CoordinatesForm({
               ¿Cómo obtener las coordenadas?
             </h4>
             <p className="mt-1 text-sm text-blue-700">
-              Puedes obtener las coordenadas exactas usando Google Maps: haz clic derecho en la ubicación del proyecto y selecciona las coordenadas que aparecen en el menú contextual.
+              Puedes obtener las coordenadas exactas usando Google Maps: haz
+              clic derecho en la ubicación del proyecto y selecciona las
+              coordenadas que aparecen en el menú contextual.
             </p>
           </div>
         </div>

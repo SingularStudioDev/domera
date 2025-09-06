@@ -6,7 +6,7 @@ import { formatCurrency } from "@/utils/utils";
 
 import { HeroFormProps } from "@/types/project-form";
 
-import { OptimizedImageUpload } from "./OptimizedImageUpload";
+import { OptimizedImageUpload } from "@/components/image-upload";
 
 export function ProjectHeroForm({
   value,
