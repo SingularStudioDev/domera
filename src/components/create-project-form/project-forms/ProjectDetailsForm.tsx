@@ -30,9 +30,7 @@ export function ProjectDetailsForm({
     });
   };
 
-  const handleDetallesChange = (
-    newDetalles: Array<{ text: string }>,
-  ) => {
+  const handleDetallesChange = (newDetalles: Array<{ text: string }>) => {
     onChange({
       ...value,
       detalles: newDetalles,
@@ -253,9 +251,7 @@ export function ProjectDetailsForm({
                   <input
                     type="text"
                     value={detalle.text}
-                    onChange={(e) =>
-                      updateDetalle(index, e.target.value)
-                    }
+                    onChange={(e) => updateDetalle(index, e.target.value)}
                     disabled={disabled}
                     maxLength={255}
                     className="flex-1 border-none bg-transparent outline-none disabled:opacity-50"
@@ -274,8 +270,8 @@ export function ProjectDetailsForm({
 
             {detalles.length === 0 && (
               <p className="text-sm text-gray-500 italic">
-                No hay características adicionales. Usa el formulario arriba para
-                agregar.
+                No hay características adicionales. Usa el formulario arriba
+                para agregar.
               </p>
             )}
           </div>
@@ -294,20 +290,21 @@ export function ProjectDetailsForm({
                 </li>
               ))}
               {detalles.length === 0 && (
-                <li className="text-gray-400 italic">Características adicionales a definir</li>
+                <li className="text-gray-400 italic">
+                  Características adicionales a definir
+                </li>
               )}
             </ul>
           </div>
         </div>
 
         {/* DETAILS - Detalles personalizables del proyecto */}
-        <div>
+        {/* <div>
           <div className="mb-6">
             <h3 className="mb-4 text-xl font-semibold text-gray-900">
-              Detalles del Proyecto
+              Inversion{" "}
             </h3>
 
-            {/* Formulario para nuevo detalle */}
             <div className="mb-4 rounded-lg bg-gray-50 p-4">
               <div className="space-y-3">
                 <input
@@ -325,19 +322,21 @@ export function ProjectDetailsForm({
                 <button
                   type="button"
                   onClick={addDetail}
-                  disabled={disabled || !newDetail.trim() || details.length >= 20}
+                  disabled={
+                    disabled || !newDetail.trim() || details.length >= 20
+                  }
                   className="bg-primaryColor hover:bg-primaryColor/90 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" />
                   Agregar Detalle {details.length >= 20 && "(Máximo alcanzado)"}
                 </button>
                 <p className="text-xs text-gray-500">
-                  {details.length}/20 detalles • Máximo 255 caracteres por detalle
+                  {details.length}/20 detalles • Máximo 255 caracteres por
+                  detalle
                 </p>
               </div>
             </div>
 
-            {/* Lista de detalles existentes */}
             <div className="space-y-3">
               {details.map((detail, index) => (
                 <div
@@ -358,7 +357,7 @@ export function ProjectDetailsForm({
                     type="button"
                     onClick={() => removeDetail(index)}
                     disabled={disabled}
-                    className="opacity-0 group-hover:opacity-100 rounded-lg p-1 text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 transition-opacity"
+                    className="rounded-lg p-1 text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     title="Eliminar detalle"
                   >
                     <X className="h-4 w-4" />
@@ -366,13 +365,13 @@ export function ProjectDetailsForm({
                 </div>
               ))}
               {details.length === 0 && (
-                <div className="text-center text-gray-400 italic py-8">
+                <div className="py-8 text-center text-gray-400 italic">
                   No hay detalles agregados
                 </div>
               )}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Mensajes de error */}

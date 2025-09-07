@@ -5,7 +5,6 @@ import React, { useState } from "react";
 import { formatCurrency } from "@/utils/utils";
 
 import { HeroFormProps } from "@/types/project-form";
-
 import { OptimizedImageUpload } from "@/components/image-upload";
 
 export function ProjectHeroForm({
@@ -225,18 +224,6 @@ export function ProjectHeroForm({
                           maxLength={100}
                           className="w-20 min-w-0 border-none bg-transparent text-lg font-medium outline-none"
                         />
-                        <span>, </span>
-                        <input
-                          type="text"
-                          value={value.city}
-                          onChange={(e) => {
-                            const newValue = e.target.value.substring(0, 100);
-                            handleFieldChange("city", newValue);
-                          }}
-                          placeholder="Ciudad"
-                          maxLength={100}
-                          className="w-16 min-w-0 border-none bg-transparent text-lg font-medium outline-none"
-                        />
                       </div>
                       <div className="rounded-2xl bg-white px-4 py-2 text-lg font-medium text-black">
                         <input
@@ -254,7 +241,7 @@ export function ProjectHeroForm({
                               e.target.value ? new Date(e.target.value) : null,
                             )
                           }
-                          className="w-24 min-w-0 border-none bg-transparent text-lg font-medium outline-none"
+                          className="w-fit min-w-0 border-none bg-transparent text-lg font-medium outline-none"
                         />
                       </div>
                     </>

@@ -96,8 +96,8 @@ export function ProjectFormMain({
     setValue,
     handleSubmit,
     formState: { errors },
-  } = useForm<ProjectFormData>({
-    resolver: zodResolver(projectFormSchema) as any,
+  } = useForm({
+    resolver: zodResolver(projectFormSchema),
     defaultValues,
   });
 
@@ -116,11 +116,11 @@ export function ProjectFormMain({
             pageSize: 100,
           });
           if (result.success && result.data) {
-            const data = result.data as any;
+            const data = result.data as { data: Organization[] };
             const orgs = data.data || [];
             setOrganizations(orgs);
           }
-        } catch (error) {
+        } catch (error: unknown) {
           console.error("Error loading organizations:", error);
         } finally {
           setLoadingOrganizations(false);
@@ -173,24 +173,29 @@ export function ProjectFormMain({
           error: result.error || "Error al verificar slug",
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       setSlugCheckResult({ error: "Error de conexión al verificar slug" });
     }
   };
 
-  const handleFormSubmit = async (data: ProjectFormData) => {
+  const handleFormSubmit = async (data: any) => {
+    console.log("🚀 handleFormSubmit called with data:", data);
     setIsSubmitting(true);
     try {
       // Validate data before sending
+      console.log("📝 Starting form validation...");
       const validation = validateFormData(data);
+      console.log("✅ Validation result:", validation);
+      
       if (!validation.isValid) {
-        console.error("Form validation errors:", validation.errors);
+        console.error("❌ Form validation errors:", validation.errors);
         console.log(`Error en el formulario:\n\n${validation.errors.join("\n")}`);
         return;
       }
 
+      console.log("📤 Calling onSubmit with cleaned data:", validation.cleanedData);
       await onSubmit(validation.cleanedData);
-    } catch (error) {
+    } catch (error: unknown) {
       // Don't log Next.js redirect "errors" - they are expected behavior
       if (error instanceof Error && error.message === "NEXT_REDIRECT") {
         // Let the redirect happen, don't show as error
@@ -328,50 +333,50 @@ export function ProjectFormMain({
 
   // Formatear datos hero
   const heroData = {
-    name: watchedValues.name,
-    basePrice: watchedValues.basePrice,
-    neighborhood: watchedValues.neighborhood,
-    city: watchedValues.city,
-    estimatedCompletion: watchedValues.estimatedCompletion,
-    images: watchedValues.images,
+    name: watchedValues.name || "",
+    basePrice: watchedValues.basePrice ?? null,
+    neighborhood: watchedValues.neighborhood || "",
+    city: watchedValues.city || "",
+    estimatedCompletion: watchedValues.estimatedCompletion ?? null,
+    images: watchedValues.images || [],
   };
 
   // Formatear datos descripción
   const descriptionData = {
-    description: watchedValues.description,
-    shortDescription: watchedValues.shortDescription,
-    address: watchedValues.address,
+    description: watchedValues.description || "",
+    shortDescription: watchedValues.shortDescription || "",
+    address: watchedValues.address || "",
   };
 
   // Formatear datos detalles
   const detailsData = {
-    amenities: watchedValues.amenities,
-    detalles: watchedValues.detalles,
-    details: watchedValues.details,
+    amenities: watchedValues.amenities || [],
+    detalles: watchedValues.detalles || [],
+    details: watchedValues.details || [],
   };
 
   // Formatear datos ubicación
   const locationData = {
-    latitude: watchedValues.latitude,
-    longitude: watchedValues.longitude,
-    masterPlanFiles: watchedValues.masterPlanFiles,
+    latitude: watchedValues.latitude ?? null,
+    longitude: watchedValues.longitude ?? null,
+    masterPlanFiles: watchedValues.masterPlanFiles || [],
   };
 
   // Formatear datos carousel
   const carouselData = {
-    images: watchedValues.images,
+    images: watchedValues.images || [],
   };
 
   // Formatear datos coordenadas
   const coordinatesData = {
-    latitude: watchedValues.latitude,
-    longitude: watchedValues.longitude,
+    latitude: watchedValues.latitude ?? null,
+    longitude: watchedValues.longitude ?? null,
   };
 
   // Formatear datos imagen principal
   const mainImageData = {
-    images: watchedValues.images,
-    name: watchedValues.name,
+    images: watchedValues.images || [],
+    name: watchedValues.name || "",
   };
 
   return (
@@ -393,10 +398,9 @@ export function ProjectFormMain({
             setValue("estimatedCompletion", newHeroData.estimatedCompletion);
             setValue("images", newHeroData.images);
           }}
-          currency={watchedValues.currency}
+          currency={watchedValues.currency || "USD"}
           disabled={isSubmitting}
           error={errors.name?.message || errors.basePrice?.message}
-          projectId={tempProjectId}
         />
 
         {/* PROJECT INFO - Botón de volver para dashboard */}
@@ -433,7 +437,7 @@ export function ProjectFormMain({
                 }}
                 disabled={isSubmitting}
                 error={errors.images?.message}
-                projectId={tempProjectId || undefined}
+                projectId={tempProjectId || "temp"}
               />
             </div>
           </div>
@@ -499,7 +503,7 @@ export function ProjectFormMain({
               disabled={isSubmitting}
               error={errors.images?.message}
               className="py-5 md:py-10"
-              projectId={tempProjectId}
+              projectId={tempProjectId || "temp"}
             />
 
             {/* LOCATION FORM - Mapa para dashboard */}
@@ -509,8 +513,8 @@ export function ProjectFormMain({
                   Ubicación del Proyecto
                 </h3>
                 <MapSelector
-                  latitude={watchedValues.latitude}
-                  longitude={watchedValues.longitude}
+                  latitude={watchedValues.latitude ?? null}
+                  longitude={watchedValues.longitude ?? null}
                   address={watchedValues.address}
                   onChange={(lat, lng) => {
                     setValue("latitude", lat);
@@ -544,7 +548,7 @@ export function ProjectFormMain({
               progressImages={[]}
               onProgressImagesChange={() => {}}
               disabled={isSubmitting}
-              projectId={tempProjectId}
+              projectId={tempProjectId || "temp"}
             />
 
             {/* COORDINATES FORM - Formulario de coordenadas al final */}

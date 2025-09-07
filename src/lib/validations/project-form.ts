@@ -77,11 +77,12 @@ export const projectFormSchema = z.object({
 
   estimatedCompletion: z.date().nullable().default(null),
 
-  // IMPORTANTE: organizationId es requerido para la creación
+  // IMPORTANTE: organizationId puede ser opcional para super admins
   organizationId: z
     .string()
     .min(1, "Organización es requerida")
-    .uuid("Organization ID debe ser un UUID válido"),
+    .uuid("Organization ID debe ser un UUID válido")
+    .optional(),
 
   status: z
     .enum(["planning", "pre_sale", "construction", "completed", "delivered"])
@@ -109,6 +110,10 @@ export const projectFormSchema = z.object({
 
   // Imágenes - URLs como strings (pueden estar vacías al principio)
   images: z.array(z.string()).default([]),
+
+  // Campos adicionales faltantes
+  details: z.array(z.string()).default([]),
+  priority: z.number().min(0).max(1000).default(0).optional(),
 
   // Estados del formulario - opcional para no interferir con validación
   isEditing: z.boolean().optional().default(false),
