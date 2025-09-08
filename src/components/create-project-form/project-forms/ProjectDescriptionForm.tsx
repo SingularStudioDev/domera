@@ -150,7 +150,7 @@ export function ProjectDescriptionForm({
             <p className="text-neutral-500">Descripción</p>
             <button
               type="button"
-              className="h-full w-full cursor-pointer rounded border p-4 whitespace-pre-line text-black hover:bg-gray-50"
+              className="h-full w-full cursor-pointer rounded border px-4 text-start whitespace-pre-line text-black hover:bg-gray-50"
               onClick={() => !disabled && setIsEditingDescription(true)}
             >
               {value.description || "Haz clic para agregar descripción..."}

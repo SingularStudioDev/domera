@@ -50,7 +50,6 @@ export default function ProjectProgress({
         <h3 className="mb-1 text-3xl font-semibold text-black md:mb-2">
           Avances de obra
         </h3>
-        <p className="mb-6">Agosto 2025</p>
         <div className="flex h-[200px] items-center justify-center rounded-2xl bg-gray-100">
           <span className="text-gray-400">
             No hay imágenes de progreso disponibles
@@ -65,7 +64,6 @@ export default function ProjectProgress({
       <h3 className="mb-1 text-3xl font-semibold text-black md:mb-2">
         Avances de obra
       </h3>
-      <p className="mb-6">Agosto 2025</p>
 
       {/* Vista móvil: Carrusel individual */}
       <div className="md:hidden">

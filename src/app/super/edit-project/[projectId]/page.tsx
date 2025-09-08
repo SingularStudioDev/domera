@@ -95,6 +95,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
         amenities: data.amenities?.map((amenity) => amenity.text) || [],
         detalles: data.detalles?.map((detalle) => detalle.text) || [],
         details: data.details || [],
+        masterPlanFiles: data.masterPlanFiles || [],
         priority: data.priority || 0,
         startDate: undefined,
         estimatedCompletion: data.estimatedCompletion || undefined,

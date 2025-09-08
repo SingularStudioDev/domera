@@ -86,6 +86,7 @@ export default async function CreateProjectPage() {
             typeof amenity === "string" ? amenity : amenity.text,
           ) || [],
         details: data.details || [],
+        masterPlanFiles: data.masterPlanFiles || [],
         priority: data.priority || 0,
         startDate: undefined,
         estimatedCompletion: data.estimatedCompletion || undefined,

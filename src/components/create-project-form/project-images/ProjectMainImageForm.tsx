@@ -191,48 +191,74 @@ export function ProjectMainImageForm({
       />
 
       {/* Card para imagen principal */}
-      <div className="h-[567px] max-w-sm rounded-2xl border bg-white shadow-sm">
-        {/* Imagen actual o placeholder */}
-        <div
-          className="relative h-full overflow-hidden rounded-2xl border"
-          onClick={() => setIsEditing(true)}
-        >
-          {value.images.length >= 2 && value.images[1] ? (
-            <img
-              src={value.images[1]}
-              alt={value.name || "Imagen principal"}
-              className="h-full w-full cursor-pointer rounded-2xl object-cover"
-              onClick={() => !disabled && setIsEditing(true)}
-            />
-          ) : (
+      <div className="flex gap-5">
+        <div>
+          <p className="mb-2 font-semibold">Imágen preview</p>
+          <div className="h-[567px] w-full max-w-sm rounded-2xl bg-white shadow-sm">
+            {/* Imagen actual o placeholder */}
             <div
-              className="flex h-full w-full cursor-pointer items-center justify-center bg-gray-100"
-              onClick={() => !disabled && setIsEditing(true)}
+              className="relative h-full overflow-hidden rounded-2xl border"
+              onClick={() => setIsEditing(true)}
             >
-              <div className="flex flex-col items-center justify-center gap-3 text-center text-gray-500">
-                <ImageIcon
-                  className="h-20 w-20 text-gray-300"
-                  strokeWidth={1.5}
+              {value.images.length >= 2 && value.images[1] ? (
+                <img
+                  src={value.images[1]}
+                  alt={value.name || "Imagen principal"}
+                  className="h-full w-full cursor-pointer rounded-2xl object-cover"
+                  onClick={() => !disabled && setIsEditing(true)}
                 />
-                <div>
-                  <p className="text-sm">
-                    Haz clic para seleccionar la imagen principal
-                  </p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Esta imagen aparecerá en las tarjetas de proyecto
-                  </p>
+              ) : (
+                <div
+                  className="flex h-full w-full cursor-pointer items-center justify-center bg-gray-100 p-4 px-6"
+                  onClick={() => !disabled && setIsEditing(true)}
+                >
+                  <div className="flex flex-col items-center justify-center gap-3 text-center text-gray-500">
+                    <ImageIcon
+                      className="h-20 w-20 text-gray-300"
+                      strokeWidth={1.5}
+                    />
+                    <div>
+                      <p className="text-sm">
+                        Haz clic para seleccionar la imagen principal
+                      </p>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Esta imagen aparecerá en las tarjetas de proyecto
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
+
+            {/* Mensaje de error */}
+            {error && (
+              <div className="mt-3 rounded bg-red-100 p-2 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Mensaje de error */}
-        {error && (
-          <div className="mt-3 rounded bg-red-100 p-2 text-sm text-red-700">
-            {error}
+        <div className="max-w-sm">
+          <p className="mb-2 font-semibold">Brochure del proyecto</p>
+          <div className="rounded-2xl border border-dashed border-gray-300 px-16 py-8 text-center">
+            <p className="mb-4 text-sm text-black">
+              Arrastra el archivo o selecciona desde tu dispositivo
+            </p>
+            <input
+              type="file"
+              className="hidden"
+              id="file-upload"
+              accept=".pdf,.doc,.docx"
+            />
+            <label
+              htmlFor="file-upload"
+              className="border-primaryColor text-primaryColor hover:bg-primaryColor cursor-pointer rounded-full border bg-white px-6 py-2 transition-colors hover:text-white"
+            >
+              Cargar archivo
+            </label>
           </div>
-        )}
+        </div>
       </div>
     </>
   );

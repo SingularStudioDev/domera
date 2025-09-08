@@ -97,7 +97,6 @@ export function ProgressFormComponent({
           <h3 className="text-xl font-semibold text-gray-900">
             Avances de obra
           </h3>
-          <span className="text-sm text-gray-600">Agosto 2025</span>
         </div>
 
         {hasImages ? (

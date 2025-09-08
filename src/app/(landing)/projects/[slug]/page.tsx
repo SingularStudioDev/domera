@@ -109,8 +109,6 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
     longitudeNumber: project.longitude ? Number(project.longitude) : null,
   });
 
-  console.log("masterPlanFiles", masterPlanFiles);
-
   return (
     <div className="min-h-screen bg-white">
       <Header />
