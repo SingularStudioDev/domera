@@ -299,7 +299,7 @@ export default function RegisterPage() {
             <img
               src="/register-img.png"
               alt="Registro Domera"
-              className="h-full w-full object-contain"
+              className="h-full min-h-screen w-full"
             />
           </div>
         </div>

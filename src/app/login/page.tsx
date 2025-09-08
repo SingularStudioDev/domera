@@ -302,7 +302,7 @@ export default function LoginPage() {
             <img
               src="/register-img.png"
               alt="Login Domera"
-              className="h-full w-full object-contain"
+              className="h-full min-h-screen w-full"
             />
           </div>
         </div>
