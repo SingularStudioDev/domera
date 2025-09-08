@@ -215,10 +215,12 @@ export function ProjectMainImageForm({
                   strokeWidth={1.5}
                 />
                 <div>
-                  <p className="text-sm">Imagen no disponible </p>
-                  {/* <p className="mt-1 text-xs text-gray-400">
+                  <p className="text-sm">
+                    Haz clic para seleccionar la imagen principal
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
                     Esta imagen aparecerá en las tarjetas de proyecto
-                  </p> */}
+                  </p>
                 </div>
               </div>
             </div>
