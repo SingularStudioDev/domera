@@ -67,6 +67,7 @@ export function ImageCarouselForm({
               aspectRatio="aspect-[16/10]"
               disabled={disabled}
               showUploadButton={true}
+              deferUpload={true}
             />
             <div className="mt-4 flex gap-2">
               <button

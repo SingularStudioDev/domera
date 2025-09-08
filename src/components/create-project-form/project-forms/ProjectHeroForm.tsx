@@ -7,13 +7,18 @@ import { formatCurrency } from "@/utils/utils";
 import { HeroFormProps } from "@/types/project-form";
 import { OptimizedImageUpload } from "@/components/image-upload";
 
+interface ProjectHeroFormProps extends HeroFormProps {
+  onFilesChange?: (files: File[]) => void;
+}
+
 export function ProjectHeroForm({
   value,
   onChange,
   error,
   disabled,
   currency,
-}: HeroFormProps) {
+  onFilesChange,
+}: ProjectHeroFormProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -76,12 +81,14 @@ export function ProjectHeroForm({
                 <OptimizedImageUpload
                   value={value.images || []}
                   onChange={handleImagesChange}
+                  onFilesChange={onFilesChange}
                   entityType="project"
                   maxImages={5}
                   placeholder="Seleccionar imágenes del proyecto"
                   aspectRatio="aspect-video"
                   disabled={disabled}
                   showUploadButton={true}
+                  deferUpload={true}
                 />
               </div>
 

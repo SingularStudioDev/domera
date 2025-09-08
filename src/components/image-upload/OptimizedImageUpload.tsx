@@ -22,6 +22,7 @@ import { useBatchImageUpload } from "@/hooks/useBatchImageUpload";
 interface OptimizedImageUploadProps {
   value: string[]; // URLs of uploaded images
   onChange: (urls: string[]) => void;
+  onFilesChange?: (files: File[]) => void; // For deferred upload mode
   onPathsChange?: (paths: string[]) => void;
   entityId?: string;
   entityType: "project" | "organization" | "unit";
@@ -31,6 +32,7 @@ interface OptimizedImageUploadProps {
   disabled?: boolean;
   aspectRatio?: string;
   showUploadButton?: boolean;
+  deferUpload?: boolean; // New prop to defer uploads until form submission
 }
 
 // =============================================================================
@@ -40,6 +42,7 @@ interface OptimizedImageUploadProps {
 export const OptimizedImageUpload: React.FC<OptimizedImageUploadProps> = ({
   value = [],
   onChange,
+  onFilesChange,
   onPathsChange,
   entityId,
   entityType,
@@ -49,9 +52,11 @@ export const OptimizedImageUpload: React.FC<OptimizedImageUploadProps> = ({
   disabled = false,
   aspectRatio = "aspect-video",
   showUploadButton = true,
+  deferUpload = false,
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [storedPaths, setStoredPaths] = useState<string[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use batch upload hook
@@ -84,10 +89,30 @@ export const OptimizedImageUpload: React.FC<OptimizedImageUploadProps> = ({
 
   const handleFileSelect = useCallback(
     (files: FileList | File[]) => {
-      if (disabled || isUploading) return;
-      addImages(Array.from(files));
+      if (disabled) return;
+      
+      const fileArray = Array.from(files);
+      
+      if (deferUpload) {
+        // In deferred mode, just store the files and create preview URLs
+        const newFiles = [...selectedFiles, ...fileArray].slice(0, maxImages);
+        setSelectedFiles(newFiles);
+        
+        // Create preview URLs for display
+        const previewUrls = newFiles.map(file => URL.createObjectURL(file));
+        onChange([...value.filter(url => !url.startsWith('blob:')), ...previewUrls]);
+        
+        // Notify parent about file changes
+        if (onFilesChange) {
+          onFilesChange(newFiles);
+        }
+      } else {
+        // Original immediate upload mode
+        if (isUploading) return;
+        addImages(fileArray);
+      }
     },
-    [disabled, isUploading, addImages],
+    [disabled, isUploading, addImages, deferUpload, selectedFiles, maxImages, onChange, value, onFilesChange],
   );
 
   const handleDrop = useCallback(

@@ -3,14 +3,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import { ProjectFormData } from "@/types/project-form";
 import { getOrganizationsAction } from "@/lib/actions/organizations";
 import { checkSlugAvailabilityAction } from "@/lib/actions/projects";
 import { generateSlug } from "@/lib/utils/slug";
-import { projectFormSchema } from "@/lib/validations/project-form";
+import { uploadProjectImages } from "@/lib/actions/storage";
 import { ImageCarouselForm } from "@/components/create-project-form/project-images/ImageCarouselForm";
 import { LocationFormComponent } from "@/components/create-project-form/project-location/LocationForm";
 import { MapSelector } from "@/components/create-project-form/project-location/MapSelector";
@@ -48,10 +47,10 @@ export function ProjectFormMain({
   showBackButton = false,
   onBack,
 }: ProjectFormMainProps) {
-  console.log("🚀 ProjectFormMain component mounted");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrganizations, setLoadingOrganizations] = useState(true);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([]);
   const [slugCheckResult, setSlugCheckResult] = useState<{
     available?: boolean;
     error?: string;
@@ -92,13 +91,11 @@ export function ProjectFormMain({
   };
 
   const {
-    control,
     watch,
     setValue,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
-    // Temporalmente sin resolver para debuggear
     defaultValues,
     mode: "onSubmit",
   });
@@ -180,18 +177,46 @@ export function ProjectFormMain({
     }
   };
 
+  // Helper function to extract File objects from form data
+  const extractImageFiles = (): File[] => {
+    return pendingImageFiles;
+  };
+
   const handleFormSubmit = async (data: any) => {
-    console.log("🚀 handleFormSubmit called with data:", data);
-    console.log("🚀 handleFormSubmit FUNCTION IS RUNNING");
-    
     try {
-      // Sin validación Zod por ahora para debuggear
-      console.log("📤 Calling onSubmit with data:", data);
-      await onSubmit(data as ProjectFormData);
+      // Extract image files that need to be uploaded
+      const imageFiles = extractImageFiles();
+      let uploadedImageUrls: string[] = [];
+      
+      // Upload images if there are any
+      if (imageFiles.length > 0) {
+        // Create FormData object
+        const formData = new FormData();
+        imageFiles.forEach((file, index) => {
+          formData.append(`image-${index}`, file);
+        });
+        
+        const tempProjectId = crypto.randomUUID();
+        const uploadResult = await uploadProjectImages(formData, tempProjectId);
+        
+        if (!uploadResult.success || !uploadResult.images) {
+          throw new Error(uploadResult.error || "Error al subir imágenes");
+        }
+        
+        uploadedImageUrls = uploadResult.images.map(img => img.url);
+      }
+      
+      // Replace blob URLs with actual uploaded URLs
+      const processedData = {
+        ...data,
+        images: uploadedImageUrls,
+      };
+      
+      await onSubmit(processedData as ProjectFormData);
+      
     } catch (error: unknown) {
       // Don't log Next.js redirect "errors" - they are expected behavior
       if (error instanceof Error && error.message === "NEXT_REDIRECT") {
-        // Let the redirect happen, don't show as error
         return;
       }
       // Show user-friendly error message
@@ -200,126 +225,6 @@ export function ProjectFormMain({
     }
   };
 
-  const validateFormData = (data: ProjectFormData) => {
-    const errors: string[] = [];
-
-    // Check required fields
-    if (!data.name?.trim()) errors.push("Nombre del proyecto es requerido");
-    if (!data.slug?.trim()) errors.push("Slug es requerido");
-    if (!data.address?.trim()) errors.push("Dirección es requerida");
-    if (!data.city?.trim()) errors.push("Ciudad es requerida");
-    if (!data.organizationId?.trim()) errors.push("Organización es requerida");
-
-    // Validate field lengths
-    if (data.name && data.name.length > 255)
-      errors.push("Nombre no puede exceder 255 caracteres");
-    if (data.slug && data.slug.length > 255)
-      errors.push("Slug no puede exceder 255 caracteres");
-    if (data.description && data.description.length > 5000)
-      errors.push("Descripción no puede exceder 5000 caracteres");
-    if (data.shortDescription && data.shortDescription.length > 500)
-      errors.push("Descripción corta no puede exceder 500 caracteres");
-    if (data.address && data.address.length > 500)
-      errors.push("Dirección no puede exceder 500 caracteres");
-    if (data.neighborhood && data.neighborhood.length > 100)
-      errors.push("Barrio no puede exceder 100 caracteres");
-    if (data.city && data.city.length > 100)
-      errors.push("Ciudad no puede exceder 100 caracteres");
-
-    // Check for blob URLs
-    const hasInvalidImages = data.images?.some((img) =>
-      img.startsWith("blob:"),
-    );
-    if (hasInvalidImages) {
-      errors.push("Las imágenes deben ser subidas antes de crear el proyecto");
-    }
-
-    // Validate amenities format
-    const validAmenities = data.amenities?.every(
-      (amenity) =>
-        typeof amenity === "object" &&
-        amenity.text &&
-        amenity.text.length <= 255,
-    );
-
-    if (data.amenities?.length > 0 && !validAmenities) {
-      errors.push(
-        "Las amenidades tienen un formato incorrecto o exceden los límites",
-      );
-    }
-
-    // Validate detalles format
-    const validDetalles = data.detalles?.every(
-      (detalle) =>
-        typeof detalle === "object" &&
-        detalle.text &&
-        detalle.text.length <= 255,
-    );
-
-    if (data.detalles?.length > 0 && !validDetalles) {
-      errors.push(
-        "Las características adicionales tienen un formato incorrecto o exceden los límites",
-      );
-    }
-
-    // Validate details format
-    const validDetails = data.details?.every(
-      (detail) => typeof detail === "string" && detail.length <= 255,
-    );
-
-    if (data.details?.length > 20) {
-      errors.push("No puedes tener más de 20 detalles");
-    }
-
-    if (data.details?.length > 0 && !validDetails) {
-      errors.push(
-        "Los detalles exceden los límites (255 caracteres por detalle)",
-      );
-    }
-
-    // Validate priority
-    if (data.priority && (data.priority < 0 || data.priority > 1000)) {
-      errors.push("La prioridad debe estar entre 0 y 1000");
-    }
-
-    // Clean and format data
-    const cleanedData: ProjectFormData = {
-      ...data,
-      name: data.name?.trim() || "",
-      slug: data.slug?.trim() || "",
-      description: data.description?.substring(0, 5000)?.trim() || "",
-      shortDescription: data.shortDescription?.substring(0, 500)?.trim() || "",
-      address: data.address?.substring(0, 500)?.trim() || "",
-      neighborhood: data.neighborhood?.substring(0, 100)?.trim() || "",
-      city: data.city?.trim() || "",
-      latitude: data.latitude,
-      longitude: data.longitude,
-      images: data.images?.filter((img) => !img.startsWith("blob:")) || [],
-      amenities:
-        data.amenities?.map((amenity) => ({
-          icon: typeof amenity === "object" ? amenity.icon || "" : "",
-          text:
-            typeof amenity === "object"
-              ? amenity.text?.substring(0, 255) || ""
-              : "",
-        })) || [],
-      detalles:
-        data.detalles?.map((detalle) => ({
-          text:
-            typeof detalle === "object"
-              ? detalle.text?.substring(0, 255) || ""
-              : "",
-        })) || [],
-      details: data.details?.map((detail) => detail.substring(0, 255)) || [],
-      priority: data.priority || 0,
-    };
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-      cleanedData,
-    };
-  };
 
   // Formatear datos hero
   const heroData = {
@@ -371,13 +276,7 @@ export function ProjectFormMain({
 
   return (
     <form
-      onSubmit={(e) => {
-        console.log("🔥 Form onSubmit triggered", e);
-        console.log("🔥 Form errors:", errors);
-        console.log("🔥 Form values:", watchedValues);
-        e.preventDefault();
-        handleSubmit(handleFormSubmit)(e);
-      }}
+      onSubmit={handleSubmit(handleFormSubmit)}
       className={hideHeaderFooter ? "space-y-6" : "min-h-screen bg-white"}
     >
       {!hideHeaderFooter && <Header />}
@@ -394,6 +293,7 @@ export function ProjectFormMain({
             setValue("estimatedCompletion", newHeroData.estimatedCompletion);
             setValue("images", newHeroData.images);
           }}
+          onFilesChange={setPendingImageFiles}
           currency={watchedValues.currency || "USD"}
           disabled={isSubmitting}
           error={errors.name?.message || errors.basePrice?.message}

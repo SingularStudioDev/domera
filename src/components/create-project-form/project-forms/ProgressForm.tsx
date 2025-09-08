@@ -69,6 +69,7 @@ export function ProgressFormComponent({
               placeholder="Seleccionar imágenes de avance de obra"
               disabled={disabled}
               showUploadButton={true}
+              deferUpload={true}
             />
             <div className="mt-4 flex gap-2">
               <button

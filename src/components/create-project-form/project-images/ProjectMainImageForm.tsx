@@ -88,6 +88,7 @@ function ProjectMainImageDialog({
               disabled={disabled}
               showUploadButton={true}
               entityId={projectId}
+              deferUpload={true}
             />
             <p className="mt-2 text-xs text-gray-500">
               Esta imagen aparecerá en las tarjetas de proyecto y será la
