@@ -100,12 +100,14 @@ export function LocationFormComponent({
             </div>
             <div className="mt-4 flex gap-2">
               <button
+                type="button"
                 onClick={() => setIsEditingCoordinates(false)}
                 className="bg-primaryColor hover:bg-primaryColor/90 rounded px-4 py-2 text-white"
               >
                 Guardar
               </button>
               <button
+                type="button"
                 onClick={() => setIsEditingCoordinates(false)}
                 className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50"
               >
@@ -136,6 +138,7 @@ export function LocationFormComponent({
                   className="focus:ring-primaryColor flex-1 rounded border border-gray-300 p-2 outline-none focus:border-transparent focus:ring-2"
                 />
                 <button
+                  type="button"
                   onClick={addMasterPlanFile}
                   disabled={disabled || !newMasterPlanFile.trim()}
                   className="bg-primaryColor hover:bg-primaryColor/90 rounded px-4 py-2 text-white disabled:opacity-50"
@@ -155,6 +158,7 @@ export function LocationFormComponent({
                   <ExternalLink className="h-4 w-4 text-gray-400" />
                   <span className="flex-1 truncate text-sm">{file}</span>
                   <button
+                    type="button"
                     onClick={() => removeMasterPlanFile(index)}
                     disabled={disabled}
                     className="rounded p-1 text-red-500 hover:bg-red-50"
@@ -174,12 +178,14 @@ export function LocationFormComponent({
 
             <div className="mt-4 flex gap-2">
               <button
+                type="button"
                 onClick={() => setIsEditingMasterPlan(false)}
                 className="bg-primaryColor hover:bg-primaryColor/90 rounded px-4 py-2 text-white"
               >
                 Guardar
               </button>
               <button
+                type="button"
                 onClick={() => setIsEditingMasterPlan(false)}
                 className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50"
               >
@@ -273,6 +279,7 @@ export function LocationFormComponent({
 
               {!disabled && (
                 <button
+                  type="button"
                   onClick={() => setIsEditingMasterPlan(true)}
                   className="hover:border-primaryColor hover:bg-primaryColor/5 hover:text-primaryColor w-full rounded-lg border-2 border-dashed border-gray-300 p-3 text-gray-600 transition-colors"
                 >

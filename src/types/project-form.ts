@@ -86,7 +86,7 @@ export interface DescriptionFormProps
 
 export interface DetailsFormProps
   extends FormFieldProps<{
-    amenities: Array<{ icon?: string; text: string }>;
+    amenities: Array<{ icon: string; text: string }>;
     detalles: Array<{ text: string }>;
     details: string[];
   }> {}

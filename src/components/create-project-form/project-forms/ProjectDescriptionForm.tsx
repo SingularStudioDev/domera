@@ -72,12 +72,14 @@ export function ProjectDescriptionForm({
             </div>
             <div className="mt-4 flex gap-2">
               <button
+                type="button"
                 onClick={() => setIsEditingDescription(false)}
                 className="bg-primaryColor hover:bg-primaryColor/90 rounded px-4 py-2 text-white"
               >
                 Guardar
               </button>
               <button
+                type="button"
                 onClick={() => setIsEditingDescription(false)}
                 className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50"
               >
@@ -110,12 +112,14 @@ export function ProjectDescriptionForm({
             </div>
             <div className="mt-4 flex gap-2">
               <button
+                type="button"
                 onClick={() => setIsEditingAddress(false)}
                 className="bg-primaryColor hover:bg-primaryColor/90 rounded px-4 py-2 text-white"
               >
                 Guardar
               </button>
               <button
+                type="button"
                 onClick={() => setIsEditingAddress(false)}
                 className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50"
               >

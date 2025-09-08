@@ -136,6 +136,7 @@ export function ProjectHeroForm({
 
             <div className="mt-6 flex gap-2">
               <button
+                type="button"
                 onClick={() => {
                   setIsEditing(false);
                   setPreviewImage(null);
@@ -145,6 +146,7 @@ export function ProjectHeroForm({
                 Guardar
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setIsEditing(false);
                   setPreviewImage(null);
@@ -209,6 +211,9 @@ export function ProjectHeroForm({
                       <span className="rounded-2xl bg-white px-4 py-2 text-lg font-medium text-black">
                         {formattedDate}
                       </span>
+                      <span className="rounded-2xl bg-white px-4 py-2 text-lg font-medium text-black">
+                        {value.city || "Ciudad"}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -242,6 +247,19 @@ export function ProjectHeroForm({
                             )
                           }
                           className="w-fit min-w-0 border-none bg-transparent text-lg font-medium outline-none"
+                        />
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-2 text-lg font-medium text-black">
+                        <input
+                          type="text"
+                          value={value.city || ""}
+                          onChange={(e) => {
+                            const newValue = e.target.value.substring(0, 100);
+                            handleFieldChange("city", newValue);
+                          }}
+                          placeholder="Ciudad"
+                          maxLength={100}
+                          className="w-24 min-w-0 border-none bg-transparent text-lg font-medium outline-none"
                         />
                       </div>
                     </>
@@ -305,6 +323,7 @@ export function ProjectHeroForm({
         {/* Botón flotante para editar imágenes */}
         {!disabled && (
           <button
+            type="button"
             onClick={() => setIsEditing(true)}
             className="bg-primaryColor hover:bg-primaryColor/90 absolute right-6 bottom-6 z-30 rounded-full p-3 text-white shadow-lg transition-colors duration-200"
             title="Editar imágenes del proyecto"

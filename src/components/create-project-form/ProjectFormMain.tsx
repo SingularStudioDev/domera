@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 
 import { ProjectFormData } from "@/types/project-form";
 import { getOrganizationsAction } from "@/lib/actions/organizations";
@@ -48,7 +48,7 @@ export function ProjectFormMain({
   showBackButton = false,
   onBack,
 }: ProjectFormMainProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  console.log("🚀 ProjectFormMain component mounted");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrganizations, setLoadingOrganizations] = useState(true);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
@@ -92,13 +92,15 @@ export function ProjectFormMain({
   };
 
   const {
+    control,
     watch,
     setValue,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm({
-    resolver: zodResolver(projectFormSchema),
+    // Temporalmente sin resolver para debuggear
     defaultValues,
+    mode: "onSubmit",
   });
 
   const watchedValues = watch();
@@ -180,21 +182,12 @@ export function ProjectFormMain({
 
   const handleFormSubmit = async (data: any) => {
     console.log("🚀 handleFormSubmit called with data:", data);
-    setIsSubmitting(true);
+    console.log("🚀 handleFormSubmit FUNCTION IS RUNNING");
+    
     try {
-      // Validate data before sending
-      console.log("📝 Starting form validation...");
-      const validation = validateFormData(data);
-      console.log("✅ Validation result:", validation);
-      
-      if (!validation.isValid) {
-        console.error("❌ Form validation errors:", validation.errors);
-        console.log(`Error en el formulario:\n\n${validation.errors.join("\n")}`);
-        return;
-      }
-
-      console.log("📤 Calling onSubmit with cleaned data:", validation.cleanedData);
-      await onSubmit(validation.cleanedData);
+      // Sin validación Zod por ahora para debuggear
+      console.log("📤 Calling onSubmit with data:", data);
+      await onSubmit(data as ProjectFormData);
     } catch (error: unknown) {
       // Don't log Next.js redirect "errors" - they are expected behavior
       if (error instanceof Error && error.message === "NEXT_REDIRECT") {
@@ -202,11 +195,8 @@ export function ProjectFormMain({
         return;
       }
       // Show user-friendly error message
-      console.log(
-        `Error: ${error instanceof Error ? error.message : "Error desconocido"}`,
-      );
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error submitting form:", error);
+      alert(`Error: ${error instanceof Error ? error.message : "Error desconocido"}`);
     }
   };
 
@@ -381,7 +371,13 @@ export function ProjectFormMain({
 
   return (
     <form
-      onSubmit={handleSubmit(handleFormSubmit)}
+      onSubmit={(e) => {
+        console.log("🔥 Form onSubmit triggered", e);
+        console.log("🔥 Form errors:", errors);
+        console.log("🔥 Form values:", watchedValues);
+        e.preventDefault();
+        handleSubmit(handleFormSubmit)(e);
+      }}
       className={hideHeaderFooter ? "space-y-6" : "min-h-screen bg-white"}
     >
       {!hideHeaderFooter && <Header />}
@@ -564,34 +560,7 @@ export function ProjectFormMain({
           </div>
         </div>
 
-        {/* BOTONES DE ACCIÓN */}
-        <div className="container mx-auto px-4 py-10 md:px-0">
-          <div className="flex justify-end gap-4">
-            <button
-              type="button"
-              disabled={isSubmitting}
-              className="rounded-lg border border-gray-300 px-6 py-3 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={() => router.back()}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-primaryColor hover:bg-primaryColor/90 rounded-lg px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isSubmitting
-                ? isEditing
-                  ? "Actualizando..."
-                  : "Creando..."
-                : isEditing
-                  ? "Actualizar Proyecto"
-                  : "Crear Proyecto"}
-            </button>
-          </div>
-        </div>
-
-        {/* Información adicional del formulario */}
+        {/* Configuración del proyecto - MOVIDO ANTES DE LOS BOTONES */}
         <div className="container mx-auto px-4 pb-10 md:px-0">
           <div className="rounded-lg bg-gray-50 p-6">
             <h3 className="mb-4 font-semibold text-gray-900">
@@ -744,6 +713,33 @@ export function ProjectFormMain({
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* BOTONES DE ACCIÓN - AHORA DESPUÉS DE LA CONFIGURACIÓN */}
+        <div className="container mx-auto px-4 py-10 md:px-0">
+          <div className="flex justify-end gap-4">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              className="rounded-lg border border-gray-300 px-6 py-3 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => router.back()}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-primaryColor hover:bg-primaryColor/90 rounded-lg px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSubmitting
+                ? isEditing
+                  ? "Actualizando..."
+                  : "Creando..."
+                : isEditing
+                  ? "Actualizar Proyecto"
+                  : "Crear Proyecto"}
+            </button>
           </div>
         </div>
       </main>

@@ -299,10 +299,10 @@ export function ProjectDetailsForm({
         </div>
 
         {/* DETAILS - Detalles personalizables del proyecto */}
-        {/* <div>
+        <div>
           <div className="mb-6">
             <h3 className="mb-4 text-xl font-semibold text-gray-900">
-              Inversion{" "}
+              Detalles del Proyecto
             </h3>
 
             <div className="mb-4 rounded-lg bg-gray-50 p-4">
@@ -371,7 +371,7 @@ export function ProjectDetailsForm({
               )}
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
 
       {/* Mensajes de error */}

@@ -77,11 +77,10 @@ export const projectFormSchema = z.object({
 
   estimatedCompletion: z.date().nullable().default(null),
 
-  // IMPORTANTE: organizationId puede ser opcional para super admins
+  // IMPORTANTE: organizationId es requerido para la creación
   organizationId: z
     .string()
     .min(1, "Organización es requerida")
-    .uuid("Organization ID debe ser un UUID válido")
     .optional(),
 
   status: z

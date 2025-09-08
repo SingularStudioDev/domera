@@ -94,6 +94,8 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
         images: data.images || [],
         amenities: data.amenities?.map((amenity) => amenity.text) || [],
         detalles: data.detalles?.map((detalle) => detalle.text) || [],
+        details: data.details || [],
+        priority: data.priority || 0,
         startDate: undefined,
         estimatedCompletion: data.estimatedCompletion || undefined,
       };
