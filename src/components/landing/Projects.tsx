@@ -155,11 +155,7 @@ export default async function Projects({
             return (
               <div
                 key={project.id}
-                className={
-                  index === projects.length - 1 && projects.length % 3 === 1
-                    ? "col-span-full"
-                    : ""
-                }
+                className={index === 0 ? "col-span-full" : ""}
               >
                 <ProjectCard
                   slug={projectData.slug}

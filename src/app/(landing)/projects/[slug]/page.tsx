@@ -45,8 +45,9 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
       }).format(project.estimatedCompletion)
     : "A definir";
 
-  // Pass amenities data directly without converting to string
-  const amenitiesData = project.amenities || "Amenidades a confirmar";
+  // Parse amenities and details data from JSON fields
+  const amenitiesData = project.amenities;
+  const detailsData = project.details;
 
   // Parse master plan files
   const masterPlanFiles: MasterPlanFile[] = Array.isArray(
@@ -131,10 +132,14 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
               <ProjectDescription
                 description={project.description || "Descripción próximamente"}
                 adress={project.address || "Direccion próximamente"}
-                organization={project.organization || { name: "Organización próximamente" }}
+                organization={
+                  (project as any).organization || {
+                    name: "Organización próximamente",
+                  }
+                }
               />
 
-              <ProjectDetails amenities={Array.isArray(amenitiesData) ? amenitiesData : []} />
+              <ProjectDetails amenities={amenitiesData} details={detailsData} />
 
               <ProjectImageCarousel
                 images={carouselImages}

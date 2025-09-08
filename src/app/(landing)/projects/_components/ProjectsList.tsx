@@ -42,7 +42,7 @@ interface ProjectsListProps {
  */
 const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   const price = project.basePrice
-    ? formatCurrency(parseFloat(project.basePrice.toString()), project.currency)
+    ? formatCurrency(Number(project.basePrice))
     : "Consultar precio";
 
   const status = project.neighborhood || project.city;
@@ -54,14 +54,15 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
     : "Fecha TBD";
 
   // Use second image from project images array (index 1) for ProjectCard
-  const projectImages = Array.isArray(project.images) 
-    ? project.images.filter((img): img is string => typeof img === 'string') 
+  const projectImages = Array.isArray(project.images)
+    ? project.images.filter((img): img is string => typeof img === "string")
     : [];
-  const image = projectImages.length >= 2 && projectImages[1] 
-    ? projectImages[1] 
-    : projectImages.length > 0 
-      ? projectImages[0] 
-      : `/images/${project.slug}-main.png`;
+  const image =
+    projectImages.length >= 2 && projectImages[1]
+      ? projectImages[1]
+      : projectImages.length > 0
+        ? projectImages[0]
+        : `/images/${project.slug}-main.png`;
 
   // Create features array from boolean fields
   const projectWithFeatures = project as Project & {
@@ -117,7 +118,9 @@ export default function ProjectsList({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log("projec", projects);
+  console.log('project.basePrice', projects
+            
+  )
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -217,15 +220,12 @@ export default function ProjectsList({
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project, index) => {
           const projectData = formatProjectForDisplay(project);
+         
 
           return (
             <div
               key={project.id}
-              className={
-                index === projects.length - 1 && projects.length % 3 === 1
-                  ? "col-span-full mx-auto max-w-md"
-                  : ""
-              }
+              className={index === 0 ? "col-span-full" : ""}
             >
               <ProjectCard
                 slug={projectData.slug}

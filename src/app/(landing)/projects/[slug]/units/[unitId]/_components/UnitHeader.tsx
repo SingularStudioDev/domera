@@ -11,7 +11,7 @@ export default function UnitHeader({ projectSlug }: UnitHeaderProps) {
     <div className="container mx-auto w-full py-6">
       <Link
         href={`/projects/${projectSlug}`}
-        className="text-primaryColor inline-flex items-center gap-2 hover:text-blue-800"
+        className="text-primaryColor hover:text-primaryColor-hover inline-flex items-center gap-2 transition duration-300"
       >
         <ArrowLeft className="h-4 w-4" />
         Volver a lista de proyectos
