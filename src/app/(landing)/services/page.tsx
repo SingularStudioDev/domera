@@ -1,9 +1,41 @@
 "use client";
 
+import { useState } from "react";
+
+import { ArrowDownIcon, ChevronDownIcon } from "lucide-react";
+
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
 export default function ServicesPage() {
+  const [openItems, setOpenItems] = useState<number[]>([]);
+
+  const toggleItem = (index: number) => {
+    setOpenItems((prev) =>
+      prev.includes(index)
+        ? prev.filter((item) => item !== index)
+        : [...prev, index],
+    );
+  };
+
+  const marketingServices = [
+    {
+      title: "Estrategia Digital Personalizada",
+      description:
+        "Desarrollamos planes de marketing digital específicos para cada proyecto, incluyendo análisis de mercado, posicionamiento de marca y estrategias de contenido adaptadas al perfil de inversor ideal.",
+    },
+    {
+      title: "Campañas de Marketing Dirigidas",
+      description:
+        "Ejecutamos campañas publicitarias en múltiples canales digitales (Google Ads, Facebook, Instagram, LinkedIn) con segmentación precisa para alcanzar inversores calificados y maximizar conversiones.",
+    },
+    {
+      title: "Gestión de Contenido y Branding",
+      description:
+        "Creamos contenido visual y escrito de alta calidad, incluyendo renders, videos promocionales, copywriting especializado y material de marketing que destaque los beneficios únicos de cada proyecto.",
+    },
+  ];
+
   const investorBenefits = [
     {
       number: "01",
@@ -150,7 +182,51 @@ export default function ServicesPage() {
           </div>
         </section>
 
-        <section className="h-[80dvh] bg-[#F5F5F5]"></section>
+        <section className="min-h-[80dvh] bg-[#F5F5F5] py-12 md:py-22">
+          <div className="container mx-auto flex w-full flex-col-reverse items-start gap-12 px-4 md:flex-row md:px-0">
+            {/* Imagen a la izquierda */}
+            <div className="flex-1">
+              <img
+                src="/service-img-2.png"
+                alt="Marketing para desarrolladoras - Servicios digitales"
+                className="h-[636px] w-[607px] rounded-2xl object-cover"
+              />
+            </div>
+
+            {/* Marketing para desarrolladoras - Desplegables a la derecha */}
+            <div className="flex-1">
+              <h2 className="mb-8 text-3xl font-semibold text-black md:text-4xl">
+                Marketing para desarrolladoras
+              </h2>
+
+              <div className="space-y-0">
+                {marketingServices.map((service, index) => (
+                  <div key={index} className="border-b border-gray-300">
+                    <div
+                      onClick={() => toggleItem(index)}
+                      className="flex cursor-pointer items-center justify-between gap-10 py-6 text-black transition duration-300 hover:text-[#0040FF]"
+                    >
+                      <span className="text-lg font-bold">{service.title}</span>
+                      <ArrowDownIcon
+                        className={`h-5 min-h-5 w-5 min-w-5 transition-transform duration-300 ${
+                          openItems.includes(index) ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
+
+                    {openItems.includes(index) && (
+                      <div className="pb-6 text-gray-700">
+                        <p className="text-base leading-relaxed">
+                          {service.description}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />
