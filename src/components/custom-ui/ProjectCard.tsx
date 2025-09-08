@@ -112,7 +112,7 @@ const ProjectCard = ({
           className="h-full w-full object-cover"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = "/project-placeholder.png";
+            target.src = "/project-fallback.png";
           }}
         />
 
@@ -154,7 +154,7 @@ const ProjectCard = ({
         </div>
 
         <div className="absolute bottom-0 flex w-full items-end gap-5">
-          <div className="group-hover:text-primaryColor relative flex w-full flex-col gap-2 rounded-t-3xl bg-white py-3 pr-4 pl-6 text-black transition duration-300">
+          <div className="group-hover:text-primaryColor relative flex w-full flex-col gap-2 bg-white py-3 pr-4 pl-6 text-black transition duration-300">
             {/* Bloque superior con curva hacia la derecha */}
             <h3 className="w-full bg-white text-3xl font-medium">{title}</h3>
 
