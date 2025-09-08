@@ -1,20 +1,43 @@
-import { SquareArrowOutUpRightIcon } from "lucide-react";
+import { Download, ExternalLink, FileText } from "lucide-react";
 
 import StaticMap from "@/components/custom-ui/StaticMap";
+import type { MasterPlanFile } from "@/types/project-form";
 
 interface ProjectLocationProps {
-  planFiles: string[];
+  masterPlanFiles: MasterPlanFile[];
   latitude?: number | null;
   longitude?: number | null;
   projectName?: string;
 }
 
 export default function ProjectLocation({
-  planFiles,
+  masterPlanFiles,
   latitude,
   longitude,
   projectName = "Proyecto",
 }: ProjectLocationProps) {
+  const formatFileSize = (bytes?: number): string => {
+    if (!bytes) return "";
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    if (bytes === 0) return "0 Bytes";
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
+  };
+
+  const handleFileOpen = (file: MasterPlanFile) => {
+    window.open(file.url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleFileDownload = (file: MasterPlanFile) => {
+    const link = document.createElement("a");
+    link.href = file.url;
+    link.download = file.name;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
   return (
     <div className="flex w-full flex-col items-start md:flex-row md:gap-10">
       <div className="w-full">
@@ -42,23 +65,49 @@ export default function ProjectLocation({
         </div>
       </div>
 
-      {/* TODO: Revisar que esto funcione con una seed mejor */}
       <div className="w-full">
         <h3 className="mb-6 text-3xl font-semibold text-black">Master plan</h3>
         <div className="space-y-0">
-          {planFiles.length > 0
-            ? planFiles.map((file, index) => (
+          {masterPlanFiles.length > 0
+            ? masterPlanFiles.map((file, index) => (
                 <div
-                  key={index}
-                  className={`${index === 0 ? "border-t" : ""} hover:text-primaryColor flex cursor-pointer items-center justify-between border-b border-gray-300 p-4 text-black transition duration-300`}
+                  key={file.id}
+                  className={`${index === 0 ? "border-t" : ""} flex items-center justify-between border-b border-gray-300 p-4 text-black transition duration-300 hover:bg-gray-50`}
                 >
-                  <span className="font-medium">{file}</span>
-                  <button className="cursor-pointer text-xl">
-                    <SquareArrowOutUpRightIcon className="h-5 w-5" />
-                  </button>
+                  <div className="flex items-center gap-3 flex-1">
+                    <FileText className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{file.name}</p>
+                      {file.size && (
+                        <p className="text-sm text-gray-500">
+                          {formatFileSize(file.size)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => handleFileOpen(file)}
+                      className="rounded p-2 text-blue-600 hover:bg-blue-50 transition-colors"
+                      title="Abrir archivo"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleFileDownload(file)}
+                      className="rounded p-2 text-green-600 hover:bg-green-50 transition-colors"
+                      title="Descargar archivo"
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ))
-            : "Proximamente"}
+            : <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Proximamente</p>
+              </div>}
         </div>
       </div>
     </div>

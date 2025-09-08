@@ -64,6 +64,14 @@ interface CreateProjectInput {
   images: string[];
   amenities: string[];
   details: string[];
+  masterPlanFiles?: Array<{
+    id: string;
+    name: string;
+    url: string;
+    path: string;
+    size?: number;
+    type?: string;
+  }>;
   priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;
@@ -85,6 +93,14 @@ interface UpdateProjectInput {
   images?: string[];
   amenities?: string[];
   details?: string[];
+  masterPlanFiles?: Array<{
+    id: string;
+    name: string;
+    url: string;
+    path: string;
+    size?: number;
+    type?: string;
+  }>;
   priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;

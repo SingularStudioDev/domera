@@ -28,7 +28,6 @@ interface ProjectFormMainProps {
   onSubmit: (data: ProjectFormData) => Promise<void>;
   isEditing?: boolean;
   organizationId?: string;
-  hideHeaderFooter?: boolean;
   showBackButton?: boolean;
   onBack?: () => void;
 }
@@ -44,7 +43,6 @@ export function ProjectFormMain({
   onSubmit,
   isEditing = false,
   organizationId,
-  hideHeaderFooter = false,
   showBackButton = false,
   onBack,
 }: ProjectFormMainProps) {
@@ -278,9 +276,9 @@ export function ProjectFormMain({
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
-      className={hideHeaderFooter ? "space-y-6" : "min-h-screen bg-white"}
+      className="min-h-screen bg-white"
     >
-      {!hideHeaderFooter && <Header />}
+      <Header />
 
       <main>
         {/* PROJECT HERO FORM - Exactamente igual al layout original */}
@@ -316,21 +314,20 @@ export function ProjectFormMain({
         )}
 
         {/* IMAGEN PRINCIPAL FORM - Solo para modo dashboard */}
-        {hideHeaderFooter && (
-          <div className="mb-10">
-            <div className="container mx-auto px-4 md:px-0">
-              <ProjectMainImageForm
-                value={mainImageData}
-                onChange={(newMainImageData) => {
-                  setValue("images", newMainImageData.images);
-                }}
-                disabled={isSubmitting}
-                error={errors.images?.message}
-                projectId={tempProjectId || "temp"}
-              />
-            </div>
+
+        <div className="mb-10">
+          <div className="container mx-auto px-4 md:px-0">
+            <ProjectMainImageForm
+              value={mainImageData}
+              onChange={(newMainImageData) => {
+                setValue("images", newMainImageData.images);
+              }}
+              disabled={isSubmitting}
+              error={errors.images?.message}
+              projectId={tempProjectId || "temp"}
+            />
           </div>
-        )}
+        </div>
 
         {/* CONTENIDO PRINCIPAL - Exactamente igual al layout original */}
         <div className="container mx-auto flex flex-col gap-10 px-4 md:flex-row md:px-0">
@@ -349,7 +346,6 @@ export function ProjectFormMain({
               disabled={isSubmitting}
               error={errors.description?.message || errors.address?.message}
             />
-
             {/* PROJECT DETAILS FORM */}
             <ProjectDetailsForm
               value={detailsData}
@@ -361,7 +357,6 @@ export function ProjectFormMain({
               disabled={isSubmitting}
               error={errors.amenities?.message}
             />
-
             {/* IMAGE CAROUSEL FORM */}
             <ImageCarouselForm
               value={carouselData}
@@ -374,44 +369,18 @@ export function ProjectFormMain({
               className="py-5 md:py-10"
               projectId={tempProjectId || "temp"}
             />
-
             {/* LOCATION FORM - Mapa para dashboard */}
-            {hideHeaderFooter ? (
-              <div className="rounded-lg border bg-white p-6 shadow-sm">
-                <h3 className="mb-4 text-xl font-semibold">
-                  Ubicación del Proyecto
-                </h3>
-                <MapSelector
-                  latitude={watchedValues.latitude ?? null}
-                  longitude={watchedValues.longitude ?? null}
-                  address={watchedValues.address}
-                  onChange={(lat, lng) => {
-                    setValue("latitude", lat);
-                    setValue("longitude", lng);
-                  }}
-                  disabled={isSubmitting}
-                />
-                {(errors.latitude?.message || errors.longitude?.message) && (
-                  <div className="mt-2 text-sm text-red-600">
-                    {errors.latitude?.message || errors.longitude?.message}
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* LOCATION FORM - Original para páginas públicas */
-              <LocationFormComponent
-                value={locationData}
-                onChange={(newLocationData) => {
-                  setValue("latitude", newLocationData.latitude);
-                  setValue("longitude", newLocationData.longitude);
-                  setValue("masterPlanFiles", newLocationData.masterPlanFiles);
-                }}
-                projectName={watchedValues.name || "Proyecto"}
-                disabled={isSubmitting}
-                error={errors.latitude?.message || errors.longitude?.message}
-              />
-            )}
-
+            <LocationFormComponent
+              value={locationData}
+              onChange={(newLocationData) => {
+                setValue("latitude", newLocationData.latitude);
+                setValue("longitude", newLocationData.longitude);
+                setValue("masterPlanFiles", newLocationData.masterPlanFiles);
+              }}
+              projectName={watchedValues.name || "Proyecto"}
+              disabled={isSubmitting}
+              error={errors.latitude?.message || errors.longitude?.message}
+            />
             {/* PROGRESS FORM - Nota: Este será manejado como una sección separada */}
             <ProgressFormComponent
               progressImages={[]}
@@ -608,7 +577,7 @@ export function ProjectFormMain({
         </div>
       </main>
 
-      {!hideHeaderFooter && <Footer />}
+      <Footer />
     </form>
   );
 }

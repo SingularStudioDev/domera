@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { formatCurrency } from "@/utils/utils";
 
+import type { MasterPlanFile } from "@/types/project-form";
 import { getProjectBySlug } from "@/lib/dal/projects";
 import ProjectImageCarousel from "@/components/custom-ui/ProjectImageCarousel";
 import Footer from "@/components/Footer";
@@ -46,7 +47,22 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
 
   // Pass amenities data directly without converting to string
   const amenitiesData = project.amenities || "Amenidades a confirmar";
-  const planFiles: string[] = project.masterPlanFiles;
+
+  // Parse master plan files
+  const masterPlanFiles: MasterPlanFile[] = Array.isArray(
+    project.masterPlanFiles,
+  )
+    ? (project.masterPlanFiles as unknown as MasterPlanFile[])
+    : typeof project.masterPlanFiles === "string"
+      ? (() => {
+          try {
+            const parsed = JSON.parse(project.masterPlanFiles as string);
+            return Array.isArray(parsed) ? (parsed as MasterPlanFile[]) : [];
+          } catch {
+            return [];
+          }
+        })()
+      : [];
   // Parse and filter images following project patterns
   const allImages = Array.isArray(project.images)
     ? (project.images as string[])
@@ -92,6 +108,8 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
     longitudeNumber: project.longitude ? Number(project.longitude) : null,
   });
 
+  console.log("masterPlanFiles", masterPlanFiles);
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -113,10 +131,10 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
               <ProjectDescription
                 description={project.description || "Descripción próximamente"}
                 adress={project.address || "Direccion próximamente"}
-                organization={project.organization}
+                organization={project.organization || { name: "Organización próximamente" }}
               />
 
-              <ProjectDetails amenities={amenitiesData} />
+              <ProjectDetails amenities={Array.isArray(amenitiesData) ? amenitiesData : []} />
 
               <ProjectImageCarousel
                 images={carouselImages}
@@ -126,7 +144,7 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
               />
 
               <ProjectLocation
-                planFiles={planFiles}
+                masterPlanFiles={masterPlanFiles}
                 latitude={project.latitude ? Number(project.latitude) : null}
                 longitude={project.longitude ? Number(project.longitude) : null}
                 projectName={project.name}
@@ -140,7 +158,6 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
         </div>
       </main>
 
-      {/* Footer Component similar to header as shown in Figma */}
       <Footer />
     </div>
   );

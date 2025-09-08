@@ -1,3 +1,12 @@
+export interface MasterPlanFile {
+  id: string;
+  name: string;
+  url: string;
+  path: string;
+  size?: number;
+  type?: string;
+}
+
 export interface ProjectFormData {
   // Información básica del proyecto
   name: string;
@@ -17,7 +26,7 @@ export interface ProjectFormData {
 
   // Imágenes y archivos - URLs como strings tras ser subidas
   images: string[];
-  masterPlanFiles: string[];
+  masterPlanFiles: MasterPlanFile[];
 
   // Contenido detallado - respetando el schema del DAL
   amenities: Array<{ icon: string; text: string }>;
@@ -95,7 +104,7 @@ export interface LocationFormProps
   extends FormFieldProps<{
     latitude: number | null;
     longitude: number | null;
-    masterPlanFiles: string[];
+    masterPlanFiles: MasterPlanFile[];
   }> {
   projectName: string;
 }

@@ -56,3 +56,48 @@ export function validateImageFiles(files: File[]): {
 
   return { valid, invalid };
 }
+
+/**
+ * Validate document files before upload
+ * Similar to image validation but for documents
+ */
+export function validateDocumentFiles(files: File[]): {
+  valid: File[];
+  invalid: Array<{ file: File; reason: string }>;
+} {
+  const valid: File[] = [];
+  const invalid: Array<{ file: File; reason: string }> = [];
+
+  const maxSize = 20 * 1024 * 1024; // 20MB for documents
+  const allowedTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel", 
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain",
+    "image/jpeg",
+    "image/jpg",
+    "image/png", 
+    "image/webp",
+  ];
+
+  for (const file of files) {
+    if (file.size > maxSize) {
+      invalid.push({
+        file,
+        reason: `El archivo excede el tamaño máximo de ${Math.round(maxSize / (1024 * 1024))}MB`,
+      });
+      continue;
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      invalid.push({ file, reason: `Tipo de archivo ${file.type} no permitido` });
+      continue;
+    }
+
+    valid.push(file);
+  }
+
+  return { valid, invalid };
+}

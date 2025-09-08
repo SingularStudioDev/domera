@@ -105,7 +105,16 @@ export const projectFormSchema = z.object({
     )
     .default([]),
 
-  masterPlanFiles: z.array(z.string()).default([]),
+  masterPlanFiles: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      url: z.string().url("URL del archivo inválida"),
+      path: z.string(),
+      size: z.number().optional(),
+      type: z.string().optional(),
+    })
+  ).default([]),
 
   // Imágenes - URLs como strings (pueden estar vacías al principio)
   images: z.array(z.string()).default([]),
@@ -140,7 +149,16 @@ export const detailsFormSchema = z.object({
 export const locationFormSchema = z.object({
   latitude: z.number().min(-90).max(90).nullable(),
   longitude: z.number().min(-180).max(180).nullable(),
-  masterPlanFiles: z.array(z.string()),
+  masterPlanFiles: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      url: z.string().url("URL del archivo inválida"),
+      path: z.string(),
+      size: z.number().optional(),
+      type: z.string().optional(),
+    })
+  ),
 });
 
 export const progressFormSchema = z.object({

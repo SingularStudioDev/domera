@@ -33,6 +33,21 @@ interface ImageUploadResult {
   }>;
 }
 
+interface DocumentUploadResult {
+  success: boolean;
+  documents?: Array<{
+    id: string;
+    name: string;
+    url: string;
+    path: string;
+  }>;
+  error?: string;
+  failedUploads?: Array<{
+    fileName: string;
+    error: string;
+  }>;
+}
+
 // =============================================================================
 // PROJECT IMAGE UPLOADS
 // =============================================================================
@@ -399,6 +414,116 @@ export async function uploadAvatar(
     };
   } catch (error) {
     console.error("Error uploading avatar:", error);
+    return {
+      success: false,
+      error: `Error interno del servidor: ${error instanceof Error ? error.message : "Unknown error"}`,
+    };
+  }
+}
+
+// =============================================================================
+// PROJECT DOCUMENT UPLOADS
+// =============================================================================
+
+export async function uploadProjectDocuments(
+  formData: FormData,
+  projectId?: string,
+): Promise<DocumentUploadResult> {
+  try {
+    // Validate session
+    const session = await validateSession();
+    if (!session.user) {
+      return { success: false, error: "Usuario no autenticado" };
+    }
+
+    // Extract files from FormData
+    const files: File[] = [];
+    for (const [key, value] of formData.entries()) {
+      if (key.startsWith("document-") && value instanceof File && value.size > 0) {
+        files.push(value);
+      }
+    }
+
+    if (files.length === 0) {
+      return { success: false, error: "No se encontraron documentos válidos" };
+    }
+
+    // Validate file count
+    if (files.length > 10) {
+      return { success: false, error: "Máximo 10 documentos permitidos" };
+    }
+
+    // Import necessary functions
+    const { uploadFiles, STORAGE_BUCKETS, STORAGE_FOLDERS } = await import(
+      "@/lib/dal/storage"
+    );
+
+    // Define allowed document types
+    const allowedDocumentTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "image/jpeg",
+      "image/jpg", 
+      "image/png",
+      "image/webp",
+    ];
+
+    // Upload documents using DAL
+    const folder = projectId
+      ? `${STORAGE_FOLDERS.PROJECTS}/${projectId}/documents`
+      : `${STORAGE_FOLDERS.PROJECTS}/documents`;
+
+    const result = await uploadFiles(files, {
+      bucket: STORAGE_BUCKETS.DOCUMENTS,
+      folder,
+      isPublic: false, // Documents should be private by default
+      maxSize: 20 * 1024 * 1024, // 20MB for documents
+      allowedMimeTypes: allowedDocumentTypes,
+    });
+
+    if (!result.data) {
+      return {
+        success: false,
+        error: result.error || "Error desconocido en la subida",
+      };
+    }
+
+    // Check if there were any failures
+    const batchResult = result.data;
+    if (batchResult.failed.length > 0 && batchResult.successful.length === 0) {
+      // All failed
+      return {
+        success: false,
+        error: "Error en la subida de todos los documentos",
+        failedUploads: batchResult.failed,
+      };
+    }
+
+    // Convert to expected format
+    const documents = batchResult.successful.map((doc) => ({
+      id: doc.id,
+      name: doc.name,
+      url: doc.url,
+      path: doc.path,
+    }));
+
+    const response: DocumentUploadResult = {
+      success: true,
+      documents,
+    };
+
+    // Include failed uploads if any
+    if (batchResult.failed.length > 0) {
+      response.failedUploads = batchResult.failed;
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Error uploading project documents:", error);
     return {
       success: false,
       error: `Error interno del servidor: ${error instanceof Error ? error.message : "Unknown error"}`,

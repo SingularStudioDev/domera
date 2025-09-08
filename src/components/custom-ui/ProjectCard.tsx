@@ -102,7 +102,7 @@ const ProjectCard = ({
   return (
     <Link
       href={`/projects/${slug}`}
-      className="relative block overflow-hidden border rounded-3xl bg-white transition-shadow duration-300 hover:shadow-lg"
+      className="hover:border-primaryColor relative block overflow-hidden rounded-3xl border bg-white transition duration-300 hover:shadow-sm"
     >
       {/* Image */}
       <div className="group relative h-[567px] overflow-hidden md:h-[547px]">
@@ -154,12 +154,12 @@ const ProjectCard = ({
         </div>
 
         <div className="absolute bottom-0 flex w-full items-end gap-5">
-          <div className="group-hover:text-primaryColor relative flex w-full flex-col gap-2  bg-white py-3 pr-4 pl-6 text-black transition duration-300">
+          <div className="group-hover:text-primaryColor relative flex w-full flex-col gap-2 bg-white py-3 pr-4 pl-6 text-black transition duration-300">
             {/* Bloque superior con curva hacia la derecha */}
             <h3 className="w-full bg-white text-3xl font-medium">{title}</h3>
 
             {/* Bloque inferior  TODO: Revisar este precio se guarda ya formateado o se trae normal y yo lo formateo*/}
-            <p className="w-full text-xl bg-white">Desde: {price}</p>
+            <p className="w-full bg-white text-xl">Desde: {price}</p>
           </div>
         </div>
       </div>
