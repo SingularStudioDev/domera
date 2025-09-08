@@ -15,12 +15,15 @@ import {
 } from "lucide-react";
 
 import { toggleFavoriteAction } from "@/lib/actions/favourites";
+import { formatUnitType } from "@/lib/utils";
 import MainButton from "@/components/custom-ui/MainButton";
 import { MaxUnitsModal } from "@/components/MaxUnitsModal";
 
 interface UnitInfoProps {
   unitId: string;
   unitNumber: string;
+  unitType: string;
+  unitFirstImage?: string;
   floor: number | null;
   facing: string | null;
   orientation: string | null;
@@ -32,11 +35,14 @@ interface UnitInfoProps {
   isFavorite?: boolean;
   projectId?: string;
   projectName?: string;
+  projectFirstImage?: string;
 }
 
 export default function UnitInfo({
   unitId,
   unitNumber,
+  unitType,
+  unitFirstImage,
   floor,
   facing,
   orientation,
@@ -48,6 +54,7 @@ export default function UnitInfo({
   isFavorite,
   projectId,
   projectName,
+  projectFirstImage,
 }: UnitInfoProps) {
   const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(
     isFavorite || false,
@@ -105,9 +112,10 @@ export default function UnitInfo({
       id: unitId,
       projectId: projectId,
       projectName: projectName,
+      projectFirstImage: projectFirstImage,
       unitId: unitId,
-      unitTitle: `Unidad ${unitNumber} - Piso ${floor || "N/A"}`,
-      image: `/images/unit-${unitNumber}-main.png`,
+      unitTitle: `${formatUnitType(unitType)} ${unitNumber}`,
+      image: unitFirstImage || `/images/unit-${unitNumber}-main.png`, // TODO: Esto tiene que ser un placeholder
       bathrooms: bathrooms,
       bedrooms: bedrooms,
       builtArea: area,

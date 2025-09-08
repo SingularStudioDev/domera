@@ -436,14 +436,14 @@ export async function createUnit(
   userAgent?: string,
 ): Promise<Result<Unit>> {
   try {
-    const validInput = CreateUnitSchema.parse(input);
+    // Input is already validated by the server action
     const client = getDbClient();
 
     // Check if unit number is unique within project
     const existingUnit = await client.unit.findFirst({
       where: {
-        projectId: validInput.projectId,
-        unitNumber: validInput.unitNumber,
+        projectId: input.projectId,
+        unitNumber: input.unitNumber,
       },
     });
 
@@ -456,7 +456,19 @@ export async function createUnit(
     // Create unit
     const unit = await client.unit.create({
       data: {
-        ...validInput,
+        projectId: input.projectId,
+        unitNumber: input.unitNumber,
+        floor: input.floor,
+        unitType: input.unitType,
+        status: input.status,
+        bedrooms: input.bedrooms,
+        bathrooms: input.bathrooms,
+        totalArea: input.area,
+        orientation: input.orientation,
+        price: input.price,
+        currency: "USD",
+        features: input.features,
+        images: input.images,
         createdBy: userId,
       },
       include: {

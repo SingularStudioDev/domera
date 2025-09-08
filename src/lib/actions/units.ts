@@ -26,6 +26,7 @@ import {
   validateUnitsAvailability,
   validateUnitsExist,
 } from "@/lib/dal/units";
+import { CreateUnitSchema } from "@/lib/validations/schemas";
 import {
   bulkCreateUnitsWithValidation,
   getBulkCreationSummary,
@@ -48,20 +49,23 @@ interface UnitFiltersInput {
 }
 
 interface CreateUnitInput {
-  projectId: string;
-  unitNumber: string;
-  unitType: string;
-  status: UnitStatus;
-  floor: number;
+  project_id: string;
+  unit_number: string;
+  unit_type: string;
+  floor?: number;
   bedrooms: number;
   bathrooms: number;
-  area: number;
-  price: number;
+  total_area?: number;
+  built_area?: number;
   orientation?: string;
-  balcony: boolean;
-  terrace: boolean;
-  features: any;
-  images: string[];
+  facing?: string;
+  price: number;
+  currency?: string;
+  description?: string;
+  features?: string[];
+  images?: string[];
+  floor_plan_url?: string;
+  dimensions?: string;
 }
 
 interface UpdateUnitInput {
@@ -343,8 +347,11 @@ export async function createUnitAction(
   userAgent?: string,
 ): Promise<UnitActionResult> {
   try {
+    // Validate input data with Zod schema
+    const validatedInput = CreateUnitSchema.parse(input);
+    
     // Validate project access
-    const projectAccessResult = await validateProjectAccess(input.projectId);
+    const projectAccessResult = await validateProjectAccess(validatedInput.project_id);
     if (!projectAccessResult.success) {
       return { success: false, error: projectAccessResult.error };
     }
@@ -367,15 +374,33 @@ export async function createUnitAction(
       };
     }
 
+    // Transform validated input from schema format to DAL format
+    const dalInput = {
+      projectId: validatedInput.project_id,
+      unitNumber: validatedInput.unit_number,
+      unitType: validatedInput.unit_type as any,
+      status: "available" as any,
+      floor: validatedInput.floor || 0,
+      bedrooms: validatedInput.bedrooms,
+      bathrooms: validatedInput.bathrooms,
+      area: validatedInput.total_area || 0,
+      price: validatedInput.price,
+      orientation: validatedInput.orientation,
+      balcony: false,
+      terrace: false,
+      features: validatedInput.features || [],
+      images: validatedInput.images || [],
+    };
+
     // Create unit
-    const result = await createUnit(input, user.id, ipAddress, userAgent);
+    const result = await createUnit(dalInput, user.id, ipAddress, userAgent);
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
     // Revalidate relevant paths
     revalidatePath("/projects");
-    revalidatePath(`/projects/${input.projectId}`);
+    revalidatePath(`/projects/${validatedInput.project_id}`);
     revalidatePath("/dashboard");
 
     return { success: true, data: result.data };

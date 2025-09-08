@@ -46,7 +46,7 @@ export default function CheckoutLayout({ children }: CheckoutLayoutProps) {
             {/* Back Button */}
             <Link
               href="/projects"
-              className="text-primaryColor inline-flex items-center gap-2 hover:text-blue-800"
+              className="text-primaryColor hover:text-primaryColor-hover inline-flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
               Volver
@@ -63,7 +63,10 @@ export default function CheckoutLayout({ children }: CheckoutLayoutProps) {
               <div className="flex w-full flex-col gap-10">
                 <div className="relative">
                   <img
-                    src="/images/torres-del-rio-hero.png"
+                    src={
+                      currentProject?.firstImage ||
+                      "/images/torres-del-rio-hero.png"
+                    }
                     alt={currentProject?.name || "Proyecto"}
                     className="h-[229px] w-full rounded-3xl border border-gray-300 object-cover"
                   />

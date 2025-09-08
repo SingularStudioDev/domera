@@ -137,22 +137,33 @@ export default function CreateUnitPage() {
 
     startTransition(async () => {
       try {
-        // Map schema fields to DAL expected format
+        // Validate required fields before submitting
+        if (!data.project_id || !data.unit_number || !data.unit_type) {
+          setError(
+            "Por favor completa todos los campos requeridos (proyecto, número de unidad y tipo)",
+          );
+          return;
+        }
+
+        // Transform data to match CreateUnitSchema format (snake_case)
         const unitInput = {
-          projectId: data.project_id,
-          unitNumber: data.unit_number,
-          unitType: data.unit_type,
-          status: "available" as any, // Default status
-          floor: data.floor || 0,
-          bedrooms: data.bedrooms,
-          bathrooms: data.bathrooms,
-          area: data.total_area || 0, // Maps to totalArea in DAL
-          price: data.price,
+          project_id: data.project_id,
+          unit_number: data.unit_number,
+          unit_type: data.unit_type,
+          floor: data.floor,
+          bedrooms: data.bedrooms || 0,
+          bathrooms: data.bathrooms || 0,
+          total_area: data.total_area,
+          built_area: data.built_area,
           orientation: data.orientation,
-          balcony: false, // Default values for missing boolean fields
-          terrace: false,
+          facing: data.facing,
+          price: data.price,
+          currency: data.currency || "USD",
+          description: data.description,
           features: data.features || [],
           images: uploadedImages || [],
+          floor_plan_url: data.floor_plan_url,
+          dimensions: data.dimensions,
         };
 
         const result = await createUnitAction(unitInput);

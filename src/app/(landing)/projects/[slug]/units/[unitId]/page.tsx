@@ -46,6 +46,7 @@ interface UnitData {
     name: string;
     slug: string;
     estimatedCompletion: Date | null;
+    images?: string[] | string | null;
   };
 }
 
@@ -100,6 +101,8 @@ const UnitDetailPage = () => {
   // Parse JSON fields using hooks - must be called before any early returns
   const { images, firstImage } = useImageParser(unit?.images);
   const { features, hasFeatures } = useFeatureParser(unit?.features);
+  const { images: projectImages, firstImage: projectFirstImage } =
+    useImageParser(unit?.project?.images);
 
   // Loading state
   if (loading) {
@@ -156,6 +159,8 @@ const UnitDetailPage = () => {
             <UnitInfo
               unitId={unit.id}
               unitNumber={unit.unitNumber}
+              unitType={unit.unitType}
+              unitFirstImage={firstImage}
               floor={unit.floor}
               facing={unit.facing}
               orientation={unit.orientation}
@@ -167,7 +172,7 @@ const UnitDetailPage = () => {
               isFavorite={isFavorite}
               projectId={unit.project.id || unit.project.slug}
               projectName={unit.project.name}
-              projectSlug={unit.project.slug}
+              projectFirstImage={projectFirstImage}
             />
           </div>
 

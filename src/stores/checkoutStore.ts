@@ -5,6 +5,7 @@ export interface CheckoutItem {
   id: string;
   projectId: string;
   projectName: string;
+  projectFirstImage?: string;
   unitId: string;
   unitTitle: string;
   image: string;
@@ -18,6 +19,7 @@ export interface CheckoutItem {
 export interface CheckoutProject {
   id: string;
   name: string;
+  firstImage?: string;
 }
 
 export type AddItemResult =
@@ -69,6 +71,7 @@ export const useCheckoutStore = create<CheckoutStore>()(
           currentProject: state.currentProject || {
             id: item.projectId,
             name: item.projectName,
+            firstImage: item.projectFirstImage,
           },
         }));
 

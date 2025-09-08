@@ -1,6 +1,6 @@
 "use client";
 
-import { syne } from "@/utils/Fonts";
+import { syne } from "@/lib/utils/Fonts";
 
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";

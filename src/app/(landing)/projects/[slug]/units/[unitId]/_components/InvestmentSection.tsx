@@ -8,7 +8,7 @@ export default function InvestmentSection({
   status,
 }: InvestmentSectionProps) {
   return (
-    <div className="mb-16">
+    <div className="mt-16">
       <div className="grid grid-cols-1 lg:grid-cols-2">
         <div className="min-h-[40dvh] rounded-l-3xl bg-[#F5F5F5] p-8 pl-48">
           <h3 className="mb-6 text-3xl font-bold text-black">Inversión</h3>

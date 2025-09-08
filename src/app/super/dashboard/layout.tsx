@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { SuperAdminMenuItems } from "@/utils/MenuItems";
+import { SuperAdminMenuItems } from "@/lib/utils/MenuItems";
 
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";

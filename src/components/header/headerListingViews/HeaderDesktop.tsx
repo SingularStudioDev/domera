@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useCheckoutStore } from "@/stores/checkoutStore";
-import { syne } from "@/utils/Fonts";
+import { syne } from "@/lib/utils/Fonts";
 import {
   BuildingIcon,
   ChevronDown,

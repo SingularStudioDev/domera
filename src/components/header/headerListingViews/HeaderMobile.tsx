@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { syne } from "@/utils/Fonts";
+import { syne } from "@/lib/utils/Fonts";
 import { DoorOpenIcon, MenuIcon } from "lucide-react";
 import { signOut } from "next-auth/react";
 

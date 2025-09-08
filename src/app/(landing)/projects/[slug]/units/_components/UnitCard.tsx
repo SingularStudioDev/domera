@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { toggleFavoriteAction } from "@/lib/actions/favourites";
+import { formatUnitType } from "@/lib/utils";
 
 interface Unit {
   id: string;
@@ -81,16 +82,16 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
   };
 
   return (
-    <div className="group hover:border-primaryColor flex flex-grow flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition duration-300">
+    <div className="group hover:border-primaryColor flex flex-grow flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition duration-300">
       <div className="relative">
         <img
-          src={`/images/unit-${unit.unitNumber}-main.png`}
+          src={unit.image}
           alt={unit.title}
           className="h-64 w-full rounded-t-2xl object-cover"
         />
         <div className="absolute top-3 left-3 flex gap-2">
           <span className="flex items-center justify-center rounded-2xl bg-gray-200 px-4 py-2 text-sm font-medium text-black">
-            {unit.type}
+            {formatUnitType(unit.type)}
           </span>
           <button
             onClick={handleFavoriteClick}
