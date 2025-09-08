@@ -5,7 +5,6 @@ import { useState } from "react";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -20,6 +19,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Slider } from "@/components/ui/slider";
+import MainButton from "@/components/custom-ui/MainButton";
 
 interface ProjectFilterSheetProps {
   neighborhoods: string[];
@@ -32,10 +33,10 @@ interface ProjectFilterSheetProps {
   currentAmenities: string | null;
   currentMinPrice: string | null;
   currentMaxPrice: string | null;
-  minPrice: string;
-  maxPrice: string;
-  setMinPrice: (price: string) => void;
-  setMaxPrice: (price: string) => void;
+  priceRange: [number, number];
+  setPriceRange: (range: [number, number]) => void;
+  areaRange: [number, number];
+  setAreaRange: (range: [number, number]) => void;
   updateFilter: (key: string, value: string) => void;
   updatePriceFilter: () => void;
   resetAllFilters: () => void;
@@ -49,18 +50,17 @@ export default function ProjectFilterSheet({
   currentCity,
   currentStatus,
   currentRooms,
-  minPrice,
-  maxPrice,
-  setMinPrice,
-  setMaxPrice,
+  priceRange,
+  setPriceRange,
+  areaRange,
+  setAreaRange,
   updateFilter,
   updatePriceFilter,
   resetAllFilters,
 }: ProjectFilterSheetProps) {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [area] = useState([50, 500]);
   const [constructionPercentage] = useState("");
-  const [priceRange] = useState([0, 1500000]);
+  const maxPriceLimit = 1500000;
 
   const toggleAmenity = (amenity: string) => {
     setSelectedAmenities((prev) =>
@@ -75,7 +75,7 @@ export default function ProjectFilterSheet({
       side="right"
       className="w-full overflow-y-auto rounded-l-2xl sm:max-w-md"
     >
-      <SheetHeader className="p-6 pt-12 pl-9">
+      <SheetHeader className="p-6 pt-12 pb-0 pl-9">
         <SheetTitle className="text-xl font-bold">
           Filtros de búsqueda
         </SheetTitle>
@@ -84,13 +84,13 @@ export default function ProjectFilterSheet({
         </SheetDescription>
       </SheetHeader>
 
-      <div className="space-y-6 px-9">
+      <div className="space-y-3 px-9">
         {/* Rango de precio */}
         <div>
-          <h3 className="mb-3 font-medium text-gray-900">Rango de precio</h3>
+          <h3 className="mb-1 font-medium text-gray-900">Rango de precio</h3>
 
           {/* Simple histogram placeholder */}
-          <div className="mb-4 flex h-16 items-end justify-center gap-1 rounded bg-gray-100 px-2">
+          <div className="mb-1 flex h-16 items-end justify-center gap-1 rounded px-2">
             <div className="bg-primaryColor/20 h-8 w-2"></div>
             <div className="bg-primaryColor/40 h-12 w-2"></div>
             <div className="bg-primaryColor/60 h-16 w-2"></div>
@@ -100,36 +100,31 @@ export default function ProjectFilterSheet({
             <div className="bg-primaryColor/40 h-2 w-2"></div>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>$USD {priceRange[0].toLocaleString()}</span>
-              <span>$USD {priceRange[1].toLocaleString()}</span>
+          <div className="space-y-4">
+            <div className="px-2">
+              <Slider
+                value={priceRange}
+                onValueChange={(value) =>
+                  setPriceRange(value as [number, number])
+                }
+                onValueCommit={updatePriceFilter}
+                max={maxPriceLimit}
+                min={0}
+                step={10000}
+                className="text-primaryColor w-full"
+              />
             </div>
 
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="Mín"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                onBlur={updatePriceFilter}
-                className="flex-1"
-              />
-              <Input
-                type="number"
-                placeholder="Máx"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                onBlur={updatePriceFilter}
-                className="flex-1"
-              />
+            <div className="flex items-center justify-between text-sm text-black">
+              <span>$USD {priceRange[0].toLocaleString()}</span>
+              <span>$USD {priceRange[1].toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         {/* Tipo de propiedad */}
         <div>
-          <h3 className="mb-3 font-medium text-gray-900">Tipo de propiedad</h3>
+          <h3 className="mb-1 font-medium text-gray-900">Tipo de propiedad</h3>
           <Select
             value={currentStatus || "all"}
             onValueChange={(value) => updateFilter("status", value)}
@@ -148,7 +143,7 @@ export default function ProjectFilterSheet({
 
         {/* Ubicación */}
         <div>
-          <h3 className="mb-3 font-medium text-gray-900">Ubicación</h3>
+          <h3 className="mb-1 font-medium text-gray-900">Ubicación</h3>
 
           <div className="space-y-3">
             <Select
@@ -196,30 +191,13 @@ export default function ProjectFilterSheet({
                 </div>
               </div>
             )}
-
-            <Select
-              value={currentNeighborhood || "all"}
-              onValueChange={(value) => updateFilter("neighborhood", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar barrio" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los barrios</SelectItem>
-                {neighborhoods.map((neighborhood) => (
-                  <SelectItem key={neighborhood} value={neighborhood}>
-                    {neighborhood}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
         {/* Habitaciones y Baños */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <h3 className="mb-3 font-medium text-gray-900">Habitaciones</h3>
+            <h3 className="mb-1 font-medium text-gray-900">Habitaciones</h3>
             <Select
               value={currentRooms || "all"}
               onValueChange={(value) => updateFilter("rooms", value)}
@@ -239,7 +217,7 @@ export default function ProjectFilterSheet({
           </div>
 
           <div>
-            <h3 className="mb-3 font-medium text-gray-900">Baños</h3>
+            <h3 className="mb-1 font-medium text-gray-900">Baños</h3>
             <Select defaultValue="all">
               <SelectTrigger>
                 <SelectValue placeholder="Todas" />
@@ -258,21 +236,29 @@ export default function ProjectFilterSheet({
         {/* Área m² */}
         <div>
           <h3 className="mb-3 font-medium text-gray-900">Área m²</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>{area[0]}m²</span>
-              <span>{area[1]}m²</span>
+          <div className="space-y-4">
+            <div className="px-2">
+              <Slider
+                value={areaRange}
+                onValueChange={(value) =>
+                  setAreaRange(value as [number, number])
+                }
+                max={1000}
+                min={10}
+                step={10}
+                className="text-primaryColor w-full"
+              />
             </div>
-            <div className="flex gap-2">
-              <Input type="number" placeholder="50" className="flex-1" />
-              <Input type="number" placeholder="500" className="flex-1" />
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>{areaRange[0]}m²</span>
+              <span>{areaRange[1]}m²</span>
             </div>
           </div>
         </div>
 
         {/* % de construcción */}
         <div>
-          <h3 className="mb-3 font-medium text-gray-900">% de construcción</h3>
+          <h3 className="mb-1 font-medium text-gray-900">% de construcción</h3>
           <Select value={constructionPercentage || "0"}>
             <SelectTrigger>
               <SelectValue placeholder="0%" />
@@ -323,18 +309,15 @@ export default function ProjectFilterSheet({
         </div>
       </div>
 
-      <SheetFooter className="mt-6 flex flex-col gap-2 border-t pt-6">
-        <div className="flex w-full gap-2">
-          <Button
-            variant="outline"
+      <SheetFooter className="mt-4 px-9 pt-0">
+        <div className="flex w-full justify-between gap-2">
+          <button
             onClick={resetAllFilters}
-            className="flex-1"
+            className="text-primaryColor cursor-pointer"
           >
             Resetear
-          </Button>
-          <Button className="bg-primaryColor hover:bg-primaryColor-hover flex-1">
-            Ver resultados (5)
-          </Button>
+          </button>
+          <MainButton className="px-4 py-2">Ver resultados</MainButton>
         </div>
       </SheetFooter>
     </SheetContent>

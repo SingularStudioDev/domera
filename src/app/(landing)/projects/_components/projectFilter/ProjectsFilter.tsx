@@ -41,8 +41,12 @@ export default function ProjectsFilter({
   const currentMinPrice = searchParams.get("minPrice");
   const currentMaxPrice = searchParams.get("maxPrice");
 
-  const [minPrice, setMinPrice] = useState(currentMinPrice || "");
-  const [maxPrice, setMaxPrice] = useState(currentMaxPrice || "");
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    currentMinPrice ? parseInt(currentMinPrice) : 0,
+    currentMaxPrice ? parseInt(currentMaxPrice) : 1500000,
+  ]);
+
+  const [areaRange, setAreaRange] = useState<[number, number]>([50, 500]);
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -62,14 +66,14 @@ export default function ProjectsFilter({
   const updatePriceFilter = () => {
     const params = new URLSearchParams(searchParams);
 
-    if (minPrice) {
-      params.set("minPrice", minPrice);
+    if (priceRange[0] > 0) {
+      params.set("minPrice", priceRange[0].toString());
     } else {
       params.delete("minPrice");
     }
 
-    if (maxPrice) {
-      params.set("maxPrice", maxPrice);
+    if (priceRange[1] < 1500000) {
+      params.set("maxPrice", priceRange[1].toString());
     } else {
       params.delete("maxPrice");
     }
@@ -79,14 +83,12 @@ export default function ProjectsFilter({
   };
 
   const clearFilters = () => {
-    setMinPrice("");
-    setMaxPrice("");
+    setPriceRange([0, 1500000]);
     router.push("/projects");
   };
 
   const resetAllFilters = () => {
-    setMinPrice("");
-    setMaxPrice("");
+    setPriceRange([0, 1500000]);
     router.push("/projects");
   };
 
@@ -141,10 +143,10 @@ export default function ProjectsFilter({
             currentAmenities={currentAmenities}
             currentMinPrice={currentMinPrice}
             currentMaxPrice={currentMaxPrice}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            setMinPrice={setMinPrice}
-            setMaxPrice={setMaxPrice}
+            priceRange={priceRange}
+            setPriceRange={setPriceRange}
+            areaRange={areaRange}
+            setAreaRange={setAreaRange}
             updateFilter={updateFilter}
             updatePriceFilter={updatePriceFilter}
             resetAllFilters={resetAllFilters}
