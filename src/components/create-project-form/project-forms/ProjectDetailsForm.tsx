@@ -21,6 +21,10 @@ export function ProjectDetailsForm({
   const detalles = value.detalles || [];
   const details = value.details || [];
 
+  const formatCapitalization = (text: string): string => {
+    return text.toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+  };
+
   const handleAmenitiesChange = (
     newAmenities: Array<{ icon: string; text: string }>,
   ) => {
@@ -46,7 +50,8 @@ export function ProjectDetailsForm({
 
   const addAmenity = () => {
     if (newAmenity.trim()) {
-      handleAmenitiesChange([...amenities, { icon: "", text: newAmenity }]);
+      const formattedText = formatCapitalization(newAmenity.trim());
+      handleAmenitiesChange([...amenities, { icon: "", text: formattedText }]);
       setNewAmenity("");
     }
   };
@@ -67,8 +72,12 @@ export function ProjectDetailsForm({
         ? newValue.substring(0, 100)
         : newValue.substring(0, 255);
 
+    // Format text capitalization for amenity text
+    const formattedValue =
+      field === "text" ? formatCapitalization(limitedValue) : limitedValue;
+
     const updatedAmenities = amenities.map((amenity, i) =>
-      i === index ? { ...amenity, [field]: limitedValue } : amenity,
+      i === index ? { ...amenity, [field]: formattedValue } : amenity,
     );
     handleAmenitiesChange(updatedAmenities);
   };
@@ -114,13 +123,13 @@ export function ProjectDetailsForm({
   };
 
   return (
-    <div className="py-5">
+    <div className="py-10">
       <div className="grid gap-8 md:grid-cols-3">
         {/* AMENIDADES - Sección editable */}
         <div>
           <div className="mb-6">
             <h3 className="mb-4 text-xl font-semibold text-gray-900">
-              Amenidades
+              Amenities
             </h3>
 
             {/* Formulario para nueva amenidad */}
@@ -145,7 +154,7 @@ export function ProjectDetailsForm({
                   className="bg-primaryColor hover:bg-primaryColor/90 flex w-full items-center justify-center gap-2 rounded px-3 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" />
-                  Agregar amenidad
+                  Agregar amenitie
                 </button>
               </div>
             </div>
@@ -157,6 +166,7 @@ export function ProjectDetailsForm({
                   key={index}
                   className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3"
                 >
+                  <p>-</p>
                   <input
                     type="text"
                     value={amenity.text}
@@ -185,25 +195,6 @@ export function ProjectDetailsForm({
                 agregar.
               </p>
             )}
-          </div>
-
-          {/* Preview de amenidades */}
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <h4 className="mb-3 font-medium text-gray-900">Vista previa:</h4>
-            <ul className="space-y-2">
-              {amenities.map((amenity, index) => (
-                <li
-                  key={index}
-                  className="flex items-center gap-3 text-gray-700"
-                >
-                  <span className="text-primaryColor text-lg">-</span>
-                  {amenity.text}
-                </li>
-              ))}
-              {amenities.length === 0 && (
-                <li className="text-gray-400 italic">Amenidades a confirmar</li>
-              )}
-            </ul>
           </div>
         </div>
 
@@ -275,34 +266,13 @@ export function ProjectDetailsForm({
               </p>
             )}
           </div>
-
-          {/* Preview de características adicionales */}
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <h4 className="mb-3 font-medium text-gray-900">Vista previa:</h4>
-            <ul className="space-y-2">
-              {detalles.map((detalle, index) => (
-                <li
-                  key={index}
-                  className="flex items-center gap-3 text-gray-700"
-                >
-                  <span className="text-primaryColor text-lg">-</span>
-                  {detalle.text}
-                </li>
-              ))}
-              {detalles.length === 0 && (
-                <li className="text-gray-400 italic">
-                  Características adicionales a definir
-                </li>
-              )}
-            </ul>
-          </div>
         </div>
 
         {/* DETAILS - Detalles personalizables del proyecto */}
         <div>
           <div className="mb-6">
-            <h3 className="mb-4 text-xl font-semibold text-gray-900">
-              Detalles del Proyecto
+            <h3 className="mb-4 text-xl text-gray-900">
+              Detalles del Proyecto <strong>(Esto no va)</strong>
             </h3>
 
             <div className="mb-4 rounded-lg bg-gray-50 p-4">

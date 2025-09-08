@@ -181,10 +181,7 @@ export async function getProjects(
           },
         },
       },
-      orderBy: [
-        { priority: "desc" },
-        { createdAt: "desc" },
-      ],
+      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       ...paginationOptions,
     });
 
@@ -275,10 +272,7 @@ export async function getPublicProjects(
           },
         },
       },
-      orderBy: [
-        { priority: "desc" },
-        { createdAt: "desc" },
-      ],
+      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       ...paginationOptions,
     });
 

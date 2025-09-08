@@ -1,24 +1,25 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { ArrowLeftIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { ProjectFormData } from "@/types/project-form";
 import { getOrganizationsAction } from "@/lib/actions/organizations";
 import { checkSlugAvailabilityAction } from "@/lib/actions/projects";
-import { generateSlug } from "@/lib/utils/slug";
 import { uploadProjectImages } from "@/lib/actions/storage";
-import { ImageCarouselForm } from "@/components/create-project-form/project-images/ImageCarouselForm";
-import { LocationFormComponent } from "@/components/create-project-form/project-location/LocationForm";
-import { MapSelector } from "@/components/create-project-form/project-location/MapSelector";
+import { generateSlug } from "@/lib/utils/slug";
 import { ProgressFormComponent } from "@/components/create-project-form/project-forms/ProgressForm";
 import { ProjectDescriptionForm } from "@/components/create-project-form/project-forms/ProjectDescriptionForm";
 import { ProjectDetailsForm } from "@/components/create-project-form/project-forms/ProjectDetailsForm";
 import { ProjectHeroForm } from "@/components/create-project-form/project-forms/ProjectHeroForm";
+import { ImageCarouselForm } from "@/components/create-project-form/project-images/ImageCarouselForm";
 import { ProjectMainImageForm } from "@/components/create-project-form/project-images/ProjectMainImageForm";
-import { CoordinatesForm } from "@/components/create-project-form/project-location/CoordinatesForm";
+import { LocationFormComponent } from "@/components/create-project-form/project-location/LocationForm";
+import { MapSelector } from "@/components/create-project-form/project-location/MapSelector";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
@@ -187,7 +188,7 @@ export function ProjectFormMain({
       // Extract image files that need to be uploaded
       const imageFiles = extractImageFiles();
       let uploadedImageUrls: string[] = [];
-      
+
       // Upload images if there are any
       if (imageFiles.length > 0) {
         // Create FormData object
@@ -195,25 +196,24 @@ export function ProjectFormMain({
         imageFiles.forEach((file, index) => {
           formData.append(`image-${index}`, file);
         });
-        
+
         const tempProjectId = crypto.randomUUID();
         const uploadResult = await uploadProjectImages(formData, tempProjectId);
-        
+
         if (!uploadResult.success || !uploadResult.images) {
           throw new Error(uploadResult.error || "Error al subir imágenes");
         }
-        
-        uploadedImageUrls = uploadResult.images.map(img => img.url);
+
+        uploadedImageUrls = uploadResult.images.map((img) => img.url);
       }
-      
+
       // Replace blob URLs with actual uploaded URLs
       const processedData = {
         ...data,
         images: uploadedImageUrls,
       };
-      
+
       await onSubmit(processedData as ProjectFormData);
-      
     } catch (error: unknown) {
       // Don't log Next.js redirect "errors" - they are expected behavior
       if (error instanceof Error && error.message === "NEXT_REDIRECT") {
@@ -221,10 +221,11 @@ export function ProjectFormMain({
       }
       // Show user-friendly error message
       console.error("Error submitting form:", error);
-      alert(`Error: ${error instanceof Error ? error.message : "Error desconocido"}`);
+      alert(
+        `Error: ${error instanceof Error ? error.message : "Error desconocido"}`,
+      );
     }
   };
-
 
   // Formatear datos hero
   const heroData = {
@@ -301,24 +302,16 @@ export function ProjectFormMain({
 
         {/* PROJECT INFO - Botón de volver para dashboard */}
         {showBackButton && onBack && (
-          <div className="mt-5 mb-10">
-            <div className="container mx-auto px-4 md:px-0">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={onBack}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  <span>←</span>
-                  <span>Volver a Proyectos</span>
-                </button>
-                <div className="text-gray-500">
-                  <span className="text-sm">
-                    {isEditing ? "Editando Proyecto" : "Creando Nuevo Proyecto"}
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div className="container mx-auto mb-10 flex h-[10dvh] flex-col items-start justify-between gap-4 px-4 md:flex-row md:items-center md:gap-0 md:px-0">
+            <Link
+              href="/super"
+              className="text-primaryColor hover:text-shadow-primaryColor-hover inline-flex items-center gap-2 font-medium"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              Volver a lista de proyectos
+            </Link>
+
+            <div className="font-medium text-neutral-400">Creando proyecto</div>
           </div>
         )}
 
@@ -335,26 +328,6 @@ export function ProjectFormMain({
                 error={errors.images?.message}
                 projectId={tempProjectId || "temp"}
               />
-            </div>
-          </div>
-        )}
-
-        {/* PROJECT INFO - Original para páginas públicas */}
-        {!hideHeaderFooter && (
-          <div className="mt-5 mb-20">
-            <div className="container mx-auto px-4 md:px-0">
-              <div className="text-primaryColor flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span>←</span>
-                  <span className="cursor-pointer hover:underline">
-                    Volver a lista
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>Descargar PDF</span>
-                  <span>↓</span>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -445,17 +418,6 @@ export function ProjectFormMain({
               onProgressImagesChange={() => {}}
               disabled={isSubmitting}
               projectId={tempProjectId || "temp"}
-            />
-
-            {/* COORDINATES FORM - Formulario de coordenadas al final */}
-            <CoordinatesForm
-              value={coordinatesData}
-              onChange={(newCoordinatesData) => {
-                setValue("latitude", newCoordinatesData.latitude);
-                setValue("longitude", newCoordinatesData.longitude);
-              }}
-              disabled={isSubmitting}
-              error={errors.latitude?.message || errors.longitude?.message}
             />
           </div>
         </div>
@@ -604,7 +566,9 @@ export function ProjectFormMain({
                   min="0"
                   max="1000"
                   value={watchedValues.priority || 0}
-                  onChange={(e) => setValue("priority", parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    setValue("priority", parseInt(e.target.value) || 0)
+                  }
                   disabled={isSubmitting}
                   className="focus:ring-primaryColor w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-transparent focus:ring-2 disabled:opacity-50"
                 />

@@ -13,7 +13,7 @@ export default function ProjectInfo() {
         Volver a lista de proyectos
       </Link>
 
-      <button className="text-primaryColor hover:text-shadow-primaryColor-hover font-medium">
+      <button className="text-primaryColor hover:text-primaryColor-hover cursor-pointer font-medium">
         Descargar PDF
       </button>
     </div>

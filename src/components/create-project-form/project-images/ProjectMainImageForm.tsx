@@ -2,15 +2,17 @@
 
 import React, { useState } from "react";
 
-import { OptimizedImageUpload } from "@/components/image-upload";
+import { ImageIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { OptimizedImageUpload } from "@/components/image-upload";
 
 interface ProjectMainImageFormProps {
   value: {
@@ -91,8 +93,8 @@ function ProjectMainImageDialog({
               deferUpload={true}
             />
             <p className="mt-2 text-xs text-gray-500">
-              Esta imagen aparecerá en las tarjetas de proyecto y será la
-              imagen principal.
+              Esta imagen aparecerá en las tarjetas de proyecto y será la imagen
+              principal.
             </p>
           </div>
 
@@ -143,9 +145,7 @@ function ProjectMainImageDialog({
                     <h3 className="w-full bg-white text-2xl font-medium">
                       {value.name || "Nombre del Proyecto"}
                     </h3>
-                    <p className="w-full bg-white text-lg">
-                      Desde: $XXX.XXX
-                    </p>
+                    <p className="w-full bg-white text-lg">Desde: $XXX.XXX</p>
                   </div>
                 </div>
               </div>
@@ -161,10 +161,7 @@ function ProjectMainImageDialog({
           >
             Cancelar
           </Button>
-          <Button
-            type="button"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" onClick={() => onOpenChange(false)}>
             Guardar
           </Button>
         </DialogFooter>
@@ -212,26 +209,19 @@ export function ProjectMainImageForm({
               className="flex h-full w-full cursor-pointer items-center justify-center bg-gray-100"
               onClick={() => !disabled && setIsEditing(true)}
             >
-              <div className="text-center text-gray-500">
-                <svg
-                  className="mx-auto mb-2 h-12 w-12"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"
-                  />
-                </svg>
-                <p className="text-sm">
-                  Haz clic para seleccionar la imagen principal
-                </p>
-                <p className="mt-1 text-xs text-gray-400">
-                  Esta imagen aparecerá en las tarjetas de proyecto
-                </p>
+              <div className="flex flex-col items-center justify-center gap-3 text-center text-gray-500">
+                <ImageIcon
+                  className="h-20 w-20 text-gray-300"
+                  strokeWidth={1.5}
+                />
+                <div>
+                  <p className="text-sm">
+                    Haz clic para seleccionar la imagen principal
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Esta imagen aparecerá en las tarjetas de proyecto
+                  </p>
+                </div>
               </div>
             </div>
           )}

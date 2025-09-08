@@ -92,7 +92,7 @@ export function ProgressFormComponent({
       )}
 
       {/* Componente principal - EXACTAMENTE igual al original ProjectProgress */}
-      <div className="py-5">
+      <div className="py-12">
         <div className="mb-6 flex items-center justify-between">
           <h3 className="text-xl font-semibold text-gray-900">
             Avances de obra

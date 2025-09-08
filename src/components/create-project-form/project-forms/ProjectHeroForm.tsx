@@ -216,10 +216,10 @@ export function ProjectHeroForm({
                         {location}
                       </span>
                       <span className="rounded-2xl bg-white px-4 py-2 text-lg font-medium text-black">
-                        {formattedDate}
+                        {value.city || "Ciudad"}
                       </span>
                       <span className="rounded-2xl bg-white px-4 py-2 text-lg font-medium text-black">
-                        {value.city || "Ciudad"}
+                        {formattedDate}
                       </span>
                     </>
                   ) : (
@@ -239,6 +239,19 @@ export function ProjectHeroForm({
                       </div>
                       <div className="rounded-2xl bg-white px-4 py-2 text-lg font-medium text-black">
                         <input
+                          type="text"
+                          value={value.city || ""}
+                          onChange={(e) => {
+                            const newValue = e.target.value.substring(0, 100);
+                            handleFieldChange("city", newValue);
+                          }}
+                          placeholder="Ciudad"
+                          maxLength={100}
+                          className="w-24 min-w-0 border-none bg-transparent text-lg font-medium outline-none"
+                        />
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-2 text-lg font-medium text-black">
+                        <input
                           type="date"
                           value={
                             value.estimatedCompletion
@@ -254,19 +267,6 @@ export function ProjectHeroForm({
                             )
                           }
                           className="w-fit min-w-0 border-none bg-transparent text-lg font-medium outline-none"
-                        />
-                      </div>
-                      <div className="rounded-2xl bg-white px-4 py-2 text-lg font-medium text-black">
-                        <input
-                          type="text"
-                          value={value.city || ""}
-                          onChange={(e) => {
-                            const newValue = e.target.value.substring(0, 100);
-                            handleFieldChange("city", newValue);
-                          }}
-                          placeholder="Ciudad"
-                          maxLength={100}
-                          className="w-24 min-w-0 border-none bg-transparent text-lg font-medium outline-none"
                         />
                       </div>
                     </>
