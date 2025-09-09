@@ -54,7 +54,7 @@ export default function ProjectsLayoutClient({
       <main className="mt-24 bg-white md:mt-30">
         <div className="container mx-auto mt-7 px-4 md:px-0">
           {/* Page Header */}
-          <div className="itmes-start mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+          <div className="itmes-start mb-7 flex flex-col justify-between gap-5 md:flex-row md:items-center">
             <h1 className="dashboard-title">Proyectos</h1>
 
             {/* Persistent Filters */}

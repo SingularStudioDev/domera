@@ -82,35 +82,35 @@ export default function ProjectsFilter({
     router.push(`/projects?${params.toString()}`);
   };
 
-  const clearFilters = () => {
-    setPriceRange([0, 1500000]);
-    router.push("/projects");
-  };
+  // const clearFilters = () => {
+  //   setPriceRange([0, 1500000]);
+  //   router.push("/projects");
+  // };
 
   const resetAllFilters = () => {
     setPriceRange([0, 1500000]);
     router.push("/projects");
   };
 
-  const getActiveFiltersCount = () => {
-    let count = 0;
-    if (currentNeighborhood) count++;
-    if (currentCity) count++;
-    if (currentStatus) count++;
-    if (currentRooms) count++;
-    if (currentAmenities) count++;
-    if (currentMinPrice || currentMaxPrice) count++;
-    return count;
-  };
+  // const getActiveFiltersCount = () => {
+  //   let count = 0;
+  //   if (currentNeighborhood) count++;
+  //   if (currentCity) count++;
+  //   if (currentStatus) count++;
+  //   if (currentRooms) count++;
+  //   if (currentAmenities) count++;
+  //   if (currentMinPrice || currentMaxPrice) count++;
+  //   return count;
+  // };
 
-  const hasActiveFilters =
-    currentNeighborhood ||
-    currentCity ||
-    currentStatus ||
-    currentRooms ||
-    currentAmenities ||
-    currentMinPrice ||
-    currentMaxPrice;
+  // const hasActiveFilters =
+  //   currentNeighborhood ||
+  //   currentCity ||
+  //   currentStatus ||
+  //   currentRooms ||
+  //   currentAmenities ||
+  //   currentMinPrice ||
+  //   currentMaxPrice;
 
   return (
     <div className="flex items-center justify-between gap-4 md:justify-end">
