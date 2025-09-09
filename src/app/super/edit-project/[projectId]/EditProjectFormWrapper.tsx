@@ -2,12 +2,47 @@
 
 import { useRouter } from "next/navigation";
 
-import { ProjectFormData } from "@/types/project-form";
+import { MasterPlanFile, ProjectFormData } from "@/types/project-form";
 import { ProjectFormMain } from "@/components/create-project-form/ProjectFormMain";
+
+interface Amenity {
+  text: string;
+  icon?: string;
+}
+
+interface Detalle {
+  text: string;
+}
 
 interface EditProjectFormWrapperProps {
   onSubmit: (data: ProjectFormData) => Promise<void>;
-  projectData: any;
+  projectData: {
+    name: string;
+    slug: string;
+    organizationId: string;
+    description?: string;
+    shortDescription?: string;
+    address: string;
+    neighborhood?: string;
+    city: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    status:
+      | "planning"
+      | "pre_sale"
+      | "construction"
+      | "completed"
+      | "delivered";
+    basePrice?: number;
+    currency?: "USD" | "UYU";
+    images?: string[];
+    masterPlanFiles?: MasterPlanFile[];
+    priority?: number;
+    details?: string[];
+    amenities?: (string | Amenity)[];
+    // detalles no existe en DB, se construye desde details
+    estimatedCompletion?: string | Date;
+  };
 }
 
 export default function EditProjectFormWrapper({
@@ -36,19 +71,25 @@ export default function EditProjectFormWrapper({
     basePrice: projectData.basePrice || undefined,
     currency: projectData.currency || "USD",
     images: projectData.images || [],
-    amenities: projectData.amenities?.map((amenity: any) => {
-      if (typeof amenity === 'string') {
-        return { text: amenity, icon: "" };
-      }
-      return { 
-        text: amenity.text || amenity,
-        icon: amenity.icon || ""
-      };
-    }) || [],
-    detalles: projectData.detalles?.map((detalle: any) => ({
-      text: typeof detalle === 'string' ? detalle : detalle.text
-    })) || [],
-    estimatedCompletion: projectData.estimatedCompletion ? new Date(projectData.estimatedCompletion) : undefined,
+    masterPlanFiles: projectData.masterPlanFiles || [],
+    priority: projectData.priority || 0,
+    details: projectData.details || [],
+    amenities:
+      projectData.amenities?.map((amenity) => {
+        if (typeof amenity === "string") {
+          return { text: amenity, icon: "" };
+        }
+        return {
+          text: amenity.text || amenity.text,
+          icon: amenity.icon || "",
+        };
+      }) || [],
+    detalles: (projectData.details || []).map((detail: string) => ({
+      text: detail,
+    })),
+    estimatedCompletion: projectData.estimatedCompletion
+      ? new Date(projectData.estimatedCompletion)
+      : undefined,
   };
 
   return (
@@ -56,7 +97,6 @@ export default function EditProjectFormWrapper({
       onSubmit={onSubmit}
       isEditing={true}
       organizationId={projectData.organizationId}
-      hideHeaderFooter={true}
       showBackButton={true}
       onBack={handleGoBack}
       initialData={initialData}

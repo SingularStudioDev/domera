@@ -2,7 +2,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { ProjectFormData } from "@/types/project-form";
-import { getProjectByIdAction, updateProjectAction } from "@/lib/actions/projects";
+import {
+  getProjectByIdAction,
+  updateProjectAction,
+} from "@/lib/actions/projects";
 import { validateSuperAdminSession } from "@/lib/auth/super-admin";
 import { extractRealIP } from "@/lib/utils/security";
 
@@ -14,10 +17,12 @@ interface EditProjectPageProps {
   };
 }
 
-export default async function EditProjectPage({ params }: EditProjectPageProps) {
+export default async function EditProjectPage({
+  params,
+}: EditProjectPageProps) {
   // Await params before using
   const { projectId } = await params;
-  
+
   // Validar sesión de super admin
   const headersList = await headers();
   const cookieHeader = headersList.get("cookie");
@@ -45,7 +50,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
 
   // Obtener datos del proyecto
   const projectResult = await getProjectByIdAction(projectId);
-  
+
   if (!projectResult.success || !projectResult.data) {
     redirect("/super/dashboard/projects");
   }
@@ -78,6 +83,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
         throw new Error("Ciudad es requerida");
       }
 
+      // Transform camelCase to snake_case for Prisma schema
       const projectData = {
         name: data.name,
         slug: data.slug,
@@ -89,11 +95,15 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
         latitude: data.latitude || null,
         longitude: data.longitude || null,
         status: data.status,
-        basePrice: data.basePrice || undefined,
+        basePrice: data.basePrice ?? undefined,
         currency: data.currency,
-        images: data.images || [],
+        // Only update images if new ones were uploaded
+        ...(data.images &&
+        data.images.length > 0 &&
+        !data.images.some((img) => img.startsWith("blob:"))
+          ? { images: data.images }
+          : {}),
         amenities: data.amenities?.map((amenity) => amenity.text) || [],
-        detalles: data.detalles?.map((detalle) => detalle.text) || [],
         details: data.details || [],
         masterPlanFiles: data.masterPlanFiles || [],
         priority: data.priority || 0,
@@ -123,8 +133,10 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
     }
   };
 
-  return <EditProjectFormWrapper 
-    onSubmit={handleUpdateProject} 
-    projectData={project}
-  />;
+  return (
+    <EditProjectFormWrapper
+      onSubmit={handleUpdateProject}
+      projectData={project}
+    />
+  );
 }

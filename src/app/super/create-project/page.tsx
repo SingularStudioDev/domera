@@ -78,7 +78,7 @@ export default async function CreateProjectPage() {
         latitude: data.latitude || null,
         longitude: data.longitude || null,
         status: data.status,
-        basePrice: data.basePrice || undefined,
+        basePrice: data.basePrice ?? undefined,
         currency: data.currency,
         images: data.images || [],
         amenities:

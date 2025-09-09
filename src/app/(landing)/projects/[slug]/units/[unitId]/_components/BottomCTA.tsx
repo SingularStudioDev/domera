@@ -45,7 +45,7 @@ export default function BottomCTA({ unit }: BottomCTAProps) {
         router.push("/checkout");
         break;
       case "different_project":
-        alert("Solo puedes agregar unidades del mismo proyecto al checkout.");
+        alert("Solo puedes agregar unidades del mismo proyecto al checkout."); // TODO: Esto tiene que ser un modal error
         break;
       case "max_units_reached":
         setIsMaxUnitsModalOpen(true);

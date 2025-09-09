@@ -185,30 +185,62 @@ export function ProjectFormMain({
     try {
       // Extract image files that need to be uploaded
       const imageFiles = extractImageFiles();
-      let uploadedImageUrls: string[] = [];
+      let finalImageUrls: string[] = [];
 
-      // Upload images if there are any
-      if (imageFiles.length > 0) {
-        // Create FormData object
-        const formData = new FormData();
-        imageFiles.forEach((file, index) => {
-          formData.append(`image-${index}`, file);
-        });
+      if (isEditing) {
+        // For editing, keep existing images and only add new ones if uploaded
+        const existingImages =
+          data.images?.filter((img: string) => !img.startsWith("blob:")) || [];
 
-        const tempProjectId = crypto.randomUUID();
-        const uploadResult = await uploadProjectImages(formData, tempProjectId);
+        if (imageFiles.length > 0) {
+          // Create FormData object for new images
+          const formData = new FormData();
+          imageFiles.forEach((file, index) => {
+            formData.append(`image-${index}`, file);
+          });
 
-        if (!uploadResult.success || !uploadResult.images) {
-          throw new Error(uploadResult.error || "Error al subir imágenes");
+          const tempProjectId = crypto.randomUUID();
+          const uploadResult = await uploadProjectImages(
+            formData,
+            tempProjectId,
+          );
+
+          if (!uploadResult.success || !uploadResult.images) {
+            throw new Error(uploadResult.error || "Error al subir imágenes");
+          }
+
+          const newUploadedUrls = uploadResult.images.map((img) => img.url);
+          finalImageUrls = [...existingImages, ...newUploadedUrls];
+        } else {
+          // No new images, keep existing ones
+          finalImageUrls = existingImages;
         }
+      } else {
+        // For new projects, upload all images
+        if (imageFiles.length > 0) {
+          const formData = new FormData();
+          imageFiles.forEach((file, index) => {
+            formData.append(`image-${index}`, file);
+          });
 
-        uploadedImageUrls = uploadResult.images.map((img) => img.url);
+          const tempProjectId = crypto.randomUUID();
+          const uploadResult = await uploadProjectImages(
+            formData,
+            tempProjectId,
+          );
+
+          if (!uploadResult.success || !uploadResult.images) {
+            throw new Error(uploadResult.error || "Error al subir imágenes");
+          }
+
+          finalImageUrls = uploadResult.images.map((img) => img.url);
+        }
       }
 
-      // Replace blob URLs with actual uploaded URLs
+      // Prepare final data
       const processedData = {
         ...data,
-        images: uploadedImageUrls,
+        images: finalImageUrls,
       };
 
       await onSubmit(processedData as ProjectFormData);
@@ -219,7 +251,7 @@ export function ProjectFormMain({
       }
       // Show user-friendly error message
       console.error("Error submitting form:", error);
-      alert(
+      console.error(
         `Error: ${error instanceof Error ? error.message : "Error desconocido"}`,
       );
     }
@@ -330,8 +362,8 @@ export function ProjectFormMain({
         </div>
 
         {/* CONTENIDO PRINCIPAL - Exactamente igual al layout original */}
-        <div className="container mx-auto flex flex-col gap-10 px-4 md:flex-row md:px-0">
-          <div className="flex flex-col gap-5">
+        <div className="container mx-auto flex w-full flex-col gap-10 px-4 md:flex-row md:px-0">
+          <div className="flex w-full flex-col gap-5">
             {/* PROJECT DESCRIPTION FORM */}
             <ProjectDescriptionForm
               value={descriptionData}

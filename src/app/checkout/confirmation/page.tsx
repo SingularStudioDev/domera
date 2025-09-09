@@ -47,7 +47,7 @@ export default function ConfirmationPage() {
     setTimeout(() => {
       setIsSubmitting(false);
       setShowTermsModal(false);
-      alert("Formulario enviado exitosamente");
+      alert("Formulario enviado exitosamente"); // TODO: Esto no tiene que estar
     }, 2000);
   };
 
