@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { X } from "lucide-react";
 
+import { getPublicProjectsAction } from "@/lib/actions/projects";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -21,6 +22,14 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import MainButton from "@/components/custom-ui/MainButton";
+
+interface PriceRangeData {
+  range: string;
+  min: number;
+  max: number;
+  count: number;
+  height: number;
+}
 
 interface ProjectFilterSheetProps {
   neighborhoods: string[];
@@ -60,7 +69,73 @@ export default function ProjectFilterSheet({
 }: ProjectFilterSheetProps) {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [constructionPercentage] = useState("");
+  const [priceRangeData, setPriceRangeData] = useState<PriceRangeData[]>([]);
   const maxPriceLimit = 1500000;
+
+  // Define price ranges
+  const priceRanges = [
+    { min: 0, max: 100000, range: "0-100k" },
+    { min: 100000, max: 300000, range: "100k-300k" },
+    { min: 300000, max: 500000, range: "300k-500k" },
+    { min: 500000, max: 700000, range: "500k-700k" },
+    { min: 700000, max: 1000000, range: "700k-1M" },
+    { min: 1000000, max: 1200000, range: "1M-1.2M" },
+    { min: 1200000, max: 1500000, range: "1.2M-1.5M" },
+  ];
+
+  // Fetch projects and calculate price distribution
+  useEffect(() => {
+    const fetchPriceDistribution = async () => {
+      try {
+        // Fetch all projects without pagination to get full dataset
+        const result = await getPublicProjectsAction({
+          page: 1,
+          pageSize: 1000, // Get all projects
+          city: currentCity !== "all" ? currentCity : undefined,
+          neighborhood:
+            currentNeighborhood !== "all" ? currentNeighborhood : undefined,
+          status:
+            currentStatus !== "all"
+              ? (currentStatus as "pre_sale" | "construction" | "completed")
+              : undefined,
+        });
+
+        if (result.success && result.data) {
+          const projects = result.data.data;
+
+          // Calculate counts for each price range
+          const rangeData = priceRanges.map((range) => {
+            const count = projects.filter((project) => {
+              const price = Number(project.basePrice) || 0;
+              return price >= range.min && price < range.max;
+            }).length;
+
+            return {
+              ...range,
+              count,
+              height: count, // We'll normalize this below
+            };
+          });
+
+          // Normalize heights to fit in the 64px container (h-16)
+          const maxCount = Math.max(...rangeData.map((r) => r.count));
+          const normalizedData = rangeData.map((range) => ({
+            ...range,
+            height:
+              maxCount > 0
+                ? Math.max(2, Math.round((range.count / maxCount) * 64))
+                : 2,
+          }));
+
+          setPriceRangeData(normalizedData);
+        }
+      } catch (error) {
+        console.error("Error fetching price distribution:", error);
+      }
+    };
+
+    fetchPriceDistribution();
+  }, [currentCity, currentNeighborhood, currentStatus]);
 
   const toggleAmenity = (amenity: string) => {
     setSelectedAmenities((prev) =>
@@ -91,13 +166,13 @@ export default function ProjectFilterSheet({
 
           {/* Simple histogram placeholder */}
           <div className="mb-1 flex h-16 items-end justify-center gap-1 rounded px-2">
-            <div className="bg-primaryColor/20 h-8 w-2"></div>
-            <div className="bg-primaryColor/40 h-12 w-2"></div>
-            <div className="bg-primaryColor/60 h-16 w-2"></div>
+            <div className="bg-primaryColor/20 h-2 w-2"></div>
+            <div className="bg-primaryColor/40 h-4 w-2"></div>
+            <div className="bg-primaryColor/60 h-6 w-2"></div>
             <div className="bg-primaryColor/80 h-10 w-2"></div>
-            <div className="bg-primaryColor h-6 w-2"></div>
-            <div className="bg-primaryColor/60 h-4 w-2"></div>
-            <div className="bg-primaryColor/40 h-2 w-2"></div>
+            <div className="bg-primaryColor h-16 w-2"></div>
+            <div className="bg-primaryColor/80 h-12 w-2"></div>
+            <div className="bg-primaryColor/60 h-8 w-2"></div>
           </div>
 
           <div className="space-y-4">
@@ -275,8 +350,8 @@ export default function ProjectFilterSheet({
 
         {/* Amenities */}
         <div>
-          <h3 className="mb-3 font-medium text-gray-900">Amenities</h3>
-          <div className="grid grid-cols-2 gap-2">
+          <h3 className="mb-1 font-medium text-gray-900">Amenities</h3>
+          <div className="grid grid-cols-2 gap-1">
             {(amenities.length > 0
               ? amenities
               : [
@@ -298,7 +373,7 @@ export default function ProjectFilterSheet({
               >
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300"
+                  className="cursor-pointer rounded border-gray-300"
                   checked={selectedAmenities.includes(amenity)}
                   onChange={() => toggleAmenity(amenity)}
                 />

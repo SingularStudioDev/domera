@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 
 import { formatCurrency } from "@/utils/utils";
 import type { Project } from "@prisma/client";
-import { Decimal } from "@prisma/client/runtime/library";
 
 import { getPublicProjectsAction } from "@/lib/actions/projects";
 import ProjectCard from "@/components/custom-ui/ProjectCard";
@@ -46,10 +45,18 @@ interface ProjectDisplayData {
   status: string;
   date: string;
   features: ProjectFeature[];
-  latitude: Decimal;
-  longitude: Decimal;
+  latitude: number;
+  longitude: number;
   neighborhood?: string;
   city?: string;
+}
+
+interface ProjectMarker {
+  id: string;
+  latitude: number;
+  longitude: number;
+  title: string;
+  popup?: string;
 }
 
 /**
@@ -86,6 +93,25 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   // Use project slug for main image with fallback
   const image = `/images/${project.slug}-main.png`;
 
+  // Convert Decimal coordinates to numbers
+  const convertToNumber = (value: unknown): number => {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === "number") return value;
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "toNumber" in value &&
+      typeof (value as { toNumber(): number }).toNumber === "function"
+    ) {
+      return (value as { toNumber(): number }).toNumber();
+    }
+    if (typeof value === "string") return parseFloat(value) || 0;
+    return 0;
+  };
+
+  const latitude = convertToNumber(project.latitude);
+  const longitude = convertToNumber(project.longitude);
+
   // Create features array from boolean fields
   const projectWithFeatures = project as Project & {
     hasParking?: boolean;
@@ -121,8 +147,8 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
     status,
     date,
     features,
-    latitude: project.latitude,
-    longitude: project.longitude,
+    latitude,
+    longitude,
     neighborhood: project.neighborhood || undefined,
     city: project.city || undefined,
   };
@@ -164,8 +190,6 @@ export default function ProjectsMapView({
   const maxPrice = searchParams.maxPrice;
   const pageSize = 100;
 
-  console.log("projects", projects);
-
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
@@ -187,7 +211,20 @@ export default function ProjectsMapView({
             data: Project[];
             count: number;
           };
+
+          console.log("Raw projects from DB:", data.data);
+          console.log(
+            "Projects with coordinates:",
+            data.data.filter((p) => p.latitude && p.longitude),
+          );
+
           const formattedProjects = data.data.map(formatProjectForDisplay);
+          console.log("Formatted projects:", formattedProjects);
+          console.log(
+            "Formatted projects with coordinates:",
+            formattedProjects.filter((p) => p.latitude && p.longitude),
+          );
+
           setProjects(formattedProjects);
         } else {
           setProjects([]);
@@ -221,8 +258,8 @@ export default function ProjectsMapView({
     );
   }
 
-  const projectsWithValidCoordinates = projects.filter(
-    (project) =>
+  const projectsWithValidCoordinates = projects.filter((project) => {
+    const isValid =
       project.latitude !== undefined &&
       project.longitude !== undefined &&
       project.latitude !== null &&
@@ -232,7 +269,27 @@ export default function ProjectsMapView({
       project.latitude >= -90 &&
       project.latitude <= 90 &&
       project.longitude >= -180 &&
-      project.longitude <= 180,
+      project.longitude <= 180 &&
+      project.latitude !== 0 &&
+      project.longitude !== 0 &&
+      Math.abs(project.latitude) > 0.0001 &&
+      Math.abs(project.longitude) > 0.0001;
+
+    if (!isValid) {
+      console.log("Filtered out project:", project.title, {
+        latitude: project.latitude,
+        longitude: project.longitude,
+        latType: typeof project.latitude,
+        lngType: typeof project.longitude,
+      });
+    }
+
+    return isValid;
+  });
+
+  console.log(
+    "Projects after coordinate filtering:",
+    projectsWithValidCoordinates.length,
   );
 
   if (projects.length === 0) {
@@ -267,29 +324,96 @@ export default function ProjectsMapView({
     );
   }
 
+  // Convert projects to markers for the map
+  const projectMarkers: ProjectMarker[] = projectsWithValidCoordinates.map(
+    (project) => ({
+      id: project.id,
+      latitude: project.latitude,
+      longitude: project.longitude,
+      title: project.title,
+      popup: `${project.title} - ${project.price}`,
+    }),
+  );
+
+  // Calculate map center from all projects
+  const calculateMapCenter = () => {
+    if (projectsWithValidCoordinates.length === 0) {
+      return { lat: -34.9011, lng: -56.1645 }; // Montevideo default
+    }
+
+    const avgLat =
+      projectsWithValidCoordinates.reduce((sum, p) => sum + p.latitude, 0) /
+      projectsWithValidCoordinates.length;
+    const avgLng =
+      projectsWithValidCoordinates.reduce((sum, p) => sum + p.longitude, 0) /
+      projectsWithValidCoordinates.length;
+
+    // Validate calculated center and fallback to default if invalid
+    if (
+      isNaN(avgLat) ||
+      isNaN(avgLng) ||
+      !isFinite(avgLat) ||
+      !isFinite(avgLng)
+    ) {
+      console.warn("Invalid map center calculated, using default:", {
+        avgLat,
+        avgLng,
+      });
+      return { lat: -34.9011, lng: -56.1645 }; // Montevideo default
+    }
+
+    return { lat: avgLat, lng: avgLng };
+  };
+
+  // Calculate appropriate zoom level based on project spread
+  const calculateZoom = () => {
+    if (projectsWithValidCoordinates.length <= 1) {
+      return 15; // Close zoom for single project
+    }
+
+    const lats = projectsWithValidCoordinates.map((p) => p.latitude);
+    const lngs = projectsWithValidCoordinates.map((p) => p.longitude);
+
+    const latSpread = Math.max(...lats) - Math.min(...lats);
+    const lngSpread = Math.max(...lngs) - Math.min(...lngs);
+    const maxSpread = Math.max(latSpread, lngSpread);
+
+    // Adjust zoom based on spread
+    if (maxSpread > 0.1) return 10; // Wide spread
+    if (maxSpread > 0.05) return 12; // Medium spread
+    if (maxSpread > 0.01) return 13; // Small spread
+    return 14; // Very close projects
+  };
+
+  const mapCenter = calculateMapCenter();
+  const mapZoom = calculateZoom();
+
+  // Handle marker click to select project
+  const handleMarkerClick = (marker: ProjectMarker) => {
+    const project = projectsWithValidCoordinates.find(
+      (p) => p.id === marker.id,
+    );
+    if (project) {
+      setSelectedProject(project);
+    }
+  };
+
   return (
     <div className="mb-16">
-      {/* Projects Count */}
-      <div className="mb-8">
-        <p className="text-sm text-gray-600">
-          {projectsWithValidCoordinates.length === 1
-            ? "1 proyecto en el mapa"
-            : `${projectsWithValidCoordinates.length} proyectos en el mapa`}
-        </p>
-      </div>
-
       {/* Map and Sidebar Layout */}
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Map Container */}
         <div className="lg:flex-1">
-          <div className="h-[600px] w-full overflow-hidden rounded-lg border">
+          <div className="h-[600px] w-full overflow-hidden">
             <Suspense fallback={<MapLoading />}>
               <InteractiveMap
-                latitude={projectsWithValidCoordinates[0].latitude!}
-                longitude={projectsWithValidCoordinates[0].longitude!}
-                zoom={12}
+                latitude={mapCenter.lat}
+                longitude={mapCenter.lng}
+                zoom={mapZoom}
                 className="h-full"
                 markerPopup={`${projectsWithValidCoordinates.length} proyecto${projectsWithValidCoordinates.length > 1 ? "s" : ""} en esta zona`}
+                projects={projectMarkers}
+                onMarkerClick={handleMarkerClick}
               />
             </Suspense>
           </div>
@@ -327,7 +451,6 @@ export default function ProjectsMapView({
                 Proyecto seleccionado
               </h3>
               <ProjectCard
-                id={selectedProject.id}
                 slug={selectedProject.slug}
                 title={selectedProject.title}
                 price={selectedProject.price}

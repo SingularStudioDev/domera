@@ -152,18 +152,6 @@ export default function ProjectsFilter({
             resetAllFilters={resetAllFilters}
           />
         </Sheet>
-
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            onClick={clearFilters}
-            size="sm"
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X className="mr-1 h-4 w-4" />
-            Limpiar filtros
-          </Button>
-        )}
       </div>
 
       {/* View Toggle Buttons */}

@@ -266,6 +266,7 @@ export async function getPublicProjectsAction(
       return { success: false, error: result.error };
     }
 
+    console.log("result ", result.data);
     // Serialize the data to handle Decimal fields
     const serializedData = {
       ...result.data,

@@ -13,7 +13,18 @@ export function serializeDecimal(value: any): number | null {
     return null;
   }
 
+  // Check for Decimal instance
   if (value instanceof Decimal) {
+    return value.toNumber();
+  }
+
+  // Check if it's a Decimal-like object with toNumber method
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toNumber" in value &&
+    typeof value.toNumber === "function"
+  ) {
     return value.toNumber();
   }
 
@@ -26,6 +37,13 @@ export function serializeDecimal(value: any): number | null {
   if (typeof value === "string" && !isNaN(parseFloat(value))) {
     return parseFloat(value);
   }
+
+  // Debug logging for problematic values
+  console.warn("serializeDecimal: Could not serialize value", {
+    value,
+    type: typeof value,
+    constructor: value?.constructor?.name,
+  });
 
   return null;
 }

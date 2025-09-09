@@ -118,9 +118,7 @@ export default function ProjectsList({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('project.basePrice', projects
-            
-  )
+  console.log("project.basePrice", projects);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -220,7 +218,6 @@ export default function ProjectsList({
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project, index) => {
           const projectData = formatProjectForDisplay(project);
-         
 
           return (
             <div

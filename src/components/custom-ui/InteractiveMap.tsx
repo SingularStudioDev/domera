@@ -4,6 +4,14 @@ import dynamic from "next/dynamic";
 
 import { cn } from "@/utils/utils";
 
+interface ProjectMarker {
+  id: string;
+  latitude: number;
+  longitude: number;
+  title: string;
+  popup?: string;
+}
+
 interface InteractiveMapProps {
   latitude: number;
   longitude: number;
@@ -11,6 +19,8 @@ interface InteractiveMapProps {
   height?: string;
   className?: string;
   markerPopup?: string;
+  projects?: ProjectMarker[];
+  onMarkerClick?: (marker: ProjectMarker) => void;
 }
 
 // Dynamically import the map component to avoid SSR issues
@@ -32,6 +42,8 @@ export default function InteractiveMap({
   zoom = 15,
   className,
   markerPopup = "Ubicación del proyecto",
+  projects,
+  onMarkerClick,
 }: InteractiveMapProps) {
   return (
     <div
@@ -45,6 +57,8 @@ export default function InteractiveMap({
         longitude={longitude}
         zoom={zoom}
         markerPopup={markerPopup}
+        projects={projects}
+        onMarkerClick={onMarkerClick}
       />
     </div>
   );
