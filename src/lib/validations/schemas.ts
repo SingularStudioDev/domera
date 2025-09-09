@@ -280,6 +280,14 @@ export const CreateProjectSchema = z.object({
   details: z.array(z.string().max(255, "Detalle muy largo")).max(20, "Máximo 20 detalles").default([]),
   priority: z.number().int().min(0).max(1000, "Prioridad máxima: 1000").default(0),
   master_plan_files: z.array(z.string()).default([]),
+  hasParking: z.boolean().default(false),
+  hasStudio: z.boolean().default(false),
+  has1Bedroom: z.boolean().default(false),
+  has2Bedroom: z.boolean().default(false),
+  has3Bedroom: z.boolean().default(false),
+  has4Bedroom: z.boolean().default(false),
+  has5Bedroom: z.boolean().default(false),
+  hasCommercial: z.boolean().default(false),
 });
 
 export const UpdateProjectSchema = CreateProjectSchema.partial().omit([

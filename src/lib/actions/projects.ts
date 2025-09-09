@@ -75,6 +75,14 @@ interface CreateProjectInput {
   priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;
+  hasParking?: boolean;
+  hasStudio?: boolean;
+  has1Bedroom?: boolean;
+  has2Bedroom?: boolean;
+  has3Bedroom?: boolean;
+  has4Bedroom?: boolean;
+  has5Bedroom?: boolean;
+  hasCommercial?: boolean;
 }
 
 interface UpdateProjectInput {
@@ -104,6 +112,14 @@ interface UpdateProjectInput {
   priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;
+  hasParking?: boolean;
+  hasStudio?: boolean;
+  has1Bedroom?: boolean;
+  has2Bedroom?: boolean;
+  has3Bedroom?: boolean;
+  has4Bedroom?: boolean;
+  has5Bedroom?: boolean;
+  hasCommercial?: boolean;
 }
 
 // =============================================================================

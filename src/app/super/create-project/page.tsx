@@ -90,6 +90,14 @@ export default async function CreateProjectPage() {
         priority: data.priority || 0,
         startDate: undefined,
         estimatedCompletion: data.estimatedCompletion || undefined,
+        hasParking: data.hasParking,
+        hasStudio: data.hasStudio,
+        has1Bedroom: data.has1Bedroom,
+        has2Bedroom: data.has2Bedroom,
+        has3Bedroom: data.has3Bedroom,
+        has4Bedroom: data.has4Bedroom,
+        has5Bedroom: data.has5Bedroom,
+        hasCommercial: data.hasCommercial,
       };
 
       const result = await createProjectAction(

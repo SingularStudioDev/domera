@@ -42,6 +42,14 @@ interface EditProjectFormWrapperProps {
     amenities?: (string | Amenity)[];
     // detalles no existe en DB, se construye desde details
     estimatedCompletion?: string | Date;
+    hasParking?: boolean;
+    hasStudio?: boolean;
+    has1Bedroom?: boolean;
+    has2Bedroom?: boolean;
+    has3Bedroom?: boolean;
+    has4Bedroom?: boolean;
+    has5Bedroom?: boolean;
+    hasCommercial?: boolean;
   };
 }
 
@@ -90,6 +98,14 @@ export default function EditProjectFormWrapper({
     estimatedCompletion: projectData.estimatedCompletion
       ? new Date(projectData.estimatedCompletion)
       : undefined,
+    hasParking: projectData.hasParking ?? false,
+    hasStudio: projectData.hasStudio ?? false,
+    has1Bedroom: projectData.has1Bedroom ?? false,
+    has2Bedroom: projectData.has2Bedroom ?? false,
+    has3Bedroom: projectData.has3Bedroom ?? false,
+    has4Bedroom: projectData.has4Bedroom ?? false,
+    has5Bedroom: projectData.has5Bedroom ?? false,
+    hasCommercial: projectData.hasCommercial ?? false,
   };
 
   return (

@@ -23,7 +23,6 @@ export default function ProjectFormWrapper({
       onSubmit={onSubmit}
       isEditing={false}
       organizationId={undefined}
-      hideHeaderFooter={true}
       showBackButton={true}
       onBack={handleGoBack}
     />

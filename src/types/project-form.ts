@@ -34,6 +34,16 @@ export interface ProjectFormData {
   details: string[];
   priority?: number;
 
+  // Tipos de unidades disponibles
+  hasParking: boolean;
+  hasStudio: boolean;
+  has1Bedroom: boolean;
+  has2Bedroom: boolean;
+  has3Bedroom: boolean;
+  has4Bedroom: boolean;
+  has5Bedroom: boolean;
+  hasCommercial: boolean;
+
   // Estados del formulario
   isEditing?: boolean;
   originalSlug?: string;

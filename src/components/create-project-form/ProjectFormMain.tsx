@@ -19,7 +19,6 @@ import { ProjectHeroForm } from "@/components/create-project-form/project-forms/
 import { ImageCarouselForm } from "@/components/create-project-form/project-images/ImageCarouselForm";
 import { ProjectMainImageForm } from "@/components/create-project-form/project-images/ProjectMainImageForm";
 import { LocationFormComponent } from "@/components/create-project-form/project-location/LocationForm";
-import { MapSelector } from "@/components/create-project-form/project-location/MapSelector";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
@@ -85,6 +84,14 @@ export function ProjectFormMain({
     detalles: [],
     details: [],
     priority: 0,
+    hasParking: false,
+    hasStudio: false,
+    has1Bedroom: false,
+    has2Bedroom: false,
+    has3Bedroom: false,
+    has4Bedroom: false,
+    has5Bedroom: false,
+    hasCommercial: false,
     isEditing,
     ...initialData,
   };
@@ -354,6 +361,10 @@ export function ProjectFormMain({
               onChange={(newMainImageData) => {
                 setValue("images", newMainImageData.images);
               }}
+              masterPlanFiles={watchedValues.masterPlanFiles || []}
+              onMasterPlanFilesChange={(files) =>
+                setValue("masterPlanFiles", files)
+              }
               disabled={isSubmitting}
               error={errors.images?.message}
               projectId={tempProjectId || "temp"}
@@ -577,6 +588,104 @@ export function ProjectFormMain({
                   Mayor número = mayor prioridad en el listado (0-1000)
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* TIPOS DE UNIDADES - Checkboxes para tipos de unidades disponibles */}
+        <div className="container mx-auto px-4 pb-10 md:px-0">
+          <div className="rounded-lg bg-gray-50 p-6">
+            <h3 className="mb-4 font-semibold text-gray-900">
+              Tipos de unidades disponibles
+            </h3>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={watchedValues.hasParking}
+                  onChange={(e) => setValue("hasParking", e.target.checked)}
+                  disabled={isSubmitting}
+                  className="text-primaryColor focus:ring-primaryColor h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">Estacionamiento</span>
+              </label>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={watchedValues.hasStudio}
+                  onChange={(e) => setValue("hasStudio", e.target.checked)}
+                  disabled={isSubmitting}
+                  className="text-primaryColor focus:ring-primaryColor h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">Monoambiente</span>
+              </label>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={watchedValues.has1Bedroom}
+                  onChange={(e) => setValue("has1Bedroom", e.target.checked)}
+                  disabled={isSubmitting}
+                  className="text-primaryColor focus:ring-primaryColor h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">1 Dormitorio</span>
+              </label>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={watchedValues.has2Bedroom}
+                  onChange={(e) => setValue("has2Bedroom", e.target.checked)}
+                  disabled={isSubmitting}
+                  className="text-primaryColor focus:ring-primaryColor h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">2 Dormitorios</span>
+              </label>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={watchedValues.has3Bedroom}
+                  onChange={(e) => setValue("has3Bedroom", e.target.checked)}
+                  disabled={isSubmitting}
+                  className="text-primaryColor focus:ring-primaryColor h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">3 Dormitorios</span>
+              </label>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={watchedValues.has4Bedroom}
+                  onChange={(e) => setValue("has4Bedroom", e.target.checked)}
+                  disabled={isSubmitting}
+                  className="text-primaryColor focus:ring-primaryColor h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">4 Dormitorios</span>
+              </label>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={watchedValues.has5Bedroom}
+                  onChange={(e) => setValue("has5Bedroom", e.target.checked)}
+                  disabled={isSubmitting}
+                  className="text-primaryColor focus:ring-primaryColor h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">5 Dormitorios</span>
+              </label>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={watchedValues.hasCommercial}
+                  onChange={(e) => setValue("hasCommercial", e.target.checked)}
+                  disabled={isSubmitting}
+                  className="text-primaryColor focus:ring-primaryColor h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">Comercial</span>
+              </label>
             </div>
           </div>
         </div>

@@ -74,6 +74,14 @@ interface CreateProjectInput {
   priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;
+  hasParking?: boolean;
+  hasStudio?: boolean;
+  has1Bedroom?: boolean;
+  has2Bedroom?: boolean;
+  has3Bedroom?: boolean;
+  has4Bedroom?: boolean;
+  has5Bedroom?: boolean;
+  hasCommercial?: boolean;
 }
 
 interface UpdateProjectInput {
@@ -103,6 +111,14 @@ interface UpdateProjectInput {
   priority?: number;
   startDate?: Date;
   estimatedCompletion?: Date;
+  hasParking?: boolean;
+  hasStudio?: boolean;
+  has1Bedroom?: boolean;
+  has2Bedroom?: boolean;
+  has3Bedroom?: boolean;
+  has4Bedroom?: boolean;
+  has5Bedroom?: boolean;
+  hasCommercial?: boolean;
 }
 
 // =============================================================================
@@ -424,6 +440,14 @@ export async function createProject(
         details: input.details || [],
         priority: input.priority || 0,
         masterPlanFiles: input.masterPlanFiles || [],
+        hasParking: input.hasParking ?? false,
+        hasStudio: input.hasStudio ?? false,
+        has1Bedroom: input.has1Bedroom ?? false,
+        has2Bedroom: input.has2Bedroom ?? false,
+        has3Bedroom: input.has3Bedroom ?? false,
+        has4Bedroom: input.has4Bedroom ?? false,
+        has5Bedroom: input.has5Bedroom ?? false,
+        hasCommercial: input.hasCommercial ?? false,
         createdBy: userId,
       },
       include: {

@@ -123,7 +123,7 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
           heroImage={heroImage}
         />
         <div>
-          <ProjectInfo />
+          <ProjectInfo masterPlanFiles={masterPlanFiles} />
 
           <div className="container mx-auto flex flex-col gap-10 px-4 md:flex-row md:px-0">
             <div className="flex flex-col gap-5">

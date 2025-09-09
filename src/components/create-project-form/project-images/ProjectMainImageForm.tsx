@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Loader2 } from "lucide-react";
 
+import type { MasterPlanFile } from "@/types/project-form";
+import { uploadProjectDocuments } from "@/lib/actions/storage";
+import { validateDocumentFiles } from "@/lib/utils/images";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,6 +23,8 @@ interface ProjectMainImageFormProps {
     name: string;
   };
   onChange: (data: { images: string[] }) => void;
+  masterPlanFiles: MasterPlanFile[];
+  onMasterPlanFilesChange: (files: MasterPlanFile[]) => void;
   disabled?: boolean;
   error?: string;
   projectId?: string;
@@ -173,11 +178,74 @@ function ProjectMainImageDialog({
 export function ProjectMainImageForm({
   value,
   onChange,
+  masterPlanFiles,
+  onMasterPlanFilesChange,
   disabled = false,
   error,
   projectId,
 }: ProjectMainImageFormProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files || files.length === 0 || disabled || isUploading) return;
+
+      const file = files[0];
+      const { valid, invalid } = validateDocumentFiles([file]);
+
+      if (invalid.length > 0) {
+        setUploadError(`Archivo inválido: ${invalid[0].reason}`);
+        return;
+      }
+
+      setIsUploading(true);
+      setUploadError(null);
+
+      try {
+        const formData = new FormData();
+        formData.append("document-0", file);
+
+        const result = await uploadProjectDocuments(formData, projectId);
+
+        if (result.success && result.documents && result.documents[0]) {
+          const newFile: MasterPlanFile = {
+            id: result.documents[0].id,
+            name: result.documents[0].name,
+            url: result.documents[0].url,
+            path: result.documents[0].path,
+            size: file.size,
+          };
+
+          // Usar unshift para colocar al principio
+          const updatedFiles = [...masterPlanFiles];
+          updatedFiles.unshift(newFile);
+          onMasterPlanFilesChange(updatedFiles);
+        } else {
+          setUploadError(result.error || "Error al subir el archivo");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        setUploadError("Error de conexión al subir el archivo");
+      } finally {
+        setIsUploading(false);
+        // Reset input value
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
+    },
+    [
+      disabled,
+      isUploading,
+      masterPlanFiles,
+      onMasterPlanFilesChange,
+      projectId,
+    ],
+  );
 
   return (
     <>
@@ -246,18 +314,49 @@ export function ProjectMainImageForm({
               Arrastra el archivo o selecciona desde tu dispositivo
             </p>
             <input
+              ref={fileInputRef}
               type="file"
               className="hidden"
-              id="file-upload"
+              id="brochure-upload"
               accept=".pdf,.doc,.docx"
+              onChange={handleFileSelect}
+              disabled={disabled || isUploading}
             />
             <label
-              htmlFor="file-upload"
-              className="border-primaryColor text-primaryColor hover:bg-primaryColor cursor-pointer rounded-full border bg-white px-6 py-2 transition-colors hover:text-white"
+              htmlFor="brochure-upload"
+              className={`border-primaryColor text-primaryColor hover:bg-primaryColor cursor-pointer rounded-full border bg-white px-6 py-2 transition-colors hover:text-white ${
+                disabled || isUploading ? "cursor-not-allowed opacity-50" : ""
+              }`}
             >
-              Cargar archivo
+              {isUploading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Subiendo...
+                </span>
+              ) : (
+                "Cargar archivo"
+              )}
             </label>
           </div>
+
+          {/* Error message */}
+          {uploadError && (
+            <div className="mt-3 rounded bg-red-100 p-2 text-sm text-red-700">
+              {uploadError}
+            </div>
+          )}
+
+          {/* Show current brochure if exists */}
+          {masterPlanFiles.length > 0 && masterPlanFiles[0] && (
+            <div className="mt-3 rounded bg-green-50 p-3">
+              <p className="text-sm font-medium text-green-700">
+                Brochure actual:
+              </p>
+              <p className="truncate text-xs text-green-600">
+                {masterPlanFiles[0].name}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </>
