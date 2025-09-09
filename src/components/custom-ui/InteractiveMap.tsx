@@ -48,7 +48,7 @@ export default function InteractiveMap({
   return (
     <div
       className={cn(
-        "h-[50dvh] overflow-hidden rounded-2xl border border-gray-300",
+        "h-[70dvh] overflow-hidden rounded-3xl border border-gray-300",
         className,
       )}
     >

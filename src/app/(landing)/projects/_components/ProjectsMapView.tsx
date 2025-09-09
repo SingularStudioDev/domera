@@ -90,8 +90,10 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
       })
     : "Fecha TBD";
 
-  // Use project slug for main image with fallback
-  const image = `/images/${project.slug}-main.png`;
+  // Use the second image from the images array with fallback to first image
+  const images = Array.isArray(project.images) ? project.images : [];
+  const image =
+    images[1] || images[0] || `/images/projects/${project.slug}/main.jpg`;
 
   // Convert Decimal coordinates to numbers
   const convertToNumber = (value: unknown): number => {
@@ -402,9 +404,32 @@ export default function ProjectsMapView({
     <div className="mb-16">
       {/* Map and Sidebar Layout */}
       <div className="flex flex-col gap-6 lg:flex-row">
+        {/* Sidebar with Selected Project */}
+        <div className="w-full lg:w-96">
+          {selectedProject ? (
+            <div className="rounded-3xl border p-4">
+              <ProjectCard
+                slug={selectedProject.slug}
+                title={selectedProject.title}
+                price={selectedProject.price}
+                image={selectedProject.image}
+                status={selectedProject.status}
+                date={selectedProject.date}
+                features={selectedProject.features}
+              />
+            </div>
+          ) : (
+            <div className="rounded-lg border bg-gray-50 p-6 text-center">
+              <p className="text-gray-600">
+                Selecciona un proyecto en el mapa para ver sus detalles
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Map Container */}
         <div className="lg:flex-1">
-          <div className="h-[600px] w-full overflow-hidden">
+          <div className="h-[70dvh] w-full overflow-hidden">
             <Suspense fallback={<MapLoading />}>
               <InteractiveMap
                 latitude={mapCenter.lat}
@@ -441,32 +466,6 @@ export default function ProjectsMapView({
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Sidebar with Selected Project */}
-        <div className="w-full lg:w-96">
-          {selectedProject ? (
-            <div className="rounded-lg border bg-white p-4">
-              <h3 className="mb-4 text-lg font-semibold">
-                Proyecto seleccionado
-              </h3>
-              <ProjectCard
-                slug={selectedProject.slug}
-                title={selectedProject.title}
-                price={selectedProject.price}
-                image={selectedProject.image}
-                status={selectedProject.status}
-                date={selectedProject.date}
-                features={selectedProject.features}
-              />
-            </div>
-          ) : (
-            <div className="rounded-lg border bg-gray-50 p-6 text-center">
-              <p className="text-gray-600">
-                Selecciona un proyecto en el mapa para ver sus detalles
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>

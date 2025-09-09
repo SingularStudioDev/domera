@@ -74,7 +74,7 @@ export default function LeafletMap({
     <MapContainer
       center={position}
       zoom={zoom}
-      className="h-[50dvh] w-full"
+      className="h-[70dvh] w-full"
       zoomControl={true}
       scrollWheelZoom={true}
       attributionControl={true}
