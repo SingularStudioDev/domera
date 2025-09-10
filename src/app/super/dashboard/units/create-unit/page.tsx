@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { OptimizedImageUpload } from "@/components/image-upload/OptimizedImageUpload";
+import { UnitImageUpload } from "@/components/unit-image-upload/UnitImageUpload";
 
 type CreateUnitForm = z.infer<typeof CreateUnitSchema>;
 
@@ -617,19 +617,11 @@ export default function CreateUnitPage() {
           <CardContent>
             {/* Images Upload */}
             <div className="mb-6">
-              <label className="mb-4 block text-sm font-medium text-gray-700">
-                Imágenes de la Unidad
-              </label>
-              <OptimizedImageUpload
+              <UnitImageUpload
                 value={uploadedImages}
                 onChange={handleImagesChange}
-                entityType="unit"
-                entityId={selectedProjectId}
-                maxImages={15}
-                placeholder="Subir imágenes de la unidad"
+                unitId={selectedProjectId}
                 disabled={isSubmitting || isPending}
-                aspectRatio="aspect-video"
-                showUploadButton={true}
               />
             </div>
 

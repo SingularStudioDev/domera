@@ -111,7 +111,6 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
           <h4 className="group-hover:text-primaryColor mb-1 text-2xl font-semibold text-black transition duration-300">
             {unit.title}
           </h4>
-          <p className="text-black">{unit.description}</p>
         </div>
 
         <div className="mb-6 flex w-full justify-between pr-10">

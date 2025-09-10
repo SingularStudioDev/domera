@@ -13,7 +13,7 @@ export default function UnitGallery({ images, unitNumber }: UnitGalleryProps) {
   }
 
   return (
-    <div className="container mx-auto mb-16">
+    <div className="container mx-auto my-18">
       <h3 className="mb-6 text-3xl font-bold text-black">Galería</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {galleryImages.map((image, index) => (

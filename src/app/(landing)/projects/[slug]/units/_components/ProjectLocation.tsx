@@ -81,11 +81,6 @@ export default function ProjectLocation({
                 <div className="flex flex-1 items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{file.name}</p>
-                    {file.size && (
-                      <p className="font-semibold">
-                        {formatFileSize(file.size)}
-                      </p>
-                    )}
                   </div>
                 </div>
 

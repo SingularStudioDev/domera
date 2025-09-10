@@ -8,7 +8,6 @@ import { formatCurrency } from "@/utils/utils";
 import { checkIsFavoriteAction } from "@/lib/actions/favourites";
 import { getUnitByIdAction } from "@/lib/actions/units";
 import { useFeatureParser, useImageParser } from "@/hooks/useJsonArrayParser";
-import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
@@ -141,6 +140,8 @@ const UnitDetailPage = () => {
     : "A definir";
 
   const mainImage = firstImage || "/placeholder-unit.jpg";
+
+  console.log("unit.description", unit.description);
 
   return (
     <div className="min-h-screen bg-white">

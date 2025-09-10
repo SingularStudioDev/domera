@@ -52,14 +52,21 @@ interface CreateUnitInput {
   unitNumber: string;
   unitType: UnitType;
   status: UnitStatus;
-  floor: number;
+  floor?: number;
   bedrooms: number;
   bathrooms: number;
-  area: number;
+  totalArea?: number;
+  builtArea?: number;
+  area?: number; // Legacy field, can be derived from totalArea
   price: number;
+  currency?: string;
   orientation?: string;
-  balcony: boolean;
-  terrace: boolean;
+  facing?: string;
+  description?: string;
+  dimensions?: string;
+  floorPlanUrl?: string;
+  balcony?: boolean;
+  terrace?: boolean;
   features: any;
   images: string[];
 }
@@ -458,15 +465,20 @@ export async function createUnit(
       data: {
         projectId: input.projectId,
         unitNumber: input.unitNumber,
-        floor: input.floor,
+        floor: input.floor || null,
         unitType: input.unitType,
         status: input.status,
         bedrooms: input.bedrooms,
         bathrooms: input.bathrooms,
-        totalArea: input.area,
-        orientation: input.orientation,
+        totalArea: input.totalArea || input.area || null,
+        builtArea: input.builtArea || null,
+        orientation: input.orientation || null,
+        facing: input.facing || null,
         price: input.price,
-        currency: "USD",
+        currency: input.currency || "USD",
+        description: input.description || null,
+        dimensions: input.dimensions || null,
+        floorPlanUrl: input.floorPlanUrl || null,
         features: input.features,
         images: input.images,
         createdBy: userId,
