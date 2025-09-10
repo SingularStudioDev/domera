@@ -5,14 +5,14 @@ import { useCallback, useRef, useState } from "react";
 import { ImageIcon, Loader2 } from "lucide-react";
 
 import type { MasterPlanFile } from "@/types/project-form";
+import { ProjectImage } from "@/types/project-images";
 import { uploadProjectDocuments } from "@/lib/actions/storage";
 import { validateDocumentFiles } from "@/lib/utils/images";
 import { useProjectImages } from "@/hooks/useProjectImages";
-import { ProjectImage } from "@/types/project-images";
 
 import { ProjectMainImageDialog } from "./UploadImageDialog";
 
-interface ProjectMainImageFormProps {
+interface CreateProjectUploadProps {
   value: {
     images: string[] | ProjectImage[];
     name: string;
@@ -26,7 +26,7 @@ interface ProjectMainImageFormProps {
   projectId?: string;
 }
 
-export function ProjectMainImageForm({
+export function CreateProjectUpload({
   value,
   onChange,
   onCardImageChange,
@@ -35,7 +35,7 @@ export function ProjectMainImageForm({
   disabled = false,
   error,
   projectId,
-}: ProjectMainImageFormProps) {
+}: CreateProjectUploadProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { ImageType, ProjectImage } from "@/types/project-images";
 import { useProjectImages } from "@/hooks/useProjectImages";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { OptimizedImageUpload } from "@/components/image-upload";
-import { ProjectImage, ImageType } from "@/types/project-images";
 
 interface ProjectMainImageDialogProps {
   isOpen: boolean;
@@ -58,18 +59,21 @@ export function ProjectMainImageDialog({
         metadata: {
           uploadedAt: new Date().toISOString(),
           isMain: true,
-          altText: value.name || 'Imagen principal'
-        }
+          altText: value.name || "Imagen principal",
+        },
       };
-      
+
       // Filter out existing card images and add the new one
       const currentImages = Array.isArray(value.images) ? value.images : [];
-      const existingImages = typeof currentImages[0] === 'string' ? 
-        [] : // If legacy format, start fresh with new format
-        (currentImages as ProjectImage[]).filter(img => img.type !== ImageType.CARD);
-      
+      const existingImages =
+        typeof currentImages[0] === "string"
+          ? [] // If legacy format, start fresh with new format
+          : (currentImages as ProjectImage[]).filter(
+              (img) => img.type !== ImageType.CARD,
+            );
+
       const updatedImages = [...existingImages, newCardImage];
-      
+
       onChange({ images: updatedImages });
     }
     onOpenChange(false);
@@ -81,7 +85,7 @@ export function ProjectMainImageDialog({
   };
 
   // Reset preview when modal opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       setPreviewImage(null);
     }
@@ -174,11 +178,7 @@ export function ProjectMainImageDialog({
         </div>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-          >
+          <Button type="button" variant="outline" onClick={handleCancel}>
             Cancelar
           </Button>
           <Button type="button" onClick={handleSave}>

@@ -6,7 +6,7 @@ export { CreateProjectProgress as ProgressFormComponent } from "./project-progre
 
 // Project Images
 export { CreateProjectCarousel as ImageCarouselForm } from "./project-carousel/CreateProjectCarousel";
-export { ProjectMainImageForm } from "./project-upload/CreateProjectUpload";
+export { CreateProjectUpload as ProjectMainImageForm } from "./project-upload/CreateProjectUpload";
 
 // Project Location
 export { CreateProjectLocation as LocationFormComponent } from "./project-location/CreateProjectLocation";

@@ -24,7 +24,7 @@ import { ProjectDetailsForm } from "@/components/create-project-form/project-det
 import { CreateProjectHeroForm } from "@/components/create-project-form/project-hero/CreateProjectHeroForm";
 import { CreateProjectLocation } from "@/components/create-project-form/project-location/CreateProjectLocation";
 import { CreateProjectProgress } from "@/components/create-project-form/project-progress/CreateProjectProgress";
-import { ProjectMainImageForm } from "@/components/create-project-form/project-upload/CreateProjectUpload";
+import { CreateProjectUpload } from "@/components/create-project-form/project-upload/CreateProjectUpload";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
@@ -664,7 +664,7 @@ export function ProjectFormMain({
 
         <div className="mb-10">
           <div className="container mx-auto px-4 md:px-0">
-            <ProjectMainImageForm
+            <CreateProjectUpload
               value={mainImageData}
               onChange={(newMainImageData) => {
                 // Convert string URLs back to ProjectImage objects
