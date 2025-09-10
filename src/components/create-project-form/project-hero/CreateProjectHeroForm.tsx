@@ -3,24 +3,24 @@
 import React, { useState } from "react";
 
 import { formatCurrency } from "@/utils/utils";
-import { CameraIcon, ImageIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 
 import { HeroFormProps } from "@/types/project-form";
 
 import { HeroImageEditDialog } from "./HeroImageEditDialog";
 
-interface ProjectHeroFormProps extends HeroFormProps {
+interface CreateProjectHeroFormProps extends HeroFormProps {
   onHeroImageChange?: (files: File[]) => void;
 }
 
-export function ProjectHeroForm({
+export function CreateProjectHeroForm({
   value,
   onChange,
   error,
   disabled,
   currency,
   onHeroImageChange,
-}: ProjectHeroFormProps) {
+}: CreateProjectHeroFormProps) {
   const [isEditing, setIsEditing] = useState(false);
 
   const handleFieldChange = (
@@ -212,7 +212,6 @@ export function ProjectHeroForm({
           title="Editar imágenes del proyecto"
         >
           Selecciona una imagen
-          <ImageIcon className="mt-0.5 h-4 w-4" />
         </button>
       </section>
 

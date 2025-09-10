@@ -33,7 +33,7 @@ interface DocumentFile {
   error?: string;
 }
 
-interface MasterPlanFilesFormProps {
+interface CreateProjectMasterPlanFilesProps {
   value: MasterPlanFile[];
   onChange: (files: MasterPlanFile[]) => void;
   maxFiles?: number;
@@ -47,7 +47,7 @@ interface MasterPlanFilesFormProps {
 // MAIN COMPONENT
 // =============================================================================
 
-export const MasterPlanFilesForm: React.FC<MasterPlanFilesFormProps> = ({
+export function CreateProjectMasterPlanFiles({
   value = [],
   onChange,
   maxFiles = 10,
@@ -55,7 +55,7 @@ export const MasterPlanFilesForm: React.FC<MasterPlanFilesFormProps> = ({
   placeholder = "Agregar archivos de Master Plan",
   className,
   disabled = false,
-}) => {
+}: CreateProjectMasterPlanFilesProps) {
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -539,4 +539,4 @@ export const MasterPlanFilesForm: React.FC<MasterPlanFilesFormProps> = ({
       )}
     </div>
   );
-};
+}

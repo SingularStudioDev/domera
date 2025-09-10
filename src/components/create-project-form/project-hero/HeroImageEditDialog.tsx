@@ -3,15 +3,16 @@
 import React, { useState } from "react";
 
 import { formatCurrency } from "@/utils/utils";
-import { OptimizedImageUpload } from "@/components/image-upload";
+
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { OptimizedImageUpload } from "@/components/image-upload";
 
 interface HeroImageEditDialogProps {
   isOpen: boolean;
@@ -76,7 +77,8 @@ export function HeroImageEditDialog({
     ? formatCurrency(value.basePrice)
     : "Consultar";
 
-  const heroImage = value.images && value.images.length > 0 ? value.images[0] : null;
+  const heroImage =
+    value.images && value.images.length > 0 ? value.images[0] : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -88,9 +90,7 @@ export function HeroImageEditDialog({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Panel de selección de imágenes */}
           <div>
-            <h4 className="text-md mb-3 font-medium">
-              Seleccionar Imágenes
-            </h4>
+            <h4 className="text-md mb-3 font-medium">Seleccionar Imágenes</h4>
             <OptimizedImageUpload
               value={value.images || []}
               onChange={handleImagesChange}
@@ -107,9 +107,7 @@ export function HeroImageEditDialog({
 
           {/* Panel de preview */}
           <div>
-            <h4 className="text-md mb-3 font-medium">
-              Vista Previa del Hero
-            </h4>
+            <h4 className="text-md mb-3 font-medium">Vista Previa del Hero</h4>
             <div className="relative h-64 overflow-hidden rounded-lg border">
               {previewImage || heroImage ? (
                 <img

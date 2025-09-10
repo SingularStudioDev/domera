@@ -4,9 +4,9 @@ import React, { useState } from "react";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { OptimizedImageUpload } from "@/components/image-upload";
+import { EditProgressDialog } from "./EditProgressDialog";
 
-interface ProgressFormProps {
+interface CreateProjectProgressProps {
   progressImages: string[];
   onProgressImagesChange: (files: File[]) => void;
   onChange?: (imageUrls: string[]) => void;
@@ -15,14 +15,14 @@ interface ProgressFormProps {
   projectId?: string;
 }
 
-export function ProgressFormComponent({
+export function CreateProjectProgress({
   progressImages,
   onProgressImagesChange,
   onChange,
   disabled,
   error,
   projectId,
-}: ProgressFormProps) {
+}: CreateProjectProgressProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [localImages, setLocalImages] = useState<string[]>(
@@ -69,45 +69,6 @@ export function ProgressFormComponent({
 
   return (
     <>
-      {/* Modal para edición de imágenes de progreso */}
-      {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
-            <h3 className="mb-4 text-lg font-semibold">
-              Editar Avances de Obra
-            </h3>
-            <OptimizedImageUpload
-              value={localImages || []}
-              onChange={handleImagesChange}
-              onFilesChange={onProgressImagesChange}
-              entityType="project"
-              entityId={projectId}
-              maxImages={50}
-              placeholder="Seleccionar imágenes PROGRESS del proyecto"
-              disabled={disabled}
-              showUploadButton={true}
-              deferUpload={true}
-            />
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="bg-primaryColor hover:bg-primaryColor/90 rounded px-4 py-2 text-white"
-              >
-                Guardar
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Componente principal - EXACTAMENTE igual al original ProjectProgress */}
       <div className="py-12">
         <div className="mb-6 flex items-center justify-between">
@@ -266,6 +227,17 @@ export function ProgressFormComponent({
           </div>
         )}
       </div>
+
+      {/* Dialog para edición de imágenes de progreso */}
+      <EditProgressDialog
+        isOpen={isEditing}
+        onClose={() => setIsEditing(false)}
+        progressImages={localImages}
+        onProgressImagesChange={onProgressImagesChange}
+        onChange={handleImagesChange}
+        disabled={disabled}
+        projectId={projectId}
+      />
     </>
   );
 }

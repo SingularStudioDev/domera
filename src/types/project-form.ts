@@ -96,7 +96,7 @@ export interface HeroFormProps
   currency: string;
 }
 
-export interface DescriptionFormProps
+export interface CreateProjectDescriptionProps
   extends FormFieldProps<{
     description: string;
     shortDescription: string;
@@ -110,7 +110,7 @@ export interface DetailsFormProps
     details: string[];
   }> {}
 
-export interface LocationFormProps
+export interface CreateProjectLocationProps
   extends FormFieldProps<{
     latitude: number | null;
     longitude: number | null;
@@ -119,7 +119,7 @@ export interface LocationFormProps
   projectName: string;
 }
 
-export interface ImageCarouselFormProps
+export interface CreateProjectCarouselProps
   extends FormFieldProps<{
     images: string[];
   }> {

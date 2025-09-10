@@ -1,17 +1,15 @@
 // Project Forms
-export { ProjectHeroForm } from "./project-hero/ProjectHeroForm";
-export { ProjectDescriptionForm } from "./project-description/ProjectDescriptionForm";
+export { CreateProjectHeroForm as ProjectHeroForm } from "./project-hero/CreateProjectHeroForm";
+export { CreateProjectDescription as ProjectDescriptionForm } from "./project-description/CreateProjectDescription";
 export { ProjectDetailsForm } from "./project-details/ProjectDetailsForm";
-export { ProgressFormComponent } from "./project-progress/ProgressForm";
+export { CreateProjectProgress as ProgressFormComponent } from "./project-progress/CreateProjectProgress";
 
 // Project Images
-export { ImageCarouselForm } from "./project-carousel/ImageCarouselForm";
-export { ProjectMainImageForm } from "./project-upload/ProjectMainImageForm";
+export { CreateProjectCarousel as ImageCarouselForm } from "./project-carousel/CreateProjectCarousel";
+export { ProjectMainImageForm } from "./project-upload/CreateProjectUpload";
 
 // Project Location
-export { LocationFormComponent } from "./project-location/LocationForm";
-export { MapSelector } from "./project-location/MapSelector";
-export { CoordinatesForm } from "./project-location/CoordinatesForm";
+export { CreateProjectLocation as LocationFormComponent } from "./project-location/CreateProjectLocation";
 
 // Main Form
 export { ProjectFormMain } from "./ProjectFormMain";

@@ -3,17 +3,10 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 
-import { LocationFormProps } from "@/types/project-form";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { CreateProjectLocationProps } from "@/types/project-form";
 
-import { MasterPlanFilesForm } from "../project-masterplans/MasterPlanFilesForm";
+import { CreateProjectMasterPlanFiles } from "../project-masterplans/CreateProjectMasterPlanFiles";
+import { EditLocationDialog } from "./EditLocationDialog";
 
 // Importar el mapa de manera dinámica para evitar problemas con SSR
 const InteractiveMap = dynamic(
@@ -26,13 +19,13 @@ const InteractiveMap = dynamic(
   },
 );
 
-export function LocationFormComponent({
+export function CreateProjectLocation({
   value,
   onChange,
   projectName,
   disabled,
   error,
-}: LocationFormProps) {
+}: CreateProjectLocationProps) {
   const [isEditingCoordinates, setIsEditingCoordinates] = useState(false);
 
   const handleFieldChange = (field: keyof typeof value, newValue: unknown) => {
@@ -44,77 +37,6 @@ export function LocationFormComponent({
 
   return (
     <>
-      {/* Dialog para editar coordenadas */}
-      <Dialog
-        open={isEditingCoordinates}
-        onOpenChange={setIsEditingCoordinates}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Editar Ubicación</DialogTitle>
-            <DialogDescription>
-              Modifica las coordenadas de latitud y longitud del proyecto
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Latitud
-              </label>
-              <input
-                type="number"
-                step="any"
-                value={value.latitude || ""}
-                onChange={(e) =>
-                  handleFieldChange(
-                    "latitude",
-                    e.target.value ? Number(e.target.value) : null,
-                  )
-                }
-                placeholder="-34.9011"
-                disabled={disabled}
-                className="focus:ring-primaryColor w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-transparent focus:ring-2"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Longitud
-              </label>
-              <input
-                type="number"
-                step="any"
-                value={value.longitude || ""}
-                onChange={(e) =>
-                  handleFieldChange(
-                    "longitude",
-                    e.target.value ? Number(e.target.value) : null,
-                  )
-                }
-                placeholder="-56.1645"
-                disabled={disabled}
-                className="focus:ring-primaryColor w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-transparent focus:ring-2"
-              />
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Button
-              type="button"
-              onClick={() => setIsEditingCoordinates(false)}
-              className="bg-primaryColor hover:bg-primaryColor/90"
-            >
-              Guardar
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditingCoordinates(false)}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Componente principal - EXACTAMENTE igual al original ProjectLocation */}
       <div className="py-5">
         <div className="grid gap-8 md:grid-cols-2">
@@ -166,13 +88,14 @@ export function LocationFormComponent({
             </div>
           </div>
 
+          {/* TODO: Esto tiene que estar en el form main no en este lugar */}
           {/* MASTER PLAN */}
           <div>
             <h3 className="mb-4 text-xl font-semibold text-gray-900">
               Master plan
             </h3>
 
-            <MasterPlanFilesForm
+            <CreateProjectMasterPlanFiles
               value={value.masterPlanFiles}
               onChange={(files) => handleFieldChange("masterPlanFiles", files)}
               disabled={disabled}
@@ -190,6 +113,19 @@ export function LocationFormComponent({
           </div>
         )}
       </div>
+
+      {/* Dialog para editar coordenadas */}
+      <EditLocationDialog
+        isOpen={isEditingCoordinates}
+        onOpenChange={setIsEditingCoordinates}
+        latitude={value.latitude}
+        longitude={value.longitude}
+        onLatitudeChange={(latitude) => handleFieldChange("latitude", latitude)}
+        onLongitudeChange={(longitude) =>
+          handleFieldChange("longitude", longitude)
+        }
+        disabled={disabled}
+      />
     </>
   );
 }

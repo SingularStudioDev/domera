@@ -5,10 +5,11 @@ import React, { useState } from "react";
 import { cn } from "@/utils/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { ImageCarouselFormProps } from "@/types/project-form";
-import { OptimizedImageUpload } from "@/components/image-upload";
+import { CreateProjectCarouselProps } from "@/types/project-form";
 
-export function ImageCarouselForm({
+import { EditCarouselDialog } from "./EditCarouselDialog";
+
+export function CreateProjectCarousel({
   value,
   onChange,
   projectName,
@@ -17,7 +18,7 @@ export function ImageCarouselForm({
   className,
   projectId,
   onCarouselImagesChange,
-}: ImageCarouselFormProps) {
+}: CreateProjectCarouselProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -51,47 +52,6 @@ export function ImageCarouselForm({
 
   return (
     <>
-      {/* Modal para edición de imágenes */}
-      {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
-            <h3 className="mb-4 text-lg font-semibold">
-              Editar Carrusel de Imágenes
-            </h3>
-            <OptimizedImageUpload
-              value={value.images || []}
-              onChange={handleImagesChange}
-              onFilesChange={onCarouselImagesChange}
-              entityType="project"
-              entityId={projectId}
-              maxImages={10}
-              placeholder="Seleccionar imágenes CAROUSEL del proyecto"
-              aspectRatio="aspect-[16/10]"
-              disabled={disabled}
-              showUploadButton={true}
-              deferUpload={true}
-            />
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="bg-primaryColor hover:bg-primaryColor/90 rounded px-4 py-2 text-white"
-              >
-                Guardar
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Componente principal - EXACTAMENTE igual al original ProjectImageCarousel */}
       <div className={cn("w-full", className)}>
         {value.images.length > 0 ? (
           <div className="relative">
@@ -171,6 +131,17 @@ export function ImageCarouselForm({
           </div>
         )}
       </div>
+
+      {/* Dialog para edición de imágenes */}
+      <EditCarouselDialog
+        isOpen={isEditing}
+        onOpenChange={setIsEditing}
+        value={value.images || []}
+        onChange={handleImagesChange}
+        onFilesChange={onCarouselImagesChange}
+        projectId={projectId}
+        disabled={disabled}
+      />
     </>
   );
 }
