@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 
 import { cn } from "@/utils/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CameraIcon, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { CreateProjectCarouselProps } from "@/types/project-form";
 
@@ -110,16 +110,21 @@ export function CreateProjectCarousel({
             className="relative flex h-[80dvh] w-full cursor-pointer items-center justify-center rounded-lg bg-gray-100 transition-colors hover:bg-gray-200"
             onClick={() => !disabled && setIsEditing(true)}
           >
-            <div className="text-center text-gray-500">
-              <div className="mb-4 text-6xl">📷</div>
-              <p className="mb-2 text-xl font-medium">
-                No hay imágenes disponibles
-              </p>
-              {!disabled && (
-                <p className="text-sm">
-                  Haz clic para agregar imágenes al carrusel
+            <div className="flex flex-col items-center justify-center gap-2 text-center text-gray-500">
+              <CameraIcon
+                strokeWidth={1.5}
+                className="h-16 w-16 text-gray-300"
+              />
+              <span>
+                <p className="mb-1 text-xl font-medium">
+                  No hay imágenes disponibles
                 </p>
-              )}
+                {!disabled && (
+                  <p className="text-sm">
+                    Haz clic para agregar imágenes al carrusel
+                  </p>
+                )}
+              </span>
             </div>
           </div>
         )}

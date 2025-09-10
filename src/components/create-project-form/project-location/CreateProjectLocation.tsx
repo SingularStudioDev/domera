@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 
+import { MapPinIcon } from "lucide-react";
+
 import { CreateProjectLocationProps } from "@/types/project-form";
 
 import { CreateProjectMasterPlanFiles } from "../project-masterplans/CreateProjectMasterPlanFiles";
@@ -74,14 +76,19 @@ export function CreateProjectLocation({
                   className="flex h-[200px] w-full cursor-pointer items-center justify-center rounded-lg bg-gray-100 transition-colors hover:bg-gray-200 md:h-[500px]"
                   onClick={() => !disabled && setIsEditingCoordinates(true)}
                 >
-                  <div className="text-center text-gray-500">
-                    <div className="mb-2 text-4xl">📍</div>
-                    <p className="font-medium">Ubicación no disponible</p>
-                    {!disabled && (
-                      <p className="text-sm">
-                        Haz clic para agregar coordenadas
-                      </p>
-                    )}
+                  <div className="flex flex-col items-center justify-center gap-3 text-center text-gray-500">
+                    <MapPinIcon
+                      strokeWidth={1.5}
+                      className="h-12 w-12 text-gray-400"
+                    />
+                    <span>
+                      <p className="font-medium">Ubicación no disponible</p>
+                      {!disabled && (
+                        <p className="text-sm">
+                          Haz clic para agregar coordenadas
+                        </p>
+                      )}
+                    </span>
                   </div>
                 </button>
               )}

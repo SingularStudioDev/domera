@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ConstructionIcon } from "lucide-react";
 
 import { EditProgressDialog } from "./EditProgressDialog";
 
@@ -210,12 +210,17 @@ export function CreateProjectProgress({
             className="flex aspect-[4/3] h-[30dvh] cursor-pointer items-center justify-center rounded-lg bg-gray-100 transition-colors hover:bg-gray-200"
             onClick={() => !disabled && setIsEditing(true)}
           >
-            <div className="text-center text-gray-500">
-              <div className="mb-2 text-4xl">🏗️</div>
-              <p className="font-medium">No hay imágenes de avance de obra</p>
-              {!disabled && (
-                <p className="text-sm">Haz clic para agregar imágenes</p>
-              )}
+            <div className="flex flex-col items-center justify-center gap-3 text-center text-gray-500">
+              <ConstructionIcon
+                strokeWidth={1.5}
+                className="h-12 w-12 text-gray-400"
+              />
+              <span>
+                <p className="font-medium">No hay imágenes de avance de obra</p>
+                {!disabled && (
+                  <p className="text-sm">Haz clic para agregar imágenes</p>
+                )}
+              </span>
             </div>
           </div>
         )}
