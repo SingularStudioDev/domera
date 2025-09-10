@@ -56,20 +56,19 @@ export function EditProgressDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <OptimizedImageUpload
-            value={progressImages || []}
-            onChange={handleImagesChange}
-            onFilesChange={onProgressImagesChange}
-            entityType="project"
-            entityId={projectId}
-            maxImages={50}
-            placeholder="Seleccionar imágenes de avance de obra del proyecto"
-            disabled={disabled}
-            showUploadButton={true}
-            deferUpload={true}
-          />
-        </div>
+        <OptimizedImageUpload
+          value={progressImages || []}
+          onChange={handleImagesChange}
+          onFilesChange={onProgressImagesChange}
+          entityType="project"
+          entityId={projectId}
+          maxImages={50}
+          placeholder="Seleccionar imágenes PROGRESS del proyecto"
+          aspectRatio="aspect-[16/10]"
+          disabled={disabled}
+          showUploadButton={true}
+          deferUpload={true}
+        />
 
         <DialogFooter>
           <button

@@ -94,7 +94,7 @@ export function ProjectFormMain({
     estimatedCompletion: null,
     organizationId: organizationId || undefined,
     status: "planning",
-    images: [],
+    images: [] as ProjectImage[],
     masterPlanFiles: [],
     amenities: [],
     detalles: [],
@@ -229,9 +229,9 @@ export function ProjectFormMain({
           });
         });
 
-        setValue("images", updatedManager.toLegacyStringArray());
+        setValue("images", updatedManager.toArray());
       } else {
-        setValue("images", newImageManager.toLegacyStringArray());
+        setValue("images", newImageManager.toArray());
       }
     }
 
@@ -263,9 +263,38 @@ export function ProjectFormMain({
           );
         });
 
-        setValue("images", updatedManager.toLegacyStringArray());
+        setValue("images", updatedManager.toArray());
       } else {
-        setValue("images", newImageManager.toLegacyStringArray());
+        setValue("images", newImageManager.toArray());
+      }
+    }
+
+    // Same logic for CARD images
+    if (type === ImageType.CARD) {
+      const imageManager = new ProjectImagesManager(watchedValues.images || []);
+      // Remove existing CARD images manually
+      const filteredImages = imageManager
+        .getAllImages()
+        .filter((img) => img.type !== ImageType.CARD);
+      const newImageManager = new ProjectImagesManager(filteredImages);
+
+      // Add new preview URLs
+      if (files.length > 0) {
+        const previewUrls = files.map((file) => URL.createObjectURL(file));
+
+        // Create proper ProjectImage objects for the preview URLs
+        let updatedManager = newImageManager;
+        previewUrls.forEach((url, index) => {
+          updatedManager = updatedManager.addImage(url, ImageType.CARD, index, {
+            isMain: true,
+            uploadedAt: new Date().toISOString(),
+            altText: `Imagen principal del proyecto`,
+          });
+        });
+
+        setValue("images", updatedManager.toArray());
+      } else {
+        setValue("images", newImageManager.toArray());
       }
     }
 
@@ -297,9 +326,9 @@ export function ProjectFormMain({
           );
         });
 
-        setValue("images", updatedManager.toLegacyStringArray());
+        setValue("images", updatedManager.toArray());
       } else {
-        setValue("images", newImageManager.toLegacyStringArray());
+        setValue("images", newImageManager.toArray());
       }
     }
   };
@@ -371,7 +400,7 @@ export function ProjectFormMain({
           updatedManager.getImageCount(ImageType.HERO),
         );
 
-        // Remove existing hero images first to avoid conflicts
+        // Remove existing hero images first to avoid conflicts (including blob URLs)
         const existingHeroImages = updatedManager.getImagesByType(
           ImageType.HERO,
         );
@@ -421,7 +450,7 @@ export function ProjectFormMain({
           `About to process ${pendingImagesByType.card.length} card images`,
         );
 
-        // Remove existing card images first to avoid conflicts
+        // Remove existing card images first to avoid conflicts (including blob URLs)
         const existingCardImages = updatedManager.getImagesByType(
           ImageType.CARD,
         );
@@ -453,7 +482,7 @@ export function ProjectFormMain({
           `About to process ${pendingImagesByType.carousel.length} carousel images`,
         );
 
-        // Remove existing carousel images first to avoid conflicts
+        // Remove existing carousel images first to avoid conflicts (including blob URLs)
         const existingCarouselImages = updatedManager.getImagesByType(
           ImageType.CAROUSEL,
         );
@@ -485,7 +514,7 @@ export function ProjectFormMain({
           `About to process ${pendingImagesByType.progress.length} progress images`,
         );
 
-        // Remove existing progress images first to avoid conflicts
+        // Remove existing progress images first to avoid conflicts (including blob URLs)
         const existingProgressImages = updatedManager.getImagesByType(
           ImageType.PROGRESS,
         );
@@ -511,15 +540,14 @@ export function ProjectFormMain({
         });
       }
 
-      // For compatibility during transition, convert back to legacy string array format
-      // TODO: In future, change createProjectAction to accept ProjectImage[]
-      const finalImages = updatedManager.toLegacyStringArray();
-      console.log("finalImages", finalImages);
+      // Use the new ProjectImage[] format instead of legacy string array
+      const finalImages = updatedManager.toArray();
+      console.log("finalImages (ProjectImage[]):", finalImages);
 
-      // Prepare final data
+      // Prepare final data with typed images
       const processedData = {
         ...data,
-        images: finalImages, // This maintains compatibility with current system
+        images: finalImages, // Now using ProjectImage[] format
       };
 
       await onSubmit(processedData as ProjectFormData);
@@ -536,10 +564,16 @@ export function ProjectFormMain({
     }
   };
 
-  // Helper function to get current images by type for form components
-  const getImagesByType = (type: ImageTypeValue): string[] => {
+  // Helper function to get current images by type for form components (URLs)
+  const getImageUrlsByType = (type: ImageTypeValue): string[] => {
     const imageManager = new ProjectImagesManager(watchedValues.images || []);
     return imageManager.getImagesByType(type).map((img) => img.url);
+  };
+
+  // Helper function to get current images by type for form components (ProjectImage[])
+  const getImagesByType = (type: ImageTypeValue): ProjectImage[] => {
+    const imageManager = new ProjectImagesManager(watchedValues.images || []);
+    return imageManager.getImagesByType(type);
   };
 
   // Formatear datos hero - solo imagen HERO específica
@@ -580,7 +614,7 @@ export function ProjectFormMain({
 
   // Formatear datos imagen principal
   const mainImageData = {
-    images: watchedValues.images || [],
+    images: getImageUrlsByType(ImageType.CARD), // Solo URLs de imágenes CARD
     name: watchedValues.name || "",
   };
 
@@ -633,7 +667,32 @@ export function ProjectFormMain({
             <ProjectMainImageForm
               value={mainImageData}
               onChange={(newMainImageData) => {
-                setValue("images", newMainImageData.images);
+                // Convert string URLs back to ProjectImage objects
+                const imageManager = new ProjectImagesManager(
+                  watchedValues.images || [],
+                );
+
+                // Remove existing CARD images
+                const filteredImages = imageManager
+                  .getAllImages()
+                  .filter((img) => img.type !== ImageType.CARD);
+                let updatedManager = new ProjectImagesManager(filteredImages);
+
+                // Add new CARD images from URLs
+                newMainImageData.images.forEach((url, index) => {
+                  updatedManager = updatedManager.addImage(
+                    url,
+                    ImageType.CARD,
+                    index,
+                    {
+                      isMain: true,
+                      uploadedAt: new Date().toISOString(),
+                      altText: `Imagen principal del proyecto`,
+                    },
+                  );
+                });
+
+                setValue("images", updatedManager.toArray());
               }}
               onCardImageChange={(files) =>
                 updateImagesByType(ImageType.CARD, files)
@@ -706,11 +765,11 @@ export function ProjectFormMain({
             />
             {/* PROGRESS FORM - Gestión específica de imágenes PROGRESS */}
             <CreateProjectProgress
-              progressImages={getImagesByType(ImageType.PROGRESS)}
+              progressImages={getImageUrlsByType(ImageType.PROGRESS)}
               onProgressImagesChange={(files) =>
                 updateImagesByType(ImageType.PROGRESS, files)
               }
-              onChange={(imageUrls) => {
+              onChange={() => {
                 // No necesitamos hacer nada aquí porque updateImagesByType ya maneja
                 // la actualización inmediata de las URLs de preview
               }}

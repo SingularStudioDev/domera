@@ -6,8 +6,8 @@ import { formatCurrency } from "@/utils/utils";
 import type { Project } from "@prisma/client";
 
 import { getPublicProjectsAction } from "@/lib/actions/projects";
-import ProjectCard from "@/components/custom-ui/ProjectCard";
 import { useProjectCardImage } from "@/hooks/useProjectImages";
+import ProjectCard from "@/components/custom-ui/ProjectCard";
 
 interface ProjectFeature {
   name: string;
@@ -95,16 +95,19 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
 };
 
 // Wrapper component to handle image selection with the new system
-function ProjectCardWrapper({ projectData }: { projectData: ProjectDisplayData }) {
+function ProjectCardWrapper({
+  projectData,
+}: {
+  projectData: ProjectDisplayData;
+}) {
   const { imageUrl } = useProjectCardImage(projectData.images);
-  const finalImage = imageUrl || `/${projectData.slug}-main.png`;
 
   return (
     <ProjectCard
       slug={projectData.slug}
       title={projectData.title}
       price={projectData.price}
-      image={finalImage}
+      image={imageUrl}
       status={projectData.status}
       date={projectData.date}
       features={projectData.features}
@@ -127,8 +130,6 @@ export default function ProjectsList({
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  console.log("project.basePrice", projects);
 
   useEffect(() => {
     const fetchProjects = async () => {

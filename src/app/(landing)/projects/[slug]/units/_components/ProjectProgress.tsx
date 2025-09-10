@@ -13,10 +13,12 @@ import {
 
 interface ProjectProgressProps {
   progressImages: string[] | string;
+  date: string;
 }
 
 export default function ProjectProgress({
   progressImages,
+  date,
 }: ProjectProgressProps) {
   const { images, hasImages, imageCount } = useImageParser(progressImages);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -60,10 +62,13 @@ export default function ProjectProgress({
   }
 
   return (
-    <div className="py-4 md:py-0">
-      <h3 className="mb-1 text-3xl font-semibold text-black md:mb-2">
-        Avances de obra
-      </h3>
+    <div className="mt-10 py-4 md:py-0">
+      <div className="mb-10">
+        <h3 className="mb-1 text-3xl font-semibold text-black">
+          Avances de obra
+        </h3>
+        <p>{date}</p>
+      </div>
 
       {/* Vista móvil: Carrusel individual */}
       <div className="md:hidden">

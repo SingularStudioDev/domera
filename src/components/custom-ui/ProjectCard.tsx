@@ -19,7 +19,7 @@ interface ProjectCardProps {
   slug: string;
   title: string;
   price: string;
-  image: string;
+  image?: string;
   status: string;
   date: string;
   features?: ProjectFeature[];
@@ -107,7 +107,7 @@ const ProjectCard = ({
       {/* Image */}
       <div className="group relative h-[567px] overflow-hidden md:h-[547px]">
         <img
-          src={image}
+          src={image || "/project-fallback.png"}
           alt={title}
           className="h-full w-full object-cover"
           onError={(e) => {

@@ -158,14 +158,13 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
 // Wrapper component to handle image selection with the new system
 function ProjectMapCardWrapper({ projectData }: { projectData: ProjectDisplayData }) {
   const { imageUrl } = useProjectCardImage(projectData.images);
-  const finalImage = imageUrl || `/images/projects/${projectData.slug}/main.jpg`;
 
   return (
     <ProjectCard
       slug={projectData.slug}
       title={projectData.title}
       price={projectData.price}
-      image={finalImage}
+      image={imageUrl}
       status={projectData.status}
       date={projectData.date}
       features={projectData.features}

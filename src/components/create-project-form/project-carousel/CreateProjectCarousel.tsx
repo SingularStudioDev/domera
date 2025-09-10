@@ -23,8 +23,20 @@ export function CreateProjectCarousel({
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleImagesChange = (imageUrls: string[]) => {
+    // Convert URLs to ProjectImage objects
+    const projectImages = imageUrls.map((url, index) => ({
+      url,
+      type: "carousel" as const,
+      order: index,
+      metadata: {
+        uploadedAt: new Date().toISOString(),
+        isMain: false,
+        altText: `Imagen carousel ${index + 1}`,
+      },
+    }));
+
     onChange({
-      images: imageUrls,
+      images: projectImages,
     });
 
     // Resetear índice si no hay imágenes
@@ -47,7 +59,7 @@ export function CreateProjectCarousel({
     );
   };
 
-  const currentImage = value.images[currentIndex];
+  const currentImage = value.images[currentIndex]?.url;
   const hasMultipleImages = value.images.length > 1;
 
   return (
@@ -141,7 +153,7 @@ export function CreateProjectCarousel({
       <EditCarouselDialog
         isOpen={isEditing}
         onOpenChange={setIsEditing}
-        value={value.images || []}
+        value={value.images?.map(img => img.url) || []}
         onChange={handleImagesChange}
         onFilesChange={onCarouselImagesChange}
         projectId={projectId}

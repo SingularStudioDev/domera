@@ -24,8 +24,8 @@ export interface ProjectFormData {
   organizationId?: string;
   status: "planning" | "pre_sale" | "construction" | "completed" | "delivered";
 
-  // Imágenes y archivos - URLs como strings tras ser subidas
-  images: string[];
+  // Imágenes y archivos - usando ProjectImage[] con tipos
+  images: import("@/types/project-images").ProjectImage[];
   masterPlanFiles: MasterPlanFile[];
 
   // Contenido detallado - respetando el schema del DAL
@@ -91,7 +91,7 @@ export interface HeroFormProps
     neighborhood: string;
     city: string;
     estimatedCompletion: Date | null;
-    images: string[];
+    images: import("@/types/project-images").ProjectImage[];
   }> {
   currency: string;
 }
@@ -121,7 +121,7 @@ export interface CreateProjectLocationProps
 
 export interface CreateProjectCarouselProps
   extends FormFieldProps<{
-    images: string[];
+    images: import("@/types/project-images").ProjectImage[];
   }> {
   projectId: string;
   className: string;

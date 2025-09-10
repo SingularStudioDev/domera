@@ -23,7 +23,7 @@ export default function ProjectDescription({
         <h2 className="mb-2 text-3xl font-bold text-black md:mb-6">
           Descripción
         </h2>
-        <p className="pr-20 text-black">{description}</p>
+        <p className="pr-20 whitespace-pre-line text-black">{description}</p>
       </div>
 
       <div className="lg:col-span-1">

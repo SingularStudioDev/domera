@@ -25,7 +25,12 @@ export function CreateProjectHeroForm({
 
   const handleFieldChange = (
     field: keyof typeof value,
-    newValue: string | number | Date | null | string[],
+    newValue:
+      | string
+      | number
+      | Date
+      | null
+      | import("@/types/project-images").ProjectImage[],
   ) => {
     onChange({
       ...value,
@@ -34,7 +39,18 @@ export function CreateProjectHeroForm({
   };
 
   const handleImagesChange = (imageUrls: string[]) => {
-    handleFieldChange("images", imageUrls);
+    // Convert URLs to ProjectImage objects
+    const projectImages = imageUrls.map((url, index) => ({
+      url,
+      type: "hero" as const,
+      order: index,
+      metadata: {
+        uploadedAt: new Date().toISOString(),
+        isMain: true,
+        altText: `Imagen hero ${index + 1}`,
+      },
+    }));
+    handleFieldChange("images", projectImages);
   };
 
   // Formatear precio para preview
@@ -56,7 +72,7 @@ export function CreateProjectHeroForm({
     : "A definir";
 
   const heroImage =
-    value.images && value.images.length > 0 ? value.images[0] : null;
+    value.images && value.images.length > 0 ? value.images[0].url : null;
 
   return (
     <>

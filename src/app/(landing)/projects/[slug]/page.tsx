@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { formatCurrency } from "@/utils/utils";
 
 import type { MasterPlanFile } from "@/types/project-form";
+import { type ImagesData } from "@/types/project-images";
 import { getProjectBySlug } from "@/lib/dal/projects";
 import { ProjectImagesManager } from "@/lib/utils/project-images";
-import { type ImagesData } from "@/types/project-images";
 import ProjectImageCarousel from "@/components/custom-ui/ProjectImageCarousel";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
@@ -68,20 +68,23 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
       : [];
   // Use new image management system
   const imageManager = new ProjectImagesManager(project.images as ImagesData);
-  
+
   // Extract images by type with smart fallbacks
-  const heroImage = imageManager.getHeroImage()?.url || 
-                   imageManager.getCardImage()?.url || 
-                   imageManager.getMainImage()?.url || 
-                   `/images/${projectSlug}-hero.png`;
-  
-  const carouselImages = imageManager.getCarouselImages().map(img => img.url);
-  
+  const heroImage =
+    imageManager.getHeroImage()?.url ||
+    imageManager.getCardImage()?.url ||
+    imageManager.getMainImage()?.url ||
+    `/images/${projectSlug}-hero.png`;
+
+  const carouselImages = imageManager.getCarouselImages().map((img) => img.url);
+
   // For progress images, check both the new system and legacy pattern matching
-  const progressFromManager = imageManager.getProgressImages().map(img => img.url);
-  
+  const progressFromManager = imageManager
+    .getProgressImages()
+    .map((img) => img.url);
+
   // Legacy pattern matching for progress images (for compatibility)
-  const allImagesUrls = imageManager.getAllImages().map(img => img.url);
+  const allImagesUrls = imageManager.getAllImages().map((img) => img.url);
   const legacyProgressImages = allImagesUrls.filter((imagePath) => {
     const imageName = imagePath.split("/").pop()?.split(".")[0];
     if (!imageName) return false;
@@ -90,10 +93,12 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
     );
     return regex.test(imageName);
   });
-  
+
   // Combine progress images from both sources
-  const progressImages = [...progressFromManager, ...legacyProgressImages]
-    .filter((url, index, arr) => arr.indexOf(url) === index); // Remove duplicates
+  const progressImages = [
+    ...progressFromManager,
+    ...legacyProgressImages,
+  ].filter((url, index, arr) => arr.indexOf(url) === index); // Remove duplicates
 
   console.log("Project images debug:", {
     projectSlug,
@@ -156,7 +161,10 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
                 projectName={project.name}
               />
 
-              <ProjectProgress progressImages={progressImages} />
+              <ProjectProgress
+                date={estimatedDate}
+                progressImages={progressImages}
+              />
             </div>
           </div>
 

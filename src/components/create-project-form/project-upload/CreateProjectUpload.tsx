@@ -8,15 +8,16 @@ import type { MasterPlanFile } from "@/types/project-form";
 import { uploadProjectDocuments } from "@/lib/actions/storage";
 import { validateDocumentFiles } from "@/lib/utils/images";
 import { useProjectImages } from "@/hooks/useProjectImages";
+import { ProjectImage } from "@/types/project-images";
 
 import { ProjectMainImageDialog } from "./UploadImageDialog";
 
 interface ProjectMainImageFormProps {
   value: {
-    images: string[];
+    images: string[] | ProjectImage[];
     name: string;
   };
-  onChange: (data: { images: string[] }) => void;
+  onChange: (data: { images: string[] | ProjectImage[] }) => void;
   onCardImageChange?: (files: File[]) => void;
   masterPlanFiles: MasterPlanFile[];
   onMasterPlanFilesChange: (files: MasterPlanFile[]) => void;

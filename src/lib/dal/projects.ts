@@ -60,7 +60,7 @@ interface CreateProjectInput {
   status: ProjectStatus;
   basePrice?: number;
   currency: string;
-  images: string[];
+  images: import("@/types/project-images").ProjectImage[];
   amenities: string[];
   details: string[];
   masterPlanFiles?: Array<{

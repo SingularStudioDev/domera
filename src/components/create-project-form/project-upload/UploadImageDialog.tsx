@@ -1,5 +1,4 @@
-import { ImageType } from "@/types/project-images";
-import { ProjectImagesManager } from "@/lib/utils/project-images";
+import React, { useState } from "react";
 import { useProjectImages } from "@/hooks/useProjectImages";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,15 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { OptimizedImageUpload } from "@/components/image-upload";
+import { ProjectImage, ImageType } from "@/types/project-images";
 
 interface ProjectMainImageDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   value: {
-    images: string[];
+    images: string[] | ProjectImage[];
     name: string;
   };
-  onChange: (data: { images: string[] }) => void;
+  onChange: (data: { images: string[] | ProjectImage[] }) => void;
   onCardImageChange?: (files: File[]) => void;
   disabled?: boolean;
   projectId?: string;
@@ -34,58 +34,58 @@ export function ProjectMainImageDialog({
   projectId,
 }: ProjectMainImageDialogProps) {
   const { cardImage } = useProjectImages(value.images);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const handleMainImageChange = (imageUrls: string[], files: File[] = []) => {
-    // New approach: work with ProjectImagesManager instead of direct index manipulation
-    const imageManager = new ProjectImagesManager(value.images);
-
+  const handleImagesChange = (imageUrls: string[]) => {
+    // Update the preview if there's a new image
     if (imageUrls.length > 0) {
-      // If there's already a card image, replace it
-      if (imageManager.hasCardImage()) {
-        const existingCardImage = imageManager.getCardImage();
-        if (existingCardImage) {
-          const updatedManager = imageManager
-            .removeImage(existingCardImage.url, ImageType.CARD)
-            .addImage(imageUrls[0], ImageType.CARD, 0, {
-              isMain: true,
-              uploadedAt: new Date().toISOString(),
-              altText: "Imagen principal del proyecto",
-            });
-          onChange({ images: updatedManager.toArray() });
-        }
-      } else {
-        // Add new card image
-        const updatedManager = imageManager.addImage(
-          imageUrls[0],
-          ImageType.CARD,
-          0,
-          {
-            isMain: true,
-            uploadedAt: new Date().toISOString(),
-            altText: "Imagen principal del proyecto",
-          },
-        );
-        onChange({ images: updatedManager.toArray() });
-      }
+      setPreviewImage(imageUrls[0]);
     } else {
-      // Remove card image if exists
-      if (imageManager.hasCardImage()) {
-        const existingCardImage = imageManager.getCardImage();
-        if (existingCardImage) {
-          const updatedManager = imageManager.removeImage(
-            existingCardImage.url,
-            ImageType.CARD,
-          );
-          onChange({ images: updatedManager.toArray() });
-        }
-      }
+      setPreviewImage(null);
     }
 
-    // Also notify parent about file changes for deferred upload
-    if (onCardImageChange && files.length > 0) {
-      onCardImageChange(files);
-    }
+    // Don't call onChange here - let the file handling be done by parent
+    // through onCardImageChange only
   };
+
+  const handleSave = () => {
+    // If there's a preview image, create a ProjectImage object for card type
+    if (previewImage) {
+      const newCardImage: ProjectImage = {
+        url: previewImage,
+        type: ImageType.CARD,
+        order: 0,
+        metadata: {
+          uploadedAt: new Date().toISOString(),
+          isMain: true,
+          altText: value.name || 'Imagen principal'
+        }
+      };
+      
+      // Filter out existing card images and add the new one
+      const currentImages = Array.isArray(value.images) ? value.images : [];
+      const existingImages = typeof currentImages[0] === 'string' ? 
+        [] : // If legacy format, start fresh with new format
+        (currentImages as ProjectImage[]).filter(img => img.type !== ImageType.CARD);
+      
+      const updatedImages = [...existingImages, newCardImage];
+      
+      onChange({ images: updatedImages });
+    }
+    onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    setPreviewImage(null);
+    onOpenChange(false);
+  };
+
+  // Reset preview when modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setPreviewImage(null);
+    }
+  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -101,7 +101,8 @@ export function ProjectMainImageDialog({
             </h4>
             <OptimizedImageUpload
               value={cardImage ? [cardImage.url] : []}
-              onChange={handleMainImageChange}
+              onChange={handleImagesChange}
+              onFilesChange={onCardImageChange}
               entityType="project"
               maxImages={1}
               placeholder="Seleccionar imagen principal"
@@ -123,14 +124,10 @@ export function ProjectMainImageDialog({
             </h4>
             <div className="relative block overflow-hidden rounded-3xl border bg-white transition-shadow duration-300">
               <div className="group relative h-[300px] overflow-hidden">
-                {cardImage ? (
+                {previewImage || cardImage ? (
                   <img
-                    src={cardImage.url}
-                    alt={
-                      cardImage.metadata?.altText ||
-                      value.name ||
-                      "Vista previa"
-                    }
+                    src={previewImage || cardImage?.url || ""}
+                    alt={value.name || "Vista previa"}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -180,11 +177,11 @@ export function ProjectMainImageDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={handleCancel}
           >
             Cancelar
           </Button>
-          <Button type="button" onClick={() => onOpenChange(false)}>
+          <Button type="button" onClick={handleSave}>
             Guardar
           </Button>
         </DialogFooter>

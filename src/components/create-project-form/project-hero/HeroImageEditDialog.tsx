@@ -23,7 +23,7 @@ interface HeroImageEditDialogProps {
     neighborhood: string;
     city: string;
     estimatedCompletion: Date | null;
-    images: string[];
+    images: import("@/types/project-images").ProjectImage[];
   };
   currency: string;
   onImagesChange: (imageUrls: string[]) => void;
@@ -78,7 +78,7 @@ export function HeroImageEditDialog({
     : "Consultar";
 
   const heroImage =
-    value.images && value.images.length > 0 ? value.images[0] : null;
+    value.images && value.images.length > 0 ? value.images[0].url : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -92,7 +92,7 @@ export function HeroImageEditDialog({
           <div>
             <h4 className="text-md mb-3 font-medium">Seleccionar Imágenes</h4>
             <OptimizedImageUpload
-              value={value.images || []}
+              value={value.images?.map(img => img.url) || []}
               onChange={handleImagesChange}
               onFilesChange={onHeroImageChange}
               entityType="project"
