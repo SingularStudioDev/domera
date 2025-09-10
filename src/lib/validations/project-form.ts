@@ -78,10 +78,7 @@ export const projectFormSchema = z.object({
   estimatedCompletion: z.date().nullable().default(null),
 
   // IMPORTANTE: organizationId es requerido para la creación
-  organizationId: z
-    .string()
-    .min(1, "Organización es requerida")
-    .optional(),
+  organizationId: z.string().min(1, "Organización es requerida").optional(),
 
   status: z
     .enum(["planning", "pre_sale", "construction", "completed", "delivered"])
@@ -105,16 +102,18 @@ export const projectFormSchema = z.object({
     )
     .default([]),
 
-  masterPlanFiles: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      url: z.string().url("URL del archivo inválida"),
-      path: z.string(),
-      size: z.number().optional(),
-      type: z.string().optional(),
-    })
-  ).default([]),
+  masterPlanFiles: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        url: z.string().url("URL del archivo inválida"),
+        path: z.string(),
+        size: z.number().optional(),
+        type: z.string().optional(),
+      }),
+    )
+    .default([]),
 
   // Imágenes - URLs como strings (pueden estar vacías al principio)
   images: z.array(z.string()).default([]),
@@ -157,7 +156,7 @@ export const locationFormSchema = z.object({
       path: z.string(),
       size: z.number().optional(),
       type: z.string().optional(),
-    })
+    }),
   ),
 });
 

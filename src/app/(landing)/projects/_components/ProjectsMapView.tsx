@@ -8,6 +8,8 @@ import type { Project } from "@prisma/client";
 
 import { getPublicProjectsAction } from "@/lib/actions/projects";
 import ProjectCard from "@/components/custom-ui/ProjectCard";
+import { useProjectCardImage } from "@/hooks/useProjectImages";
+import { type ImagesData } from "@/types/project-images";
 
 // Dynamically import the map component to avoid SSR issues
 const InteractiveMap = dynamic(
@@ -41,7 +43,7 @@ interface ProjectDisplayData {
   slug: string;
   title: string;
   price: string;
-  image: string;
+  images: unknown; // Project images data (legacy or new format)
   status: string;
   date: string;
   features: ProjectFeature[];
@@ -90,10 +92,7 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
       })
     : "Fecha TBD";
 
-  // Use the second image from the images array with fallback to first image
-  const images = Array.isArray(project.images) ? project.images : [];
-  const image =
-    images[1] || images[0] || `/images/projects/${project.slug}/main.jpg`;
+  // Images data will be processed by the ProjectMapCardWrapper component
 
   // Convert Decimal coordinates to numbers
   const convertToNumber = (value: unknown): number => {
@@ -145,7 +144,7 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
     title: project.name,
     slug: project.slug,
     price,
-    image,
+    images: project.images, // Pass full images data instead of single image
     status,
     date,
     features,
@@ -155,6 +154,24 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
     city: project.city || undefined,
   };
 };
+
+// Wrapper component to handle image selection with the new system
+function ProjectMapCardWrapper({ projectData }: { projectData: ProjectDisplayData }) {
+  const { imageUrl } = useProjectCardImage(projectData.images);
+  const finalImage = imageUrl || `/images/projects/${projectData.slug}/main.jpg`;
+
+  return (
+    <ProjectCard
+      slug={projectData.slug}
+      title={projectData.title}
+      price={projectData.price}
+      image={finalImage}
+      status={projectData.status}
+      date={projectData.date}
+      features={projectData.features}
+    />
+  );
+}
 
 /**
  * Map view component that displays projects on an interactive map
@@ -408,15 +425,7 @@ export default function ProjectsMapView({
         <div className="w-full lg:w-96">
           {selectedProject ? (
             <div className="rounded-3xl border p-4">
-              <ProjectCard
-                slug={selectedProject.slug}
-                title={selectedProject.title}
-                price={selectedProject.price}
-                image={selectedProject.image}
-                status={selectedProject.status}
-                date={selectedProject.date}
-                features={selectedProject.features}
-              />
+              <ProjectMapCardWrapper projectData={selectedProject} />
             </div>
           ) : (
             <div className="rounded-lg border bg-gray-50 p-6 text-center">

@@ -126,6 +126,7 @@ export interface ImageCarouselFormProps
   projectId: string;
   className: string;
   projectName: string;
+  onCarouselImagesChange?: (files: File[]) => void;
 }
 
 export interface CoordinatesFormProps

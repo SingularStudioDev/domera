@@ -16,6 +16,7 @@ export function ImageCarouselForm({
   error,
   className,
   projectId,
+  onCarouselImagesChange,
 }: ImageCarouselFormProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -60,10 +61,11 @@ export function ImageCarouselForm({
             <OptimizedImageUpload
               value={value.images || []}
               onChange={handleImagesChange}
+              onFilesChange={onCarouselImagesChange}
               entityType="project"
               entityId={projectId}
-              maxImages={20}
-              placeholder="Seleccionar imágenes para el carrusel"
+              maxImages={10}
+              placeholder="Seleccionar imágenes CAROUSEL del proyecto"
               aspectRatio="aspect-[16/10]"
               disabled={disabled}
               showUploadButton={true}

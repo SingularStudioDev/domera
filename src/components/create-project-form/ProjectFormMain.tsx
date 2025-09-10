@@ -12,12 +12,14 @@ import { getOrganizationsAction } from "@/lib/actions/organizations";
 import { checkSlugAvailabilityAction } from "@/lib/actions/projects";
 import { uploadProjectImages } from "@/lib/actions/storage";
 import { generateSlug } from "@/lib/utils/slug";
-import { ProgressFormComponent } from "@/components/create-project-form/project-forms/ProgressForm";
-import { ProjectDescriptionForm } from "@/components/create-project-form/project-forms/ProjectDescriptionForm";
-import { ProjectDetailsForm } from "@/components/create-project-form/project-forms/ProjectDetailsForm";
-import { ProjectHeroForm } from "@/components/create-project-form/project-forms/ProjectHeroForm";
-import { ImageCarouselForm } from "@/components/create-project-form/project-images/ImageCarouselForm";
-import { ProjectMainImageForm } from "@/components/create-project-form/project-images/ProjectMainImageForm";
+import { ProjectImagesManager } from "@/lib/utils/project-images";
+import { ImageType, type ProjectImage, type ImageTypeValue } from "@/types/project-images";
+import { ProgressFormComponent } from "@/components/create-project-form/project-progress/ProgressForm";
+import { ProjectDescriptionForm } from "@/components/create-project-form/project-description/ProjectDescriptionForm";
+import { ProjectDetailsForm } from "@/components/create-project-form/project-details/ProjectDetailsForm";
+import { ProjectHeroForm } from "@/components/create-project-form/project-hero/ProjectHeroForm";
+import { ImageCarouselForm } from "@/components/create-project-form/project-carousel/ImageCarouselForm";
+import { ProjectMainImageForm } from "@/components/create-project-form/project-upload/ProjectMainImageForm";
 import { LocationFormComponent } from "@/components/create-project-form/project-location/LocationForm";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
@@ -48,7 +50,17 @@ export function ProjectFormMain({
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrganizations, setLoadingOrganizations] = useState(true);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
-  const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([]);
+  const [pendingImagesByType, setPendingImagesByType] = useState<{
+    hero: File[]
+    card: File[]
+    carousel: File[]
+    progress: File[]
+  }>({
+    hero: [],
+    card: [],
+    carousel: [],
+    progress: []
+  });
   const [slugCheckResult, setSlugCheckResult] = useState<{
     available?: boolean;
     error?: string;
@@ -183,71 +195,236 @@ export function ProjectFormMain({
     }
   };
 
-  // Helper function to extract File objects from form data
-  const extractImageFiles = (): File[] => {
-    return pendingImageFiles;
+  // Helper function to manage image files by type
+  const updateImagesByType = (type: ImageTypeValue, files: File[]) => {
+    setPendingImagesByType(prev => ({
+      ...prev,
+      [type]: files
+    }));
+    
+    // Create immediate preview URLs for hero and carousel images
+    if (type === ImageType.HERO) {
+      const imageManager = new ProjectImagesManager(watchedValues.images || []);
+      // Remove existing HERO images manually
+      const filteredImages = imageManager.getAllImages().filter(img => img.type !== ImageType.HERO);
+      const newImageManager = new ProjectImagesManager(filteredImages);
+      
+      // Add new preview URLs
+      if (files.length > 0) {
+        const previewUrls = files.map(file => URL.createObjectURL(file));
+        
+        // Create proper ProjectImage objects for the preview URLs
+        let updatedManager = newImageManager;
+        previewUrls.forEach((url, index) => {
+          updatedManager = updatedManager.addImage(url, ImageType.HERO, index, {
+            isMain: true,
+            uploadedAt: new Date().toISOString(),
+            altText: `Imagen hero (preview)`
+          });
+        });
+        
+        setValue("images", updatedManager.toLegacyStringArray());
+      } else {
+        setValue("images", newImageManager.toLegacyStringArray());
+      }
+    }
+    
+    // Same logic for CAROUSEL images
+    if (type === ImageType.CAROUSEL) {
+      const imageManager = new ProjectImagesManager(watchedValues.images || []);
+      // Remove existing CAROUSEL images manually
+      const filteredImages = imageManager.getAllImages().filter(img => img.type !== ImageType.CAROUSEL);
+      const newImageManager = new ProjectImagesManager(filteredImages);
+      
+      // Add new preview URLs
+      if (files.length > 0) {
+        const previewUrls = files.map(file => URL.createObjectURL(file));
+        
+        // Create proper ProjectImage objects for the preview URLs
+        let updatedManager = newImageManager;
+        previewUrls.forEach((url, index) => {
+          updatedManager = updatedManager.addImage(url, ImageType.CAROUSEL, index, {
+            isMain: false,
+            uploadedAt: new Date().toISOString(),
+            altText: `Imagen carousel ${index + 1} (preview)`
+          });
+        });
+        
+        setValue("images", updatedManager.toLegacyStringArray());
+      } else {
+        setValue("images", newImageManager.toLegacyStringArray());
+      }
+    }
+    
+    // Same logic for PROGRESS images
+    if (type === ImageType.PROGRESS) {
+      const imageManager = new ProjectImagesManager(watchedValues.images || []);
+      // Remove existing PROGRESS images manually
+      const filteredImages = imageManager.getAllImages().filter(img => img.type !== ImageType.PROGRESS);
+      const newImageManager = new ProjectImagesManager(filteredImages);
+      
+      // Add new preview URLs
+      if (files.length > 0) {
+        const previewUrls = files.map(file => URL.createObjectURL(file));
+        
+        // Create proper ProjectImage objects for the preview URLs
+        let updatedManager = newImageManager;
+        previewUrls.forEach((url, index) => {
+          updatedManager = updatedManager.addImage(url, ImageType.PROGRESS, index, {
+            isMain: false,
+            uploadedAt: new Date().toISOString(),
+            altText: `Avance de obra ${index + 1} (preview)`
+          });
+        });
+        
+        setValue("images", updatedManager.toLegacyStringArray());
+      } else {
+        setValue("images", newImageManager.toLegacyStringArray());
+      }
+    }
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: ProjectFormData) => {
     try {
-      // Extract image files that need to be uploaded
-      const imageFiles = extractImageFiles();
-      let finalImageUrls: string[] = [];
+      console.log('=== FORM SUBMIT DEBUG ===');
+      console.log('Initial data.images:', data.images);
+      console.log('pendingImagesByType:', JSON.stringify(pendingImagesByType, null, 2));
+      
+      // Create ProjectImagesManager from existing data
+      const imageManager = new ProjectImagesManager(data.images || []);
+      console.log('Initial imageManager state:');
+      console.log('- All images:', imageManager.getAllImages());
+      console.log('- Hero images:', imageManager.getImagesByType(ImageType.HERO));
+      console.log('- Hero count:', imageManager.getImageCount(ImageType.HERO));
+      console.log('- Has hero image:', imageManager.hasHeroImage());
+      
+      // Upload images by type and create ProjectImage objects
+      const processImagesByType = async (files: File[], type: ImageTypeValue): Promise<ProjectImage[]> => {
+        if (files.length === 0) return [];
+        
+        console.log(`Processing ${files.length} files for type ${type}`);
+        
+        const formData = new FormData();
+        files.forEach((file, index) => {
+          console.log(`- File ${index}: ${file.name}, size: ${file.size}`);
+          formData.append(`image-${index}`, file);
+        });
 
-      if (isEditing) {
-        // For editing, keep existing images and only add new ones if uploaded
-        const existingImages =
-          data.images?.filter((img: string) => !img.startsWith("blob:")) || [];
+        const tempProjectId = crypto.randomUUID();
+        const uploadResult = await uploadProjectImages(formData, tempProjectId);
 
-        if (imageFiles.length > 0) {
-          // Create FormData object for new images
-          const formData = new FormData();
-          imageFiles.forEach((file, index) => {
-            formData.append(`image-${index}`, file);
-          });
-
-          const tempProjectId = crypto.randomUUID();
-          const uploadResult = await uploadProjectImages(
-            formData,
-            tempProjectId,
-          );
-
-          if (!uploadResult.success || !uploadResult.images) {
-            throw new Error(uploadResult.error || "Error al subir imágenes");
-          }
-
-          const newUploadedUrls = uploadResult.images.map((img) => img.url);
-          finalImageUrls = [...existingImages, ...newUploadedUrls];
-        } else {
-          // No new images, keep existing ones
-          finalImageUrls = existingImages;
+        if (!uploadResult.success || !uploadResult.images) {
+          throw new Error(uploadResult.error || "Error al subir imágenes");
         }
-      } else {
-        // For new projects, upload all images
-        if (imageFiles.length > 0) {
-          const formData = new FormData();
-          imageFiles.forEach((file, index) => {
-            formData.append(`image-${index}`, file);
-          });
 
-          const tempProjectId = crypto.randomUUID();
-          const uploadResult = await uploadProjectImages(
-            formData,
-            tempProjectId,
-          );
-
-          if (!uploadResult.success || !uploadResult.images) {
-            throw new Error(uploadResult.error || "Error al subir imágenes");
+        return uploadResult.images.map((img, index) => ({
+          url: img.url,
+          type,
+          order: index,
+          metadata: {
+            uploadedAt: new Date().toISOString(),
+            isMain: type === ImageType.HERO || type === ImageType.CARD,
+            altText: `Imagen ${type} ${index + 1}`
           }
+        }));
+      };
 
-          finalImageUrls = uploadResult.images.map((img) => img.url);
-        }
+      // Process each type of image
+      let updatedManager = imageManager;
+      
+      // Upload and add hero images
+      if (pendingImagesByType.hero.length > 0) {
+        console.log(`About to process ${pendingImagesByType.hero.length} hero images`);
+        console.log('Current hero count before processing:', updatedManager.getImageCount(ImageType.HERO));
+        
+        // Remove existing hero images first to avoid conflicts
+        const existingHeroImages = updatedManager.getImagesByType(ImageType.HERO);
+        existingHeroImages.forEach(existingImg => {
+          console.log('Removing existing hero image:', existingImg.url);
+          updatedManager = updatedManager.removeImage(existingImg.url, ImageType.HERO);
+        });
+        console.log('Hero count after cleanup:', updatedManager.getImageCount(ImageType.HERO));
+        
+        const heroImages = await processImagesByType(pendingImagesByType.hero, ImageType.HERO);
+        console.log('Processed hero images:', heroImages);
+        
+        heroImages.forEach((img, index) => {
+          console.log(`Adding hero image ${index + 1}:`, {
+            url: img.url,
+            type: img.type,
+            order: img.order,
+            currentHeroCount: updatedManager.getImageCount(ImageType.HERO)
+          });
+          try {
+            updatedManager = updatedManager.addImage(img.url, img.type, img.order, img.metadata);
+            console.log(`Successfully added hero image ${index + 1}`);
+          } catch (error) {
+            console.error(`Error adding hero image ${index + 1}:`, error);
+            throw error;
+          }
+        });
       }
 
+      // Upload and add card images
+      if (pendingImagesByType.card.length > 0) {
+        console.log(`About to process ${pendingImagesByType.card.length} card images`);
+        
+        // Remove existing card images first to avoid conflicts
+        const existingCardImages = updatedManager.getImagesByType(ImageType.CARD);
+        existingCardImages.forEach(existingImg => {
+          console.log('Removing existing card image:', existingImg.url);
+          updatedManager = updatedManager.removeImage(existingImg.url, ImageType.CARD);
+        });
+        
+        const cardImages = await processImagesByType(pendingImagesByType.card, ImageType.CARD);
+        cardImages.forEach(img => {
+          updatedManager = updatedManager.addImage(img.url, img.type, img.order, img.metadata);
+        });
+      }
+
+      // Upload and add carousel images
+      if (pendingImagesByType.carousel.length > 0) {
+        console.log(`About to process ${pendingImagesByType.carousel.length} carousel images`);
+        
+        // Remove existing carousel images first to avoid conflicts
+        const existingCarouselImages = updatedManager.getImagesByType(ImageType.CAROUSEL);
+        existingCarouselImages.forEach(existingImg => {
+          console.log('Removing existing carousel image:', existingImg.url);
+          updatedManager = updatedManager.removeImage(existingImg.url, ImageType.CAROUSEL);
+        });
+        
+        const carouselImages = await processImagesByType(pendingImagesByType.carousel, ImageType.CAROUSEL);
+        carouselImages.forEach(img => {
+          updatedManager = updatedManager.addImage(img.url, img.type, img.order, img.metadata);
+        });
+      }
+
+      // Upload and add progress images
+      if (pendingImagesByType.progress.length > 0) {
+        console.log(`About to process ${pendingImagesByType.progress.length} progress images`);
+        
+        // Remove existing progress images first to avoid conflicts
+        const existingProgressImages = updatedManager.getImagesByType(ImageType.PROGRESS);
+        existingProgressImages.forEach(existingImg => {
+          console.log('Removing existing progress image:', existingImg.url);
+          updatedManager = updatedManager.removeImage(existingImg.url, ImageType.PROGRESS);
+        });
+        
+        const progressImages = await processImagesByType(pendingImagesByType.progress, ImageType.PROGRESS);
+        progressImages.forEach(img => {
+          updatedManager = updatedManager.addImage(img.url, img.type, img.order, img.metadata);
+        });
+      }
+
+      // For compatibility during transition, convert back to legacy string array format
+      // TODO: In future, change createProjectAction to accept ProjectImage[]
+      const finalImages = updatedManager.toLegacyStringArray();
+      console.log('finalImages', finalImages)
+      
       // Prepare final data
       const processedData = {
         ...data,
-        images: finalImageUrls,
+        images: finalImages, // This maintains compatibility with current system
       };
 
       await onSubmit(processedData as ProjectFormData);
@@ -264,14 +441,20 @@ export function ProjectFormMain({
     }
   };
 
-  // Formatear datos hero
+  // Helper function to get current images by type for form components
+  const getImagesByType = (type: ImageTypeValue): string[] => {
+    const imageManager = new ProjectImagesManager(watchedValues.images || []);
+    return imageManager.getImagesByType(type).map(img => img.url);
+  };
+
+  // Formatear datos hero - solo imagen HERO específica
   const heroData = {
     name: watchedValues.name || "",
     basePrice: watchedValues.basePrice ?? null,
     neighborhood: watchedValues.neighborhood || "",
     city: watchedValues.city || "",
     estimatedCompletion: watchedValues.estimatedCompletion ?? null,
-    images: watchedValues.images || [],
+    images: getImagesByType(ImageType.HERO), // Solo imágenes HERO
   };
 
   // Formatear datos descripción
@@ -295,15 +478,9 @@ export function ProjectFormMain({
     masterPlanFiles: watchedValues.masterPlanFiles || [],
   };
 
-  // Formatear datos carousel
+  // Formatear datos carousel - solo imágenes CAROUSEL específicas
   const carouselData = {
-    images: watchedValues.images || [],
-  };
-
-  // Formatear datos coordenadas
-  const coordinatesData = {
-    latitude: watchedValues.latitude ?? null,
-    longitude: watchedValues.longitude ?? null,
+    images: getImagesByType(ImageType.CAROUSEL), // Solo imágenes CAROUSEL
   };
 
   // Formatear datos imagen principal
@@ -320,7 +497,7 @@ export function ProjectFormMain({
       <Header />
 
       <main>
-        {/* PROJECT HERO FORM - Exactamente igual al layout original */}
+        {/* PROJECT HERO FORM - Gestión específica de imágenes HERO */}
         <ProjectHeroForm
           value={heroData}
           onChange={(newHeroData) => {
@@ -329,9 +506,9 @@ export function ProjectFormMain({
             setValue("neighborhood", newHeroData.neighborhood);
             setValue("city", newHeroData.city);
             setValue("estimatedCompletion", newHeroData.estimatedCompletion);
-            setValue("images", newHeroData.images);
+            // NO actualizamos images aquí, se maneja con onHeroImageChange
           }}
-          onFilesChange={setPendingImageFiles}
+          onHeroImageChange={(files) => updateImagesByType(ImageType.HERO, files)}
           currency={watchedValues.currency || "USD"}
           disabled={isSubmitting}
           error={errors.name?.message || errors.basePrice?.message}
@@ -361,6 +538,7 @@ export function ProjectFormMain({
               onChange={(newMainImageData) => {
                 setValue("images", newMainImageData.images);
               }}
+              onCardImageChange={(files) => updateImagesByType(ImageType.CARD, files)}
               masterPlanFiles={watchedValues.masterPlanFiles || []}
               onMasterPlanFilesChange={(files) =>
                 setValue("masterPlanFiles", files)
@@ -400,12 +578,13 @@ export function ProjectFormMain({
               disabled={isSubmitting}
               error={errors.amenities?.message}
             />
-            {/* IMAGE CAROUSEL FORM */}
+            {/* IMAGE CAROUSEL FORM - Gestión específica de imágenes CAROUSEL */}
             <ImageCarouselForm
               value={carouselData}
-              onChange={(newCarouselData) => {
-                setValue("images", newCarouselData.images);
+              onChange={() => {
+                // NO actualizamos images aquí, se maneja con onCarouselImagesChange
               }}
+              onCarouselImagesChange={(files) => updateImagesByType(ImageType.CAROUSEL, files)}
               projectName={watchedValues.name || "Proyecto"}
               disabled={isSubmitting}
               error={errors.images?.message}
@@ -424,10 +603,14 @@ export function ProjectFormMain({
               disabled={isSubmitting}
               error={errors.latitude?.message || errors.longitude?.message}
             />
-            {/* PROGRESS FORM - Nota: Este será manejado como una sección separada */}
+            {/* PROGRESS FORM - Gestión específica de imágenes PROGRESS */}
             <ProgressFormComponent
-              progressImages={[]}
-              onProgressImagesChange={() => {}}
+              progressImages={getImagesByType(ImageType.PROGRESS)}
+              onProgressImagesChange={(files) => updateImagesByType(ImageType.PROGRESS, files)}
+              onChange={(imageUrls) => {
+                // No necesitamos hacer nada aquí porque updateImagesByType ya maneja
+                // la actualización inmediata de las URLs de preview
+              }}
               disabled={isSubmitting}
               projectId={tempProjectId || "temp"}
             />

@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { MasterPlanFilesForm } from "./MasterPlanFilesForm";
+import { MasterPlanFilesForm } from "../project-masterplans/MasterPlanFilesForm";
 
 // Importar el mapa de manera dinámica para evitar problemas con SSR
 const InteractiveMap = dynamic(

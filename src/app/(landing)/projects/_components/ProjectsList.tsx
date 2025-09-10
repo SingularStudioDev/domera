@@ -7,6 +7,7 @@ import type { Project } from "@prisma/client";
 
 import { getPublicProjectsAction } from "@/lib/actions/projects";
 import ProjectCard from "@/components/custom-ui/ProjectCard";
+import { useProjectCardImage } from "@/hooks/useProjectImages";
 
 interface ProjectFeature {
   name: string;
@@ -18,7 +19,7 @@ interface ProjectDisplayData {
   slug: string;
   title: string;
   price: string;
-  image: string;
+  images: unknown; // Project images data (legacy or new format)
   status: string;
   date: string;
   features: ProjectFeature[];
@@ -53,16 +54,7 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
       })
     : "Fecha TBD";
 
-  // Use second image from project images array (index 1) for ProjectCard
-  const projectImages = Array.isArray(project.images)
-    ? project.images.filter((img): img is string => typeof img === "string")
-    : [];
-  const image =
-    projectImages.length >= 2 && projectImages[1]
-      ? projectImages[1]
-      : projectImages.length > 0
-        ? projectImages[0]
-        : `/images/${project.slug}-main.png`;
+  // Images data will be processed by the ProjectCardWrapper component
 
   // Create features array from boolean fields
   const projectWithFeatures = project as Project & {
@@ -95,12 +87,30 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
     title: project.name,
     slug: project.slug,
     price,
-    image,
+    images: project.images, // Pass full images data instead of single image
     status,
     date,
     features,
   };
 };
+
+// Wrapper component to handle image selection with the new system
+function ProjectCardWrapper({ projectData }: { projectData: ProjectDisplayData }) {
+  const { imageUrl } = useProjectCardImage(projectData.images);
+  const finalImage = imageUrl || `/${projectData.slug}-main.png`;
+
+  return (
+    <ProjectCard
+      slug={projectData.slug}
+      title={projectData.title}
+      price={projectData.price}
+      image={finalImage}
+      status={projectData.status}
+      date={projectData.date}
+      features={projectData.features}
+    />
+  );
+}
 
 export default function ProjectsList({
   page = 1,
@@ -224,15 +234,7 @@ export default function ProjectsList({
               key={project.id}
               className={index === 0 ? "col-span-full" : ""}
             >
-              <ProjectCard
-                slug={projectData.slug}
-                title={projectData.title}
-                price={projectData.price}
-                image={projectData.image}
-                status={projectData.status}
-                date={projectData.date}
-                features={projectData.features}
-              />
+              <ProjectCardWrapper projectData={projectData} />
             </div>
           );
         })}

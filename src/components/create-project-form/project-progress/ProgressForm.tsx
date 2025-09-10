@@ -8,7 +8,8 @@ import { OptimizedImageUpload } from "@/components/image-upload";
 
 interface ProgressFormProps {
   progressImages: string[];
-  onProgressImagesChange: (images: string[]) => void;
+  onProgressImagesChange: (files: File[]) => void;
+  onChange?: (imageUrls: string[]) => void;
   disabled?: boolean;
   error?: string;
   projectId?: string;
@@ -17,15 +18,30 @@ interface ProgressFormProps {
 export function ProgressFormComponent({
   progressImages,
   onProgressImagesChange,
+  onChange,
   disabled,
   error,
   projectId,
 }: ProgressFormProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [localImages, setLocalImages] = useState<string[]>(
+    progressImages || [],
+  );
+
+  // Sincronizar con progressImages cuando cambie
+  React.useEffect(() => {
+    setLocalImages(progressImages || []);
+  }, [progressImages]);
 
   const handleImagesChange = (imageUrls: string[]) => {
-    onProgressImagesChange(imageUrls);
+    // Actualizar el estado local para preview inmediato
+    setLocalImages(imageUrls);
+
+    // Comunicar cambios al componente padre
+    if (onChange) {
+      onChange(imageUrls);
+    }
 
     // Resetear índice si no hay imágenes
     if (imageUrls.length === 0) {
@@ -37,19 +53,19 @@ export function ProgressFormComponent({
 
   const goToPrevious = () => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? progressImages.length - 1 : prevIndex - 1,
+      prevIndex === 0 ? localImages.length - 1 : prevIndex - 1,
     );
   };
 
   const goToNext = () => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === progressImages.length - 1 ? 0 : prevIndex + 1,
+      prevIndex === localImages.length - 1 ? 0 : prevIndex + 1,
     );
   };
 
-  const currentImage = progressImages[currentIndex];
-  const hasMultipleImages = progressImages.length > 1;
-  const hasImages = progressImages.length > 0;
+  const currentImage = localImages[currentIndex];
+  const hasMultipleImages = localImages.length > 1;
+  const hasImages = localImages.length > 0;
 
   return (
     <>
@@ -61,12 +77,13 @@ export function ProgressFormComponent({
               Editar Avances de Obra
             </h3>
             <OptimizedImageUpload
-              value={progressImages || []}
+              value={localImages || []}
               onChange={handleImagesChange}
+              onFilesChange={onProgressImagesChange}
               entityType="project"
               entityId={projectId}
-              maxImages={20}
-              placeholder="Seleccionar imágenes de avance de obra"
+              maxImages={50}
+              placeholder="Seleccionar imágenes PROGRESS del proyecto"
               disabled={disabled}
               showUploadButton={true}
               deferUpload={true}
@@ -142,7 +159,7 @@ export function ProgressFormComponent({
                       <ChevronRight className="h-4 w-4 text-gray-900" />
                     </button>
                     <div className="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 text-xs text-white">
-                      {currentIndex + 1} / {progressImages.length}
+                      {currentIndex + 1} / {localImages.length}
                     </div>
                   </>
                 )}
@@ -156,7 +173,7 @@ export function ProgressFormComponent({
                   className="grid cursor-pointer grid-cols-3 gap-4"
                   onClick={() => !disabled && setIsEditing(true)}
                 >
-                  {progressImages
+                  {localImages
                     .slice(currentIndex, currentIndex + 3)
                     .map((image, index) => (
                       <div key={currentIndex + index} className="relative">
@@ -179,7 +196,7 @@ export function ProgressFormComponent({
                 </div>
 
                 {/* Controles de navegación desktop - Solo si hay más de 3 imágenes */}
-                {progressImages.length > 3 && (
+                {localImages.length > 3 && (
                   <>
                     <button
                       onClick={goToPrevious}
@@ -200,11 +217,11 @@ export function ProgressFormComponent({
               </div>
 
               {/* Indicadores y contador para desktop */}
-              {progressImages.length > 3 && (
+              {localImages.length > 3 && (
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex space-x-2">
                     {Array.from({
-                      length: Math.ceil(progressImages.length / 3),
+                      length: Math.ceil(localImages.length / 3),
                     }).map((_, index) => (
                       <button
                         key={index}
@@ -219,8 +236,8 @@ export function ProgressFormComponent({
                     ))}
                   </div>
                   <span className="text-sm text-gray-600">
-                    {Math.min(currentIndex + 3, progressImages.length)} de{" "}
-                    {progressImages.length} imágenes
+                    {Math.min(currentIndex + 3, localImages.length)} de{" "}
+                    {localImages.length} imágenes
                   </span>
                 </div>
               )}

@@ -5,8 +5,11 @@ import React, { useCallback, useRef, useState } from "react";
 import { ImageIcon, Loader2 } from "lucide-react";
 
 import type { MasterPlanFile } from "@/types/project-form";
+import { ImageType } from "@/types/project-images";
 import { uploadProjectDocuments } from "@/lib/actions/storage";
 import { validateDocumentFiles } from "@/lib/utils/images";
+import { ProjectImagesManager } from "@/lib/utils/project-images";
+import { useProjectImages } from "@/hooks/useProjectImages";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,6 +26,7 @@ interface ProjectMainImageFormProps {
     name: string;
   };
   onChange: (data: { images: string[] }) => void;
+  onCardImageChange?: (files: File[]) => void;
   masterPlanFiles: MasterPlanFile[];
   onMasterPlanFilesChange: (files: MasterPlanFile[]) => void;
   disabled?: boolean;
@@ -38,6 +42,7 @@ interface ProjectMainImageDialogProps {
     name: string;
   };
   onChange: (data: { images: string[] }) => void;
+  onCardImageChange?: (files: File[]) => void;
   disabled?: boolean;
   projectId?: string;
 }
@@ -47,26 +52,62 @@ function ProjectMainImageDialog({
   onOpenChange,
   value,
   onChange,
+  onCardImageChange,
   disabled = false,
   projectId,
 }: ProjectMainImageDialogProps) {
-  const handleMainImageChange = (imageUrls: string[]) => {
-    const newImages = [...value.images];
+  const { cardImage } = useProjectImages(value.images);
+
+  const handleMainImageChange = (imageUrls: string[], files: File[] = []) => {
+    // New approach: work with ProjectImagesManager instead of direct index manipulation
+    const imageManager = new ProjectImagesManager(value.images);
 
     if (imageUrls.length > 0) {
-      if (newImages.length < 2) {
-        if (newImages.length === 0) newImages.push("");
-        newImages.push(imageUrls[0]);
+      // If there's already a card image, replace it
+      if (imageManager.hasCardImage()) {
+        const existingCardImage = imageManager.getCardImage();
+        if (existingCardImage) {
+          const updatedManager = imageManager
+            .removeImage(existingCardImage.url, ImageType.CARD)
+            .addImage(imageUrls[0], ImageType.CARD, 0, {
+              isMain: true,
+              uploadedAt: new Date().toISOString(),
+              altText: "Imagen principal del proyecto",
+            });
+          onChange({ images: updatedManager.toArray() });
+        }
       } else {
-        newImages[1] = imageUrls[0];
+        // Add new card image
+        const updatedManager = imageManager.addImage(
+          imageUrls[0],
+          ImageType.CARD,
+          0,
+          {
+            isMain: true,
+            uploadedAt: new Date().toISOString(),
+            altText: "Imagen principal del proyecto",
+          },
+        );
+        onChange({ images: updatedManager.toArray() });
       }
     } else {
-      if (newImages.length >= 2) {
-        newImages.splice(1, 1);
+      // Remove card image if exists
+      if (imageManager.hasCardImage()) {
+        const existingCardImage = imageManager.getCardImage();
+        if (existingCardImage) {
+          const updatedManager = imageManager.removeImage(
+            existingCardImage.url,
+            ImageType.CARD,
+          );
+          onChange({ images: updatedManager.toArray() });
+        }
       }
     }
 
-    onChange({ images: newImages });
+    // Also notify parent about file changes for deferred upload
+    if (onCardImageChange && files.length > 0) {
+      onCardImageChange(files);
+    }
   };
 
   return (
@@ -82,11 +123,7 @@ function ProjectMainImageDialog({
               Seleccionar Imagen Principal
             </h4>
             <OptimizedImageUpload
-              value={
-                value.images.length >= 2 && value.images[1]
-                  ? [value.images[1]]
-                  : []
-              }
+              value={cardImage ? [cardImage.url] : []}
               onChange={handleMainImageChange}
               entityType="project"
               maxImages={1}
@@ -109,10 +146,14 @@ function ProjectMainImageDialog({
             </h4>
             <div className="relative block overflow-hidden rounded-3xl border bg-white transition-shadow duration-300">
               <div className="group relative h-[300px] overflow-hidden">
-                {value.images.length >= 2 && value.images[1] ? (
+                {cardImage ? (
                   <img
-                    src={value.images[1]}
-                    alt={value.name || "Vista previa"}
+                    src={cardImage.url}
+                    alt={
+                      cardImage.metadata?.altText ||
+                      value.name ||
+                      "Vista previa"
+                    }
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -178,6 +219,7 @@ function ProjectMainImageDialog({
 export function ProjectMainImageForm({
   value,
   onChange,
+  onCardImageChange,
   masterPlanFiles,
   onMasterPlanFilesChange,
   disabled = false,
@@ -189,13 +231,15 @@ export function ProjectMainImageForm({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { cardImage } = useProjectImages(value.images);
+
   const handleFileSelect = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = event.target.files;
       if (!files || files.length === 0 || disabled || isUploading) return;
 
       const file = files[0];
-      const { valid, invalid } = validateDocumentFiles([file]);
+      const { invalid } = validateDocumentFiles([file]);
 
       if (invalid.length > 0) {
         setUploadError(`Archivo inválido: ${invalid[0].reason}`);
@@ -254,6 +298,7 @@ export function ProjectMainImageForm({
         onOpenChange={setIsEditing}
         value={value}
         onChange={onChange}
+        onCardImageChange={onCardImageChange}
         disabled={disabled}
         projectId={projectId}
       />
@@ -268,10 +313,14 @@ export function ProjectMainImageForm({
               className="relative h-full overflow-hidden rounded-2xl border"
               onClick={() => setIsEditing(true)}
             >
-              {value.images.length >= 2 && value.images[1] ? (
+              {cardImage ? (
                 <img
-                  src={value.images[1]}
-                  alt={value.name || "Imagen principal"}
+                  src={cardImage.url}
+                  alt={
+                    cardImage.metadata?.altText ||
+                    value.name ||
+                    "Imagen principal"
+                  }
                   className="h-full w-full cursor-pointer rounded-2xl object-cover"
                   onClick={() => !disabled && setIsEditing(true)}
                 />

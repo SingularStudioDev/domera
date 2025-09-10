@@ -4,6 +4,8 @@ import { formatCurrency } from "@/utils/utils";
 
 import type { MasterPlanFile } from "@/types/project-form";
 import { getProjectBySlug } from "@/lib/dal/projects";
+import { ProjectImagesManager } from "@/lib/utils/project-images";
+import { type ImagesData } from "@/types/project-images";
 import ProjectImageCarousel from "@/components/custom-ui/ProjectImageCarousel";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
@@ -64,27 +66,23 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
           }
         })()
       : [];
-  // Parse and filter images following project patterns
-  const allImages = Array.isArray(project.images)
-    ? (project.images as string[])
-    : typeof project.images === "string"
-      ? (() => {
-          try {
-            const parsed = JSON.parse(project.images as string);
-            return Array.isArray(parsed) ? parsed : [project.images];
-          } catch {
-            return [project.images];
-          }
-        })()
-      : [];
-
-  // Use first image for hero, rest for carousel
-  const heroImage =
-    allImages.length > 0 ? allImages[0] : `/images/${projectSlug}-hero.png`;
-  const carouselImages = allImages.length > 0 ? allImages : [];
-
-  // Filter images that match the pattern ${slug}-progress-${number}
-  const progressImages = allImages.filter((imagePath) => {
+  // Use new image management system
+  const imageManager = new ProjectImagesManager(project.images as ImagesData);
+  
+  // Extract images by type with smart fallbacks
+  const heroImage = imageManager.getHeroImage()?.url || 
+                   imageManager.getCardImage()?.url || 
+                   imageManager.getMainImage()?.url || 
+                   `/images/${projectSlug}-hero.png`;
+  
+  const carouselImages = imageManager.getCarouselImages().map(img => img.url);
+  
+  // For progress images, check both the new system and legacy pattern matching
+  const progressFromManager = imageManager.getProgressImages().map(img => img.url);
+  
+  // Legacy pattern matching for progress images (for compatibility)
+  const allImagesUrls = imageManager.getAllImages().map(img => img.url);
+  const legacyProgressImages = allImagesUrls.filter((imagePath) => {
     const imageName = imagePath.split("/").pop()?.split(".")[0];
     if (!imageName) return false;
     const regex = new RegExp(
@@ -92,13 +90,18 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
     );
     return regex.test(imageName);
   });
+  
+  // Combine progress images from both sources
+  const progressImages = [...progressFromManager, ...legacyProgressImages]
+    .filter((url, index, arr) => arr.indexOf(url) === index); // Remove duplicates
 
   console.log("Project images debug:", {
     projectSlug,
-    allImages,
     heroImage,
     carouselImages,
     progressImages,
+    isLegacyFormat: imageManager.isFromLegacyFormat(),
+    totalImages: imageManager.getImageCount(),
   });
 
   console.log("Project location debug:", {

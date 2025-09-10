@@ -3,12 +3,14 @@
 import React, { useState } from "react";
 
 import { formatCurrency } from "@/utils/utils";
+import { CameraIcon, ImageIcon } from "lucide-react";
 
 import { HeroFormProps } from "@/types/project-form";
-import { OptimizedImageUpload } from "@/components/image-upload";
+
+import { HeroImageEditDialog } from "./HeroImageEditDialog";
 
 interface ProjectHeroFormProps extends HeroFormProps {
-  onFilesChange?: (files: File[]) => void;
+  onHeroImageChange?: (files: File[]) => void;
 }
 
 export function ProjectHeroForm({
@@ -17,12 +19,14 @@ export function ProjectHeroForm({
   error,
   disabled,
   currency,
-  onFilesChange,
+  onHeroImageChange,
 }: ProjectHeroFormProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const handleFieldChange = (field: keyof typeof value, newValue: any) => {
+  const handleFieldChange = (
+    field: keyof typeof value,
+    newValue: string | number | Date | null | string[],
+  ) => {
     onChange({
       ...value,
       [field]: newValue,
@@ -30,14 +34,6 @@ export function ProjectHeroForm({
   };
 
   const handleImagesChange = (imageUrls: string[]) => {
-    // Las URLs ya están procesadas por OptimizedImageUpload
-    // Actualizar el preview si hay una imagen nueva
-    if (imageUrls.length > 0) {
-      setPreviewImage(imageUrls[0]);
-    } else {
-      setPreviewImage(null);
-    }
-
     handleFieldChange("images", imageUrls);
   };
 
@@ -64,110 +60,6 @@ export function ProjectHeroForm({
 
   return (
     <>
-      {/* Modal/Overlay para edición de imágenes */}
-      {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-white p-6">
-            <h3 className="mb-4 text-lg font-semibold">
-              Editar Imágenes del Proyecto
-            </h3>
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {/* Panel de selección de imágenes */}
-              <div>
-                <h4 className="text-md mb-3 font-medium">
-                  Seleccionar Imágenes
-                </h4>
-                <OptimizedImageUpload
-                  value={value.images || []}
-                  onChange={handleImagesChange}
-                  onFilesChange={onFilesChange}
-                  entityType="project"
-                  maxImages={5}
-                  placeholder="Seleccionar imágenes del proyecto"
-                  aspectRatio="aspect-video"
-                  disabled={disabled}
-                  showUploadButton={true}
-                  deferUpload={true}
-                />
-              </div>
-
-              {/* Panel de preview */}
-              <div>
-                <h4 className="text-md mb-3 font-medium">
-                  Vista Previa del Hero
-                </h4>
-                <div className="relative h-64 overflow-hidden rounded-lg border">
-                  {previewImage || heroImage ? (
-                    <img
-                      src={previewImage || heroImage || ""}
-                      alt="Preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gray-200">
-                      <div className="text-center text-gray-500">
-                        <svg
-                          className="mx-auto mb-2 h-12 w-12"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <p className="text-sm">No hay imagen seleccionada</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Overlay del preview similar al hero real */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/50"></div>
-                  <div className="absolute right-2 bottom-2 left-2">
-                    <div className="rounded-lg bg-white/90 p-2">
-                      <h5 className="truncate text-sm font-semibold text-black">
-                        {value.name || "Nombre del Proyecto"}
-                      </h5>
-                      <p className="text-xs text-gray-600">
-                        Desde: {formattedPrice}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditing(false);
-                  setPreviewImage(null);
-                }}
-                className="bg-primaryColor hover:bg-primaryColor/90 rounded px-4 py-2 text-white"
-              >
-                Guardar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditing(false);
-                  setPreviewImage(null);
-                }}
-                className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Hero Section - EXACTAMENTE igual al original */}
       <section className="relative h-[95vh] overflow-hidden">
         <div>
           <div className="relative h-full overflow-hidden">
@@ -176,30 +68,15 @@ export function ProjectHeroForm({
                 src={heroImage}
                 alt={value.name || "Proyecto"}
                 className="h-[95vh] w-full cursor-pointer rounded-b-3xl object-cover"
-                onClick={() => !disabled && setIsEditing(true)}
               />
             ) : (
-              <div
-                className="flex h-[95vh] w-full cursor-pointer items-center justify-center rounded-b-3xl bg-gray-200"
-                onClick={() => !disabled && setIsEditing(true)}
-              >
-                <div className="text-center text-gray-500">
-                  <svg
-                    className="mx-auto mb-4 h-16 w-16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p className="text-lg">
-                    Haz clic para seleccionar una imagen
-                  </p>
+              <div className="flex h-[95vh] w-full cursor-pointer items-center justify-center rounded-b-3xl bg-gray-200">
+                <div className="flex flex-col items-center justify-center gap-1 text-center text-gray-500">
+                  <ImageIcon
+                    className="h-20 w-20 text-gray-400"
+                    strokeWidth={1.5}
+                  />
+                  <p className="text-lg">No hay imagen seleccionada</p>
                 </div>
               </div>
             )}
@@ -328,34 +205,15 @@ export function ProjectHeroForm({
         </div>
 
         {/* Botón flotante para editar imágenes */}
-        {!disabled && (
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            className="bg-primaryColor hover:bg-primaryColor/90 absolute right-6 bottom-6 z-30 rounded-full p-3 text-white shadow-lg transition-colors duration-200"
-            title="Editar imágenes del proyecto"
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setIsEditing(true)}
+          className="bg-primaryColor hover:bg-primaryColor-hover absolute right-6 bottom-6 z-30 flex cursor-pointer items-center gap-2 rounded-full p-3 px-6 text-white shadow-lg transition-colors duration-200"
+          title="Editar imágenes del proyecto"
+        >
+          Selecciona una imagen
+          <ImageIcon className="mt-0.5 h-4 w-4" />
+        </button>
       </section>
 
       {/* Mensajes de error */}
@@ -364,6 +222,17 @@ export function ProjectHeroForm({
           {error}
         </div>
       )}
+
+      {/* Modal para edición de imágenes usando shadcn Dialog */}
+      <HeroImageEditDialog
+        isOpen={isEditing}
+        onOpenChange={setIsEditing}
+        value={value}
+        currency={currency}
+        onImagesChange={handleImagesChange}
+        onHeroImageChange={onHeroImageChange}
+        disabled={disabled}
+      />
     </>
   );
 }

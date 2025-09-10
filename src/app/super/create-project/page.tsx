@@ -80,7 +80,7 @@ export default async function CreateProjectPage() {
         status: data.status,
         basePrice: data.basePrice ?? undefined,
         currency: data.currency,
-        images: data.images || [],
+        images: data.images || [], // Still string[] for compatibility during transition
         amenities:
           data.amenities?.map((amenity) =>
             typeof amenity === "string" ? amenity : amenity.text,

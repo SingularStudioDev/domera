@@ -56,7 +56,9 @@ export const useJsonArrayParser = (
 };
 
 /**
- * Hook específico para parsear imágenes
+ * Hook específico para parsear imágenes - LEGACY COMPATIBILITY
+ * @deprecated Use useProjectImages or specific image hooks instead
+ * Mantenido para compatibilidad hacia atrás con componentes existentes
  */
 export const useImageParser = (
   images: string[] | string | undefined | null,
