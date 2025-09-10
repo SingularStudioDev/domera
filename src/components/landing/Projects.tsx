@@ -1,10 +1,11 @@
 import { formatCurrency } from "@/utils/utils";
 import type { Project } from "@prisma/client";
 
+import type { ImagesData } from "@/types/project-images";
 import { getPublicProjects } from "@/lib/dal/projects";
 
 import MainButton from "../custom-ui/MainButton";
-import ProjectCard from "../custom-ui/ProjectCard";
+import ProjectCardWithImages from "./ProjectCardWithImages";
 
 interface ProjectsProps {
   limit?: number;
@@ -21,20 +22,22 @@ interface ProjectDisplayData {
   slug: string;
   title: string;
   price: string;
-  image: string;
+  images: ImagesData;
   status: string;
   date: string;
   features: ProjectFeature[];
 }
 
-// TODO: Revisar esta funcion al detalle para que devuelva todo lo que se necesita
+/**
+ * Formats a project from the database for display in the UI
+ * Extracts features, formats pricing, dates, and images
+ */
 const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   const price = project.basePrice
     ? formatCurrency(Number(project.basePrice))
     : "Consultar precio";
 
-  const status =
-    project.neighborhood || project.city || "Ubicación desconocida";
+  const status = project.neighborhood || project.city;
   const date = project.estimatedCompletion
     ? new Date(project.estimatedCompletion).toLocaleDateString("es-UY", {
         month: "short",
@@ -42,41 +45,7 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
       })
     : "Fecha TBD";
 
-  // Use second image from project.images array (index 1) for ProjectCard
-  const getProjectImage = (project: Project): string => {
-    if (Array.isArray(project.images)) {
-      // Use second image (index 1) if available, otherwise first image
-      if (project.images.length >= 2 && project.images[1]) {
-        return project.images[1];
-      }
-      if (project.images.length > 0 && project.images[0]) {
-        return project.images[0];
-      }
-    }
-
-    if (typeof project.images === "string") {
-      try {
-        const parsed = JSON.parse(project.images);
-        if (Array.isArray(parsed)) {
-          // Use second image (index 1) if available, otherwise first image
-          if (parsed.length >= 2 && parsed[1]) {
-            return parsed[1];
-          }
-          if (parsed.length > 0 && parsed[0]) {
-            return parsed[0];
-          }
-        }
-        return project.images; // If it's a single URL string
-      } catch {
-        return project.images; // If it's not JSON, treat as URL
-      }
-    }
-
-    // Fallback to hardcoded image
-    return `/images/${project.slug}-main.png`;
-  };
-
-  const image = getProjectImage(project);
+  // Images data will be processed by the ProjectCardWrapper component
 
   // Create features array from boolean fields
   const projectWithFeatures = project as Project & {
@@ -109,7 +78,7 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
     title: project.name,
     slug: project.slug,
     price,
-    image,
+    images: project.images as ImagesData, // Cast JsonValue to ImagesData
     status,
     date,
     features,
@@ -157,15 +126,7 @@ export default async function Projects({
                 key={project.id}
                 className={index === 0 ? "col-span-full" : ""}
               >
-                <ProjectCard
-                  slug={projectData.slug}
-                  title={projectData.title}
-                  price={projectData.price}
-                  image={projectData.image}
-                  status={projectData.status}
-                  date={projectData.date}
-                  features={projectData.features}
-                />
+                <ProjectCardWithImages projectData={projectData} />
               </div>
             );
           })}

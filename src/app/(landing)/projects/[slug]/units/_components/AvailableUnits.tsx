@@ -97,8 +97,71 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
     return (
       <div className="bg-neutral-100 px-4 py-4 md:px-0 md:py-10">
         <div className="container mx-auto py-10">
-          <div className="text-center">
-            <p className="text-gray-600">Cargando unidades...</p>
+          {/* Header skeleton */}
+          <div className="mb-2 h-9 w-80 animate-pulse rounded bg-gray-300"></div>
+          <div className="mb-8 h-6 w-48 animate-pulse rounded bg-gray-300"></div>
+
+          {/* Filter skeleton */}
+          <div className="mb-8 flex flex-wrap gap-4">
+            <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-300"></div>
+            <div className="h-10 w-36 animate-pulse rounded-lg bg-gray-300"></div>
+            <div className="h-10 w-40 animate-pulse rounded-lg bg-gray-300"></div>
+          </div>
+
+          {/* Unit cards skeleton */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm"
+              >
+                {/* Image skeleton */}
+                <div className="relative">
+                  <div className="h-64 w-full animate-pulse rounded-t-2xl bg-gray-300"></div>
+                  <div className="absolute top-3 left-3 flex gap-2">
+                    <div className="h-8 w-20 animate-pulse rounded-2xl bg-gray-400"></div>
+                    <div className="h-8 w-12 animate-pulse rounded-2xl bg-gray-400"></div>
+                  </div>
+                </div>
+
+                {/* Content skeleton */}
+                <div className="flex flex-1 flex-col p-4">
+                  {/* Title */}
+                  <div className="mb-4">
+                    <div className="mb-1 h-8 w-32 animate-pulse rounded bg-gray-300"></div>
+                  </div>
+
+                  {/* Features skeleton */}
+                  <div className="mb-6 flex w-full justify-between pr-10">
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 animate-pulse rounded bg-gray-300"></div>
+                      <div className="h-5 w-4 animate-pulse rounded bg-gray-300"></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 animate-pulse rounded bg-gray-300"></div>
+                      <div className="h-5 w-4 animate-pulse rounded bg-gray-300"></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 animate-pulse rounded bg-gray-300"></div>
+                      <div className="h-5 w-12 animate-pulse rounded bg-gray-300"></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 animate-pulse rounded bg-gray-300"></div>
+                      <div className="h-5 w-8 animate-pulse rounded bg-gray-300"></div>
+                    </div>
+                  </div>
+
+                  {/* Price and button skeleton */}
+                  <div className="mt-auto flex items-end justify-between">
+                    <div>
+                      <div className="mb-1 h-5 w-12 animate-pulse rounded bg-gray-300"></div>
+                      <div className="h-9 w-28 animate-pulse rounded bg-gray-300"></div>
+                    </div>
+                    <div className="h-10 w-24 animate-pulse rounded-full bg-gray-300"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

@@ -64,8 +64,7 @@ export default function CheckoutLayout({ children }: CheckoutLayoutProps) {
                 <div className="relative">
                   <img
                     src={
-                      currentProject?.firstImage ||
-                      "/images/torres-del-rio-hero.png"
+                      currentProject?.heroImage || "/checkout-hero-fallback.png"
                     }
                     alt={currentProject?.name || "Proyecto"}
                     className="h-[229px] w-full rounded-3xl border border-gray-300 object-cover"

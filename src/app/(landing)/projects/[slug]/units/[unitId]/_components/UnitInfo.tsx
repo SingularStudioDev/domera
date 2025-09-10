@@ -35,7 +35,7 @@ interface UnitInfoProps {
   isFavorite?: boolean;
   projectId?: string;
   projectName?: string;
-  projectFirstImage?: string;
+  projectHeroImage?: string;
 }
 
 export default function UnitInfo({
@@ -54,7 +54,7 @@ export default function UnitInfo({
   isFavorite,
   projectId,
   projectName,
-  projectFirstImage,
+  projectHeroImage,
 }: UnitInfoProps) {
   const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(
     isFavorite || false,
@@ -112,7 +112,7 @@ export default function UnitInfo({
       id: unitId,
       projectId: projectId,
       projectName: projectName,
-      projectFirstImage: projectFirstImage,
+      projectHeroImage: projectHeroImage,
       unitId: unitId,
       unitTitle: `${formatUnitType(unitType)} ${unitNumber}`,
       image: unitFirstImage || `/images/unit-${unitNumber}-main.png`, // TODO: Esto tiene que ser un placeholder

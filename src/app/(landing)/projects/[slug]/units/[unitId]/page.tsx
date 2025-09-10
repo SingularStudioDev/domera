@@ -8,6 +8,7 @@ import { formatCurrency } from "@/utils/utils";
 import { checkIsFavoriteAction } from "@/lib/actions/favourites";
 import { getUnitByIdAction } from "@/lib/actions/units";
 import { useFeatureParser, useImageParser } from "@/hooks/useJsonArrayParser";
+import { useProjectHeroImage } from "@/hooks/useProjectImages";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
@@ -100,8 +101,9 @@ const UnitDetailPage = () => {
   // Parse JSON fields using hooks - must be called before any early returns
   const { images, firstImage } = useImageParser(unit?.images);
   const { features, hasFeatures } = useFeatureParser(unit?.features);
-  const { images: projectImages, firstImage: projectFirstImage } =
-    useImageParser(unit?.project?.images);
+  const { imageUrl: projectHeroImage } = useProjectHeroImage(
+    unit?.project?.images,
+  );
 
   // Loading state
   if (loading) {
@@ -141,8 +143,6 @@ const UnitDetailPage = () => {
 
   const mainImage = firstImage || "/placeholder-unit.jpg";
 
-  console.log("unit.description", unit.description);
-
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -173,7 +173,7 @@ const UnitDetailPage = () => {
               isFavorite={isFavorite}
               projectId={unit.project.id || unit.project.slug}
               projectName={unit.project.name}
-              projectFirstImage={projectFirstImage}
+              projectHeroImage={projectHeroImage}
             />
           </div>
 
