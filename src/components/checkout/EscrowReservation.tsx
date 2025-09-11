@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useEscrow, CreateEscrowParams } from "@/lib/web3/hooks/useEscrow";
-import { ESCROW_CONFIG, DOMERA_RECEIVER_ADDRESS } from "@/lib/web3/config";
+import { ESCROW_CONFIG, DOMERA_RECEIVER_ADDRESS, TEST_DATA } from "@/lib/web3/config";
 import MainButton from "@/components/custom-ui/MainButton";
 
 interface EscrowReservationProps {
@@ -56,6 +56,22 @@ export function EscrowReservation({
   }, []);
 
   const createReservationEscrow = async () => {
+    // Check if we're in demo mode
+    if (ESCROW_CONFIG.demoMode) {
+      setIsCreating(true);
+      
+      // Simulate a transaction delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Return test data
+      const testTxHash = TEST_DATA.testTxHashes.create;
+      const testTxId = TEST_DATA.testTransactionIds.pending;
+      
+      setIsCreating(false);
+      onEscrowCreated(testTxId, testTxHash);
+      return;
+    }
+
     if (!isReady) {
       onError("Wallet no conectada o red incorrecta");
       return;
@@ -72,7 +88,7 @@ export function EscrowReservation({
       // Create meta evidence for the escrow
       const metaEvidence: CreateEscrowParams['metaEvidence'] = {
         title: `Reserva de Propiedad: ${propertyData.title}`,
-        description: `Escrow de reserva de USD 200 para la propiedad ${propertyData.title} ubicada en ${propertyData.location}. Los fondos serán liberados al completar el proceso de compra o devueltos si la plataforma o desarrolladora no puede continuar con el proceso.`,
+        description: `Escrow de reserva de ${ESCROW_CONFIG.paymentAmountUSD} USD para la propiedad ${propertyData.title} ubicada en ${propertyData.location}. Los fondos serán liberados al completar el proceso de compra o devueltos si la plataforma o desarrolladora no puede continuar con el proceso.`,
         question: "¿Debe liberarse el pago de reserva?",
         rulingOptions: {
           type: "single-select",
@@ -91,8 +107,8 @@ export function EscrowReservation({
 
       const escrowParams: CreateEscrowParams = {
         receiverAddress: DOMERA_RECEIVER_ADDRESS,
-        amount: "0.1", // ~200 USD in ETH (adjust based on ETH price)
-        timeoutHours: 24, // 24 hours for initial timeout
+        amount: ESCROW_CONFIG.paymentAmount, // Use config amount (0.001 ETH for dev, 0.1 ETH for prod)
+        timeoutHours: ESCROW_CONFIG.timeoutPayment / 3600, // Convert seconds to hours
         metaEvidence
       };
 
@@ -126,7 +142,7 @@ export function EscrowReservation({
     }
   }, [isSuccess, lastTransactionHash, onEscrowCreated]);
 
-  const canCreateEscrow = mounted && isReady && !disabled && !isCreating && !isLoading;
+  const canCreateEscrow = mounted && (ESCROW_CONFIG.demoMode || isReady) && !disabled && !isCreating && !isLoading;
 
   if (!mounted) {
     return (
@@ -151,13 +167,20 @@ export function EscrowReservation({
         </h4>
         <div className="text-sm text-blue-800 space-y-2">
           <p>
-            Se creará un escrow de <strong>USD 200</strong> (≈0.1 ETH) que será:
+            Se creará un escrow de <strong>{ESCROW_CONFIG.paymentAmountUSD} USD</strong> (≈{ESCROW_CONFIG.paymentAmount} ETH) que será:
           </p>
           <ul className="list-disc list-inside space-y-1 text-xs">
             <li><strong>Devuelto automáticamente</strong> si la plataforma o desarrolladora no puede continuar</li>
             <li><strong>Liberado a Domera</strong> al completar la compra exitosamente</li>
             <li><strong>Disputado a través de Kleros</strong> en caso de desacuerdo</li>
           </ul>
+          {ESCROW_CONFIG.demoMode && (
+            <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded">
+              <p className="text-xs text-yellow-800">
+                🧪 <strong>Modo Demo:</strong> No se realizarán transacciones reales en blockchain
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -173,7 +196,7 @@ export function EscrowReservation({
         </div>
       )}
 
-      {!isReady && (
+      {!ESCROW_CONFIG.demoMode && !isReady && (
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
             ⚠️ Conecta tu wallet y asegúrate de estar en Arbitrum para continuar
