@@ -173,12 +173,12 @@ export default function CheckoutPage() {
           {/* Total and Actions */}
           <div className="flex items-center gap-7">
             {items.length < 2 && (
-              <MainButton href="/checkout/additional">
+              <MainButton type="button" href="/checkout/additional">
                 Agregar otro item
               </MainButton>
             )}
 
-            <MainButton href="/checkout/confirmation">
+            <MainButton type="button" href="/checkout/confirmation">
               Ir al boleto de reserva
             </MainButton>
           </div>

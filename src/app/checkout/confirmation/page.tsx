@@ -22,7 +22,7 @@ export default function ConfirmationPage() {
   });
 
   const [useOwnNotary, setUseOwnNotary] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(true);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (
