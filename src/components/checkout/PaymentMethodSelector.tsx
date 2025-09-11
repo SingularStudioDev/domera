@@ -1,11 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
-import { WalletConnectButton, WalletInfo } from "@/components/web3/WalletConnectButton";
-import { ARBITRUM_CHAIN_ID } from "@/lib/web3/config";
+import { useEffect, useState } from "react";
 
-export type PaymentMethod = "escrow" | "traditional";
+import { useCheckoutStore } from "@/stores/checkoutStore";
+import {
+  AlertTriangle,
+  CheckCircle,
+  CreditCard,
+  Shield,
+  Wallet,
+} from "lucide-react";
+import { useAccount } from "wagmi";
+
+import { cn } from "@/lib/utils";
+import { ARBITRUM_CHAIN_ID } from "@/lib/web3/config";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  WalletConnectButton,
+  WalletInfo,
+} from "@/components/web3/WalletConnectButton";
+
+export type PaymentMethod = "escrow" | "traditional" | null;
 
 interface PaymentMethodSelectorProps {
   selectedMethod: PaymentMethod;
@@ -19,20 +35,23 @@ export function PaymentMethodSelector({
   onWalletConnected,
 }: PaymentMethodSelectorProps) {
   const [mounted, setMounted] = useState(false);
-  
+  const { items, currentProject, getTotalPrice } = useCheckoutStore();
+
   // Safe access to wagmi hooks only after mounting
   let isConnected = false;
   let chain: any = null;
-  
+  let address: string | undefined = undefined;
+
   try {
     const account = useAccount();
     isConnected = mounted ? account.isConnected : false;
     chain = mounted ? account.chain : null;
+    address = mounted ? account.address : undefined;
   } catch (error) {
     // If wagmi hooks fail, keep default values
     console.warn("Wagmi hooks not available:", error);
   }
-  
+
   const isOnArbitrum = chain?.id === ARBITRUM_CHAIN_ID;
   const isEscrowReady = mounted && isConnected && isOnArbitrum;
 
@@ -43,126 +62,213 @@ export function PaymentMethodSelector({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <h3 className="text-foreground mb-4 text-2xl font-semibold">
           Método de Reserva
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
-          Selecciona cómo deseas asegurar tu reserva de USD 200:
-        </p>
       </div>
 
       <div className="space-y-4">
+        {items.length > 0 && currentProject && (
+          <div className="rounded-lg bg-gray-50 p-6">
+            <h5 className="mb-4 font-bold">Detalles de la Reserva</h5>
+            <div className="grid grid-cols-4 text-sm">
+              <div className="flex flex-col gap-1">
+                <span className="font-semibold">Propiedad</span>
+                <div className="space-y-1">
+                  {items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-col justify-between"
+                    >
+                      <span>{item.unitTitle}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="flex flex-col gap-1">
+                <span className="font-bold">Proyecto</span>{" "}
+                {currentProject.name}
+              </p>
+
+              <p className="flex flex-col gap-1">
+                <span className="font-bold">Precio total</span> $
+                {getTotalPrice().toLocaleString()}
+              </p>
+
+              <p className="flex flex-col gap-1">
+                <span className="font-bold">Monto de reserva</span> USD200
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Escrow Web3 Option */}
-        <div
-          className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
+        <Card
+          className={cn(
+            "cursor-pointer transition-all duration-200 hover:shadow-md",
             selectedMethod === "escrow"
-              ? "border-blue-500 bg-blue-50"
-              : "border-gray-200 hover:border-gray-300"
-          }`}
+              ? "ring-primaryColor border-primaryColor bg-[#F9FBFF] ring-1"
+              : "hover:border-muted-foreground/30",
+          )}
           onClick={() => onMethodChange("escrow")}
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3">
-              <input
-                type="radio"
-                id="escrow"
-                name="payment-method"
-                value="escrow"
-                checked={selectedMethod === "escrow"}
-                onChange={() => onMethodChange("escrow")}
-                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <label htmlFor="escrow" className="block text-sm font-medium text-gray-900 cursor-pointer">
-                  🔒 Escrow Descentralizado (Recomendado)
-                </label>
-                <p className="mt-1 text-sm text-gray-600">
-                  Pago seguro con Kleros en Arbitrum. <strong>Devolvible</strong> si no se puede continuar con la compra por motivos de la plataforma o desarrolladora.
-                </p>
-                <div className="mt-2 text-xs text-green-600 space-y-1">
-                  <div>✅ Transparente y verificable en blockchain</div>
-                  <div>✅ Sistema de arbitraje justo</div>
-                  <div>✅ Control total de tus fondos</div>
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-4">
+                <input
+                  type="radio"
+                  id="escrow"
+                  name="payment-method"
+                  value="escrow"
+                  checked={selectedMethod === "escrow"}
+                  onChange={() => onMethodChange("escrow")}
+                  className="text-primaryColor focus:ring-primaryColor border-border mt-1 h-4 w-4"
+                />
+                <div className="flex-1">
+                  <div className="mb-2 flex items-center gap-2">
+                    <label
+                      htmlFor="escrow"
+                      className="text-foreground block cursor-pointer text-sm font-semibold"
+                    >
+                      Pago Descentralizado
+                    </label>
+                    <Badge
+                      variant="secondary"
+                      className="bg-primaryColor/10 text-primaryColor rounded-full text-xs"
+                    >
+                      Recomendado
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground mb-3 text-sm">
+                    Pago seguro con Kleros en Arbitrum.{" "}
+                    <span className="text-primaryColor font-semibold">
+                      Reembolsable
+                    </span>{" "}
+                    si no se puede continuar con la compra por motivos de la
+                    plataforma o desarrolladora.
+                  </p>
+                  <div className="space-y-1.5">
+                    <div
+                      className={`flex items-center gap-2 text-xs ${selectedMethod === "escrow" ? "text-primaryColor" : "text-green-600"}`}
+                    >
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Transparente y verificable en blockchain</span>
+                    </div>
+                    <div
+                      className={`flex items-center gap-2 text-xs ${selectedMethod === "escrow" ? "text-primaryColor" : "text-green-600"}`}
+                    >
+                      {" "}
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Sistema de arbitraje justo</span>
+                    </div>
+                    <div
+                      className={`flex items-center gap-2 text-xs ${selectedMethod === "escrow" ? "text-primaryColor" : "text-green-600"}`}
+                    >
+                      {" "}
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Control total de tus fondos</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            {selectedMethod === "escrow" && !isEscrowReady && (
-              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                Requiere Wallet
-              </span>
-            )}
-          </div>
-
-          {selectedMethod === "escrow" && mounted && (
-            <div className="mt-4 ml-7">
-              {!isConnected ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600">
-                    Conecta tu wallet para usar el escrow descentralizado:
-                  </p>
-                  <WalletConnectButton onConnect={onWalletConnected} />
-                </div>
-              ) : (
-                <WalletInfo />
+              {selectedMethod === "escrow" && !isEscrowReady && (
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1 text-xs"
+                >
+                  <Wallet className="h-3 w-3" />
+                  Requiere Wallet
+                </Badge>
               )}
             </div>
-          )}
-        </div>
+
+            {selectedMethod === "escrow" && mounted && (
+              <div className="mt-6 ml-8">
+                {!isConnected ? (
+                  <div className="space-y-3">
+                    x
+                    <p className="text-muted-foreground text-sm">
+                      Conecta tu wallet para usar el escrow descentralizado:
+                    </p>
+                    <WalletConnectButton onConnect={onWalletConnected} />
+                  </div>
+                ) : (
+                  <WalletInfo />
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Traditional Payment Option */}
-        <div
-          className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
+        <Card
+          className={cn(
+            "cursor-pointer transition-all duration-200 hover:shadow-md",
             selectedMethod === "traditional"
-              ? "border-orange-500 bg-orange-50"
-              : "border-gray-200 hover:border-gray-300"
-          }`}
+              ? "ring-primaryColor bg-[#F9FBFF] ring-2"
+              : "hover:border-muted-foreground/30",
+          )}
           onClick={() => onMethodChange("traditional")}
         >
-          <div className="flex items-start space-x-3">
-            <input
-              type="radio"
-              id="traditional"
-              name="payment-method"
-              value="traditional"
-              checked={selectedMethod === "traditional"}
-              onChange={() => onMethodChange("traditional")}
-              className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500"
-            />
-            <div>
-              <label htmlFor="traditional" className="block text-sm font-medium text-gray-900 cursor-pointer">
-                💳 Pago Tradicional
-              </label>
-              <p className="mt-1 text-sm text-gray-600">
-                Pago procesado y validado por Domera. <strong>NO devolvible</strong> sin importar el motivo de cancelación.
-              </p>
-              <div className="mt-2 text-xs text-gray-500 space-y-1">
-                <div>• Proceso más simple</div>
-                <div>• Sin necesidad de wallet</div>
-                <div>• Riesgo de pérdida total en caso de cancelación</div>
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-4">
+              <input
+                type="radio"
+                id="traditional"
+                name="payment-method"
+                value="traditional"
+                checked={selectedMethod === "traditional"}
+                onChange={() => onMethodChange("traditional")}
+                className="border-border mt-1 h-4 w-4"
+              />
+              <div className="flex-1">
+                <div className="mb-2 flex items-center gap-2">
+                  <label
+                    htmlFor="traditional"
+                    className="text-foreground block cursor-pointer text-sm font-semibold"
+                  >
+                    Pago Tradicional
+                  </label>
+                </div>
+                <p className="text-muted-foreground mb-3 text-sm">
+                  Pago procesado y validado por Domera.{" "}
+                  <span className="text-primaryColor font-semibold">
+                    No reembolsable
+                  </span>{" "}
+                  sin importar el motivo de cancelación.
+                </p>
+                <div className="space-y-1.5">
+                  <div
+                    className={`flex items-center gap-2 text-xs ${selectedMethod === "traditional" ? "text-primaryColor" : "text-green-600"}`}
+                  >
+                    <span>Proceso más simple</span>
+                  </div>
+                  <div
+                    className={`flex items-center gap-2 text-xs ${selectedMethod === "traditional" ? "text-primaryColor" : "text-green-600"}`}
+                  >
+                    <span>Sin necesidad de wallet</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Status Messages */}
       {mounted && selectedMethod === "escrow" && !isEscrowReady && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            {!isConnected 
-              ? "⚡ Conecta tu wallet para continuar con el escrow"
-              : "🔄 Cambia a la red Arbitrum para usar el escrow"
-            }
-          </p>
-        </div>
-      )}
-
-      {selectedMethod === "traditional" && (
-        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <p className="text-sm text-orange-800">
-            ⚠️ <strong>Importante:</strong> Los pagos tradicionales no son devolvibles bajo ninguna circunstancia.
-          </p>
-        </div>
+        <Card className="border-primaryColor/30 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-primaryColor h-2 w-2 animate-pulse rounded-full" />
+              <p className="text-primaryColor text-sm font-medium">
+                {!isConnected
+                  ? "Conecta tu wallet para continuar con el escrow"
+                  : "Cambia a la red Arbitrum para usar el escrow"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useBalance } from 'wagmi';
-import { ARBITRUM_CHAIN_ID } from '@/lib/web3/config';
-import MainButton from '@/components/custom-ui/MainButton';
+import { useEffect, useState } from "react";
+
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useAccount, useBalance } from "wagmi";
+
+import { ARBITRUM_CHAIN_ID } from "@/lib/web3/config";
+import MainButton from "@/components/custom-ui/MainButton";
 
 interface WalletConnectButtonProps {
   onConnect?: () => void;
   onDisconnect?: () => void;
 }
 
-export function WalletConnectButton({ 
-  onConnect, 
-  onDisconnect 
+export function WalletConnectButton({
+  onConnect,
+  onDisconnect,
 }: WalletConnectButtonProps) {
   const [mounted, setMounted] = useState(false);
   const { address, isConnected, chain } = useAccount();
@@ -29,11 +31,7 @@ export function WalletConnectButton({
   }, []);
 
   if (!mounted) {
-    return (
-      <MainButton className="w-full">
-        Conectar Wallet
-      </MainButton>
-    );
+    return <MainButton className="w-full">Conectar Wallet</MainButton>;
   }
 
   return (
@@ -47,19 +45,19 @@ export function WalletConnectButton({
         authenticationStatus,
         mounted,
       }) => {
-        const ready = mounted && authenticationStatus !== 'loading';
+        const ready = mounted && authenticationStatus !== "loading";
         const connected =
           ready &&
           account &&
           chain &&
-          (!authenticationStatus || authenticationStatus === 'authenticated');
+          (!authenticationStatus || authenticationStatus === "authenticated");
 
         return (
           <div>
             {(() => {
               if (!connected) {
                 return (
-                  <MainButton 
+                  <MainButton
                     onClick={() => {
                       openConnectModal();
                       onConnect?.();
@@ -73,7 +71,7 @@ export function WalletConnectButton({
 
               if (chain.unsupported) {
                 return (
-                  <MainButton 
+                  <MainButton
                     onClick={openChainModal}
                     className="w-full bg-red-500 hover:bg-red-600"
                   >
@@ -84,7 +82,7 @@ export function WalletConnectButton({
 
               return (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-gray-900">
                         {account.displayName}
@@ -101,9 +99,9 @@ export function WalletConnectButton({
                       >
                         {chain.hasIcon && chain.iconUrl && (
                           <img
-                            alt={chain.name ?? 'Chain icon'}
+                            alt={chain.name ?? "Chain icon"}
                             src={chain.iconUrl}
-                            className="w-4 h-4 mr-1 inline"
+                            className="mr-1 inline h-4 w-4"
                           />
                         )}
                         {chain.name}
@@ -122,7 +120,7 @@ export function WalletConnectButton({
                   </div>
 
                   {!isOnArbitrum && (
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
                       <p className="text-sm text-yellow-800">
                         ⚠️ Necesitas estar en Arbitrum para usar el escrow
                       </p>
@@ -153,20 +151,22 @@ export function WalletInfo() {
   if (!mounted || !isConnected) return null;
 
   return (
-    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+    <div className="bg-primaryColor/5 border-primaryColor/50 rounded-lg border p-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-green-800">Wallet Conectada</p>
-          <p className="text-xs text-green-600">
+          <p className="text-primaryColor text-sm font-medium">
+            Wallet Conectada
+          </p>
+          <p className="text-primaryColor text-xs">
             {address && `${address.slice(0, 6)}...${address.slice(-4)}`}
           </p>
         </div>
         {balance && (
           <div className="text-right">
-            <p className="text-sm font-medium text-green-800">
+            <p className="text-primaryColor text-sm font-medium">
               {parseFloat(balance.formatted).toFixed(4)} ETH
             </p>
-            <p className="text-xs text-green-600">Balance disponible</p>
+            <p className="text-primaryColor text-xs">Balance disponible</p>
           </div>
         )}
       </div>
