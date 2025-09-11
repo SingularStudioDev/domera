@@ -1,4 +1,4 @@
-# Domera
+# Domera - Hackaton de Ethereum
 
 Domera, una plataforma de inversión en propiedades en pozo sin comisiones inmobiliarias.
 
