@@ -12,10 +12,20 @@ interface Web3ProviderProps {
   children: React.ReactNode;
 }
 
-const queryClient = new QueryClient();
+// Create query client with SSR-safe configuration
+const createQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export function Web3Provider({ children }: Web3ProviderProps) {
   const [mounted, setMounted] = useState(false);
+  const [queryClient] = useState(() => createQueryClient());
 
   useEffect(() => {
     setMounted(true);
