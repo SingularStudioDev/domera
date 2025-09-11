@@ -116,6 +116,30 @@ enum NotificationType {
   professional_assignment
 }
 
+enum PaymentMethod {
+  escrow
+  traditional
+  bank_transfer
+  credit_card
+}
+
+enum EscrowStatus {
+  created
+  funded
+  disputed
+  completed
+  refunded
+  expired
+}
+
+enum TraditionalPaymentStatus {
+  initiated
+  pending_confirmation
+  confirmed
+  failed
+  cancelled
+}
+
 // =============================================================================
 // ORGANIZATIONS AND USERS
 // =============================================================================
@@ -195,6 +219,7 @@ model User {
   favorites                   UserFavorite[]
   twoFactorToken              TwoFactorToken?
   superAdminSession           SuperAdminSession?
+  reservationPayments         ReservationPayment[]
 
   @@map("users")
 }
@@ -363,6 +388,7 @@ model Operation {
   professionalAssignments  ProfessionalAssignment[]
   documents                Document[]
   notifications            Notification[]
+  reservationPayments      ReservationPayment[]
   correctedBy              Operation?                 @relation("OperationCorrections", fields: [correctionOf], references: [id])
   corrections              Operation[]                @relation("OperationCorrections")
 
@@ -640,4 +666,113 @@ model SecurityLog {
   @@index([eventType, timestamp])
   @@index([userIdentifier, timestamp])
   @@map("security_logs")
+}
+
+// =============================================================================
+// WEB3 AND PAYMENT TRACKING
+// =============================================================================
+
+model ReservationPayment {
+  id               String                    @id @default(uuid()) @db.Uuid
+  userId           String                    @map("user_id") @db.Uuid
+  operationId      String?                   @map("operation_id") @db.Uuid
+  paymentMethod    PaymentMethod             @map("payment_method")
+  amount           Decimal                   @db.Decimal(10, 2)
+  currency         String                    @default("USD") @db.VarChar(3)
+  
+  // Property information at time of reservation
+  propertyData     Json                      @map("property_data") // Store property details
+  formData         Json                      @map("form_data")     // Store form submission data
+  
+  // Escrow-specific fields
+  escrowTransaction EscrowTransaction?
+  
+  // Traditional payment-specific fields
+  traditionalPayment TraditionalPayment?
+  
+  // General tracking
+  status           String                    @default("initiated") @db.VarChar(50)
+  createdAt        DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  completedAt      DateTime?                 @map("completed_at") @db.Timestamptz
+  
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operation Operation? @relation(fields: [operationId], references: [id])
+  
+  @@map("reservation_payments")
+}
+
+model EscrowTransaction {
+  id                    String                    @id @default(uuid()) @db.Uuid
+  reservationPaymentId  String                    @unique @map("reservation_payment_id") @db.Uuid
+  
+  // Blockchain transaction details
+  contractAddress       String                    @map("contract_address") @db.VarChar(42) // Ethereum address
+  transactionHash       String?                   @map("transaction_hash") @db.VarChar(66) // Transaction hash
+  blockNumber           BigInt?                   @map("block_number")
+  klerosTxId            String?                   @map("kleros_tx_id") // Kleros internal transaction ID
+  
+  // Escrow participants
+  senderAddress         String                    @map("sender_address") @db.VarChar(42)
+  receiverAddress       String                    @map("receiver_address") @db.VarChar(42)
+  arbitratorAddress     String                    @map("arbitrator_address") @db.VarChar(42)
+  
+  // Escrow configuration
+  timeoutPayment        Int                       @map("timeout_payment") // Seconds
+  timeoutDispute        Int                       @map("timeout_dispute") // Seconds
+  
+  // Status and lifecycle
+  status                EscrowStatus              @default(created)
+  createdOnChain        Boolean                   @default(false) @map("created_on_chain")
+  fundedAt             DateTime?                  @map("funded_at") @db.Timestamptz
+  disputedAt           DateTime?                  @map("disputed_at") @db.Timestamptz
+  completedAt          DateTime?                  @map("completed_at") @db.Timestamptz
+  
+  // Meta evidence and dispute data
+  metaEvidence         Json                       @map("meta_evidence")
+  disputeId            String?                    @map("dispute_id")
+  ruling               String?                    // Kleros ruling if dispute occurred
+  
+  // Audit trail
+  createdAt            DateTime                   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime                   @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  reservationPayment ReservationPayment @relation(fields: [reservationPaymentId], references: [id], onDelete: Cascade)
+  
+  @@map("escrow_transactions")
+}
+
+model TraditionalPayment {
+  id                    String                    @id @default(uuid()) @db.Uuid
+  reservationPaymentId  String                    @unique @map("reservation_payment_id") @db.Uuid
+  
+  // Payment method details
+  method                PaymentMethod             // bank_transfer, credit_card, etc.
+  reference             String?                   // Reference number for tracking
+  
+  // Payment processor information
+  processorName         String?                   @map("processor_name") @db.VarChar(100)
+  processorTxId         String?                   @map("processor_tx_id") @db.VarChar(255)
+  processorResponse     Json?                     @map("processor_response")
+  
+  // Status tracking
+  status                TraditionalPaymentStatus  @default(initiated)
+  confirmedAt          DateTime?                  @map("confirmed_at") @db.Timestamptz
+  failedAt             DateTime?                  @map("failed_at") @db.Timestamptz
+  failureReason        String?                    @map("failure_reason")
+  
+  // Instructions and metadata
+  paymentInstructions  Json?                      @map("payment_instructions")
+  bankDetails          Json?                      @map("bank_details")
+  
+  // Audit trail
+  createdAt            DateTime                   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime                   @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  reservationPayment ReservationPayment @relation(fields: [reservationPaymentId], references: [id], onDelete: Cascade)
+  
+  @@map("traditional_payments")
 }

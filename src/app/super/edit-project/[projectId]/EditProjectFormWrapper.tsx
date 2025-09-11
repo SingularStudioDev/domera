@@ -81,20 +81,45 @@ export default function EditProjectFormWrapper({
     images: projectData.images || [],
     masterPlanFiles: projectData.masterPlanFiles || [],
     priority: projectData.priority || 0,
-    details: projectData.details || [],
+    details: Array.isArray(projectData.details) ? projectData.details : 
+             (typeof projectData.details === 'string' ? JSON.parse(projectData.details) : []),
     amenities:
-      projectData.amenities?.map((amenity) => {
-        if (typeof amenity === "string") {
-          return { text: amenity, icon: "" };
+      (() => {
+        let amenitiesArray = [];
+        if (Array.isArray(projectData.amenities)) {
+          amenitiesArray = projectData.amenities;
+        } else if (typeof projectData.amenities === 'string') {
+          try {
+            amenitiesArray = JSON.parse(projectData.amenities);
+          } catch (e) {
+            amenitiesArray = [];
+          }
         }
-        return {
-          text: amenity.text || amenity.text,
-          icon: amenity.icon || "",
-        };
-      }) || [],
-    detalles: (projectData.details || []).map((detail: string) => ({
-      text: detail,
-    })),
+        return amenitiesArray.map((amenity) => {
+          if (typeof amenity === "string") {
+            return { text: amenity, icon: "" };
+          }
+          return {
+            text: amenity.text || amenity,
+            icon: amenity.icon || "",
+          };
+        });
+      })(),
+    detalles: (() => {
+      let detailsArray = [];
+      if (Array.isArray(projectData.details)) {
+        detailsArray = projectData.details;
+      } else if (typeof projectData.details === 'string') {
+        try {
+          detailsArray = JSON.parse(projectData.details);
+        } catch (e) {
+          detailsArray = [];
+        }
+      }
+      return detailsArray.map((detail: string) => ({
+        text: detail,
+      }));
+    })(),
     estimatedCompletion: projectData.estimatedCompletion
       ? new Date(projectData.estimatedCompletion)
       : undefined,

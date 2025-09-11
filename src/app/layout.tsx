@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth/config";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { Web3Provider } from "@/components/web3/Web3Provider";
 
 import "./globals.css";
 
@@ -31,7 +32,11 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.className} antialiased`}>
-        <SessionProvider session={session}>{children}</SessionProvider>
+        <SessionProvider session={session}>
+          <Web3Provider>
+            {children}
+          </Web3Provider>
+        </SessionProvider>
       </body>
     </html>
   );
