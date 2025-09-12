@@ -1,5 +1,5 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { arbitrum, arbitrumSepolia } from 'wagmi/chains';
+import { arbitrum, arbitrumSepolia, hardhat } from 'wagmi/chains';
 
 // Use testnet for development/testing
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -16,12 +16,15 @@ export const ARBITRUM_CHAIN_ID = primaryChain.id;
 export const ARBITRUM_SEPOLIA_CHAIN_ID = arbitrumSepolia.id;
 
 export const KLEROS_CONTRACTS = {
-  // Kleros Arbitrator on Arbitrum One
-  arbitrator: process.env.NEXT_PUBLIC_KLEROS_ARBITRATOR_ADDRESS || '0x9C1dA9A04925bDfDedf0f6421bC7EEa8305F9002',
-  // MultipleArbitrableTransaction contract (TODO: Get actual address from Kleros)
-  escrow: process.env.NEXT_PUBLIC_KLEROS_ESCROW_ADDRESS || '0x1234567890123456789012345678901234567890', // TODO: Replace with actual address
-  // PNK Token on Arbitrum
-  pnkToken: '0x330bd769382cfc6d50175903434ccc8d206dcae5',
+  // Kleros Arbitrator on Arbitrum Sepolia (testnet)
+  arbitrator: process.env.NEXT_PUBLIC_KLEROS_ARBITRATOR_ADDRESS || '0x1128eD55ab2d796fa92D2F8E1f336d745354a77A', // Kleros Arbitrator on Sepolia
+  // PNK Token on Arbitrum Sepolia
+  pnkToken: isDevelopment ? '0x34ed0C5A50dBB2C2e0673D257e7bbE0C6Ce2Ae09' : '0x330bd769382cfc6d50175903434ccc8d206dcae5', // Sepolia vs Mainnet
+} as const;
+
+export const DOMERA_CONTRACTS = {
+  // Our custom DomeraEscrow contract address (will be filled after deployment)
+  escrow: process.env.NEXT_PUBLIC_DOMERA_ESCROW_CONTRACT || '',
 } as const;
 
 export const DOMERA_RECEIVER_ADDRESS = process.env.NEXT_PUBLIC_DOMERA_RECEIVER_ADDRESS || '0x0000000000000000000000000000000000000000';
