@@ -48,8 +48,7 @@ export function CheckoutSteps({ currentStep }: CheckoutStepsProps) {
             href={step.href}
             className="group flex w-full items-center gap-4 transition-colors duration-300"
           >
-            <button
-              type="button"
+            <div
               className={`flex h-[60px] w-[40px] items-center justify-center text-3xl font-bold ${
                 isActive
                   ? "bg-primaryColor group-hover:bg-primaryColor-hover text-white"
@@ -57,7 +56,7 @@ export function CheckoutSteps({ currentStep }: CheckoutStepsProps) {
               }`}
             >
               {step.number}
-            </button>
+            </div>
             <span className="max-w-[100px] text-black">{step.label}</span>
           </Link>
         );
