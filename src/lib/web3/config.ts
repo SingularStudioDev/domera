@@ -23,11 +23,11 @@ export const KLEROS_CONTRACTS = {
 } as const;
 
 export const DOMERA_CONTRACTS = {
-  // Our custom DomeraEscrow contract address (will be filled after deployment)
-  escrow: process.env.NEXT_PUBLIC_DOMERA_ESCROW_CONTRACT || '',
+  // Our custom DomeraEscrow contract address (deployed on Arbitrum Sepolia)
+  escrow: process.env.NEXT_PUBLIC_DOMERA_ESCROW_CONTRACT || '0xFeEc95417D930d2428B9d6102535198ecb644021',
 } as const;
 
-export const DOMERA_RECEIVER_ADDRESS = process.env.NEXT_PUBLIC_DOMERA_RECEIVER_ADDRESS || '0x0000000000000000000000000000000000000000';
+export const DOMERA_RECEIVER_ADDRESS = process.env.NEXT_PUBLIC_DOMERA_RECEIVER_ADDRESS || '0x93186173425baba3A8fBcCb58C273beB332Bdb28';
 
 export const ESCROW_CONFIG = {
   // Payment amounts (development uses smaller amounts for testing)

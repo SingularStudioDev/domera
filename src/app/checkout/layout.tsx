@@ -8,7 +8,6 @@ import { ArrowLeft, ChevronDownIcon } from "lucide-react";
 
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
-import { Web3Provider } from "@/components/web3/Web3Provider";
 
 import { CheckoutSteps } from "./_components/CheckoutSteps";
 import { accordionItems } from "./page";
@@ -38,8 +37,7 @@ export default function CheckoutLayout({ children }: CheckoutLayoutProps) {
   };
 
   return (
-    <Web3Provider>
-      <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
         <Header />
 
         <main className="pt-28">
@@ -103,7 +101,6 @@ export default function CheckoutLayout({ children }: CheckoutLayoutProps) {
         </main>
 
         <Footer />
-      </div>
-    </Web3Provider>
+    </div>
   );
 }

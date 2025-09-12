@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 interface IArbitrator {
     function createDispute(uint256 _choices, bytes memory _extraData) external payable returns (uint256 disputeID);
@@ -19,9 +18,7 @@ interface IArbitrable {
  * @dev Smart contract for handling property reservation escrows with Kleros arbitration
  */
 contract DomeraEscrow is ReentrancyGuard, Ownable, IArbitrable {
-    using Counters for Counters.Counter;
-    
-    Counters.Counter private _escrowIdCounter;
+    uint256 private _escrowIdCounter;
     
     IArbitrator public arbitrator;
     bytes public arbitratorExtraData;
@@ -64,7 +61,7 @@ contract DomeraEscrow is ReentrancyGuard, Ownable, IArbitrable {
     constructor(
         IArbitrator _arbitrator,
         bytes memory _arbitratorExtraData
-    ) {
+    ) Ownable(msg.sender) {
         arbitrator = _arbitrator;
         arbitratorExtraData = _arbitratorExtraData;
     }
@@ -88,8 +85,8 @@ contract DomeraEscrow is ReentrancyGuard, Ownable, IArbitrable {
         require(_receiver != address(0), "Invalid receiver address");
         require(_timeout > block.timestamp, "Timeout must be in the future");
         
-        escrowID = _escrowIdCounter.current();
-        _escrowIdCounter.increment();
+        escrowID = _escrowIdCounter;
+        _escrowIdCounter++;
         
         escrows[escrowID] = Escrow({
             id: escrowID,
@@ -237,6 +234,6 @@ contract DomeraEscrow is ReentrancyGuard, Ownable, IArbitrable {
      * @dev Get current escrow counter
      */
     function getCurrentEscrowId() external view returns (uint256) {
-        return _escrowIdCounter.current();
+        return _escrowIdCounter;
     }
 }
