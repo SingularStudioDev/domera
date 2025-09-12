@@ -67,9 +67,6 @@ export function EscrowReservation({
     createEscrow = async () => ({ error: "Wallet not connected" });
   }
   const [isCreating, setIsCreating] = useState(false);
-  const [lastTransactionHash, setLastTransactionHash] = useState<string | null>(
-    null,
-  );
 
   useEffect(() => {
     setMounted(true);
@@ -138,26 +135,14 @@ export function EscrowReservation({
 
       if (result.error) {
         onError(result.error);
+        setIsCreating(false);
         return;
       }
 
-      if (result.transactionHash) {
-        setLastTransactionHash(result.transactionHash);
-      }
-    } catch (error) {
-      console.error("Error creating reservation escrow:", error);
-      onError(error instanceof Error ? error.message : "Error desconocido");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  // Handle successful transaction
-  useEffect(() => {
-    if (isSuccess && lastTransactionHash && propertyData && address) {
-      const handleSuccessfulTransaction = async () => {
+      // Transaction was successful
+      if (result.transactionHash && address && propertyData) {
         try {
-          // Create record in database
+          // Create record in database immediately
           const escrowInput: CreateEscrowInput = {
             propertyId: propertyData.id,
             propertyTitle: propertyData.title,
@@ -180,36 +165,35 @@ export function EscrowReservation({
             },
             escrowData: {
               contractEscrowId: "0", // This will be updated when we parse the transaction logs
-              transactionHash: lastTransactionHash,
+              transactionHash: result.transactionHash,
               amount: ESCROW_CONFIG.paymentAmount,
               receiverAddress: DOMERA_RECEIVER_ADDRESS,
               buyerAddress: address,
               timeoutTimestamp: Math.floor(Date.now() / 1000) + (ESCROW_CONFIG.timeoutPayment),
-              metaEvidence: JSON.stringify({
-                title: `Reserva de Propiedad: ${propertyData.title}`,
-                description: `Escrow de reserva de ${ESCROW_CONFIG.paymentAmountUSD} USD para la propiedad ${propertyData.title} ubicada en ${propertyData.location}.`,
-              }),
+              metaEvidence: JSON.stringify(metaEvidence),
             },
           };
 
-          const result = await createEscrowReservationAction(escrowInput);
+          const dbResult = await createEscrowReservationAction(escrowInput);
           
-          if (result.success) {
-            onEscrowCreated(result.data?.contractEscrowId || "pending", lastTransactionHash);
+          if (dbResult.success) {
+            onEscrowCreated(dbResult.data?.contractEscrowId || "pending", result.transactionHash);
           } else {
-            onError(result.error || "Error saving escrow to database");
+            onError(dbResult.error || "Error saving escrow to database");
           }
-        } catch (error) {
-          console.error("Error saving escrow to database:", error);
+        } catch (dbError) {
+          console.error("Error saving escrow to database:", dbError);
           onError("Error saving escrow to database");
-        } finally {
-          setLastTransactionHash(null);
         }
-      };
-
-      handleSuccessfulTransaction();
+      }
+    } catch (error) {
+      console.error("Error creating reservation escrow:", error);
+      onError(error instanceof Error ? error.message : "Error desconocido");
+    } finally {
+      setIsCreating(false);
     }
-  }, [isSuccess, lastTransactionHash, onEscrowCreated, propertyData, address, formData]);
+  };
+
 
   const canCreateEscrow =
     mounted &&
