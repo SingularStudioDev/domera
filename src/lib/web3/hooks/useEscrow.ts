@@ -63,6 +63,7 @@ export function useEscrow() {
     }
 
     try {
+
       const metaEvidenceJson = JSON.stringify(params.metaEvidence);
       const timeoutTimestamp = Math.floor(Date.now() / 1000) + ((params.timeoutHours || 24) * 3600); // Current time + hours in seconds
       
