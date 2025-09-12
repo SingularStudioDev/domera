@@ -14,6 +14,7 @@ import { useAccount } from "wagmi";
 
 import { cn } from "@/lib/utils";
 import { ARBITRUM_CHAIN_ID } from "@/lib/web3/config";
+import { switchToArbitrumSepolia, getNetworkSwitchMessage } from "@/lib/web3/network-utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -35,21 +36,25 @@ export function PaymentMethodSelector({
   onWalletConnected,
 }: PaymentMethodSelectorProps) {
   const [mounted, setMounted] = useState(false);
+  const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
   const { items, currentProject, getTotalPrice } = useCheckoutStore();
 
-  // Safe access to wagmi hooks only after mounting
+  // Safe access to wagmi hooks with error handling
   let isConnected = false;
   let chain: any = null;
   let address: string | undefined = undefined;
 
   try {
     const account = useAccount();
-    isConnected = mounted ? account.isConnected : false;
+    isConnected = mounted && account.isConnected;
     chain = mounted ? account.chain : null;
     address = mounted ? account.address : undefined;
   } catch (error) {
-    // If wagmi hooks fail, keep default values
-    console.warn("Wagmi hooks not available:", error);
+    // If wagmi hooks fail, keep default values and show helpful message
+    console.warn("Wagmi hooks not available - Web3Provider may not be properly configured:", error);
+    isConnected = false;
+    chain = null;
+    address = undefined;
   }
 
   const isOnArbitrum = chain?.id === ARBITRUM_CHAIN_ID;
@@ -58,6 +63,20 @@ export function PaymentMethodSelector({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleSwitchToArbitrum = async () => {
+    setIsSwitchingNetwork(true);
+    try {
+      const success = await switchToArbitrumSepolia();
+      if (success && onWalletConnected) {
+        onWalletConnected();
+      }
+    } catch (error) {
+      console.error('Failed to switch network:', error);
+    } finally {
+      setIsSwitchingNetwork(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -186,11 +205,33 @@ export function PaymentMethodSelector({
               <div className="mt-6 ml-8">
                 {!isConnected ? (
                   <div className="space-y-3">
-                    x
                     <p className="text-muted-foreground text-sm">
                       Conecta tu wallet para usar el escrow descentralizado:
                     </p>
                     <WalletConnectButton onConnect={onWalletConnected} />
+                  </div>
+                ) : !isOnArbitrum ? (
+                  <div className="space-y-3">
+                    <p className="text-muted-foreground text-sm">
+                      {getNetworkSwitchMessage(chain?.id)}:
+                    </p>
+                    <button
+                      onClick={handleSwitchToArbitrum}
+                      disabled={isSwitchingNetwork}
+                      className="flex w-full items-center justify-center rounded-lg bg-primaryColor px-4 py-2 text-sm font-medium text-white hover:bg-primaryColor/90 disabled:opacity-50"
+                    >
+                      {isSwitchingNetwork ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                          Cambiando red...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="mr-2 h-4 w-4" />
+                          Cambiar a Arbitrum Sepolia
+                        </>
+                      )}
+                    </button>
                   </div>
                 ) : (
                   <WalletInfo />
@@ -264,7 +305,7 @@ export function PaymentMethodSelector({
               <p className="text-primaryColor text-sm font-medium">
                 {!isConnected
                   ? "Conecta tu wallet para continuar con el escrow"
-                  : "Cambia a la red Arbitrum para usar el escrow"}
+                  : `${getNetworkSwitchMessage(chain?.id)} para usar el escrow`}
               </p>
             </div>
           </CardContent>

@@ -10,6 +10,7 @@ import {
   TEST_DATA,
 } from "@/lib/web3/config";
 import { CreateEscrowParams, useEscrow } from "@/lib/web3/hooks/useEscrow";
+import { createEscrowReservationAction, CreateEscrowInput } from "@/lib/actions/escrow";
 import MainButton from "@/components/custom-ui/MainButton";
 
 interface EscrowReservationProps {
@@ -20,6 +21,16 @@ interface EscrowReservationProps {
     title: string;
     price: string;
     location: string;
+    projectId?: string;
+  };
+  formData?: {
+    personalInfo: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+      address: string;
+    };
   };
   disabled?: boolean;
 }
@@ -28,6 +39,7 @@ export function EscrowReservation({
   onEscrowCreated,
   onError,
   propertyData,
+  formData,
   disabled = false,
 }: EscrowReservationProps) {
   const [mounted, setMounted] = useState(false);
@@ -117,6 +129,8 @@ export function EscrowReservation({
         receiverAddress: DOMERA_RECEIVER_ADDRESS,
         amount: ESCROW_CONFIG.paymentAmount, // Use config amount (0.001 ETH for dev, 0.1 ETH for prod)
         timeoutHours: ESCROW_CONFIG.timeoutPayment / 3600, // Convert seconds to hours
+        propertyId: propertyData.id,
+        propertyTitle: propertyData.title,
         metaEvidence,
       };
 
@@ -140,14 +154,62 @@ export function EscrowReservation({
 
   // Handle successful transaction
   useEffect(() => {
-    if (isSuccess && lastTransactionHash) {
-      // In a real implementation, you would parse the transaction logs to get the transaction ID
-      // For now, we'll use a placeholder
-      const transactionId = "pending"; // This should be extracted from transaction logs
-      onEscrowCreated(transactionId, lastTransactionHash);
-      setLastTransactionHash(null);
+    if (isSuccess && lastTransactionHash && propertyData && address) {
+      const handleSuccessfulTransaction = async () => {
+        try {
+          // Create record in database
+          const escrowInput: CreateEscrowInput = {
+            propertyId: propertyData.id,
+            propertyTitle: propertyData.title,
+            propertyData: {
+              id: propertyData.id,
+              title: propertyData.title,
+              price: propertyData.price,
+              location: propertyData.location,
+              projectId: propertyData.projectId,
+            },
+            formData: {
+              personalInfo: formData?.personalInfo || {
+                firstName: "",
+                lastName: "",
+                email: "",
+                phone: "",
+                address: "",
+              },
+              paymentMethod: "escrow" as const,
+            },
+            escrowData: {
+              contractEscrowId: "0", // This will be updated when we parse the transaction logs
+              transactionHash: lastTransactionHash,
+              amount: ESCROW_CONFIG.paymentAmount,
+              receiverAddress: DOMERA_RECEIVER_ADDRESS,
+              buyerAddress: address,
+              timeoutTimestamp: Math.floor(Date.now() / 1000) + (ESCROW_CONFIG.timeoutPayment),
+              metaEvidence: JSON.stringify({
+                title: `Reserva de Propiedad: ${propertyData.title}`,
+                description: `Escrow de reserva de ${ESCROW_CONFIG.paymentAmountUSD} USD para la propiedad ${propertyData.title} ubicada en ${propertyData.location}.`,
+              }),
+            },
+          };
+
+          const result = await createEscrowReservationAction(escrowInput);
+          
+          if (result.success) {
+            onEscrowCreated(result.data?.contractEscrowId || "pending", lastTransactionHash);
+          } else {
+            onError(result.error || "Error saving escrow to database");
+          }
+        } catch (error) {
+          console.error("Error saving escrow to database:", error);
+          onError("Error saving escrow to database");
+        } finally {
+          setLastTransactionHash(null);
+        }
+      };
+
+      handleSuccessfulTransaction();
     }
-  }, [isSuccess, lastTransactionHash, onEscrowCreated]);
+  }, [isSuccess, lastTransactionHash, onEscrowCreated, propertyData, address, formData]);
 
   const canCreateEscrow =
     mounted &&

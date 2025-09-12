@@ -31,11 +31,6 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    // Return a fallback or loading state during SSR
-    return <>{children}</>;
-  }
-
   return (
     <WagmiProvider config={web3Config}>
       <QueryClientProvider client={queryClient}>
