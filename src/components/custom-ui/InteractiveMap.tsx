@@ -10,6 +10,7 @@ interface ProjectMarker {
   longitude: number;
   title: string;
   popup?: string;
+  isSelected?: boolean;
 }
 
 interface InteractiveMapProps {

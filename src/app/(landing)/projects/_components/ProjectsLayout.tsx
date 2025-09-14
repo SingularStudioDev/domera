@@ -7,7 +7,7 @@ import Header from "@/components/header/Header";
 
 import ProjectsFilter from "./projectFilter/ProjectsFilter";
 import ProjectsListView from "./ProjectsListView";
-import ProjectsMapView from "./ProjectsMapView";
+import ProjectsMapView from "./project-map/ProjectsMapView";
 
 interface ProjectsLayoutProps {
   searchParams: {
