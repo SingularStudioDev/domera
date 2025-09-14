@@ -41,6 +41,7 @@ interface Organization {
   id: string;
   name: string;
   slug: string;
+  logo_url: string | null;
 }
 
 export function ProjectFormMain({
@@ -750,7 +751,10 @@ export function ProjectFormMain({
           <div className="flex w-full flex-col gap-5">
             {/* PROJECT DESCRIPTION FORM */}
             <CreateProjectDescription
-              value={descriptionData}
+              value={{
+                ...descriptionData,
+                images: watchedValues.images || [],
+              }}
               onChange={(newDescriptionData) => {
                 setValue("description", newDescriptionData.description);
                 setValue(
@@ -759,8 +763,17 @@ export function ProjectFormMain({
                 );
                 setValue("address", newDescriptionData.address);
               }}
+              onBuilderImageChange={(files) =>
+                updateImagesByType(ImageType.BUILDER, files)
+              }
+              selectedOrganization={
+                organizationId
+                  ? organizations.find((org) => org.id === organizationId) || null
+                  : organizations.find((org) => org.id === watchedValues.organizationId) || null
+              }
               disabled={isSubmitting}
               error={errors.description?.message || errors.address?.message}
+              projectId={tempProjectId || "temp"}
             />
             {/* PROJECT DETAILS FORM */}
             <ProjectDetailsForm

@@ -101,7 +101,16 @@ export interface CreateProjectDescriptionProps
     description: string;
     shortDescription: string;
     address: string;
-  }> {}
+    images: import("@/types/project-images").ProjectImage[];
+  }> {
+  onBuilderImageChange?: (files: File[]) => void;
+  projectId?: string;
+  selectedOrganization?: {
+    id: string;
+    name: string;
+    logo_url: string | null;
+  } | null;
+}
 
 export interface DetailsFormProps
   extends FormFieldProps<{

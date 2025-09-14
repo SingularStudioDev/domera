@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
+
+import { ImageIcon } from "lucide-react";
 
 import { CreateProjectDescriptionProps } from "@/types/project-form";
+import { useProjectImages } from "@/hooks/useProjectImages";
 
 import { EditAddressDialog } from "./EditAddressDialog";
 import { EditDescriptionDialog } from "./EditDescriptionDialog";
@@ -10,11 +13,21 @@ import { EditDescriptionDialog } from "./EditDescriptionDialog";
 export function CreateProjectDescription({
   value,
   onChange,
+  onBuilderImageChange,
+  selectedOrganization,
   error,
   disabled,
+  projectId,
 }: CreateProjectDescriptionProps) {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { builderImage } = useProjectImages(value.images);
+
+  // Debug: Log the selected organization
+  console.log("selectedOrganization:", selectedOrganization.logoUrl);
 
   const handleFieldChange = (field: keyof typeof value, newValue: string) => {
     onChange({
@@ -22,6 +35,36 @@ export function CreateProjectDescription({
       [field]: newValue,
     });
   };
+
+  const handleBuilderImageClick = () => {
+    if (!disabled && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewImage(previewUrl);
+
+      // Call the onChange callback if provided
+      if (onBuilderImageChange) {
+        onBuilderImageChange([file]);
+      }
+
+      // Reset input value
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    [onBuilderImageChange],
+  );
 
   return (
     <>
@@ -56,24 +99,55 @@ export function CreateProjectDescription({
             <div className="flex w-full gap-5 md:gap-10">
               <div className="flex w-full flex-col gap-2">
                 <p className="text-neutral-500">Desarrolla</p>
-                <button type="button" className="flex w-full gap-4 border p-6">
-                  <img
-                    src="/developer-logo-7b3d8c.png"
-                    alt="Developer"
-                    className="h-7 w-auto md:h-8"
-                  />
-                </button>
+                <div className="flex w-full items-center justify-center border p-6">
+                  {selectedOrganization?.logoUrl ? (
+                    <img
+                      src={selectedOrganization.logoUrl}
+                      alt={selectedOrganization.name}
+                      className="h-7 w-auto object-contain md:h-8"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 text-gray-500">
+                      <span className="text-sm">
+                        {selectedOrganization
+                          ? selectedOrganization.name
+                          : "Selecciona una organización"}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex w-full flex-col gap-2">
                 <p className="text-neutral-500">Construye:</p>
-                <button type="button" className="flex w-full gap-4 border p-6">
-                  <img
-                    src="/constructor-logo-7b3d8c.png"
-                    alt="Constructor"
-                    className="h-7 w-auto md:h-8"
-                  />
-                </button>
+                <div
+                  className="flex h-20 w-full cursor-pointer items-center justify-center border p-6 hover:bg-gray-50"
+                  onClick={handleBuilderImageClick}
+                >
+                  {previewImage || builderImage ? (
+                    <img
+                      src={previewImage || builderImage?.url}
+                      alt="Logo de la constructora"
+                      className="h-7 w-auto object-contain md:h-8"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 text-gray-500">
+                      <ImageIcon
+                        className="h-5 w-5 text-gray-300"
+                        strokeWidth={1.5}
+                      />
+                      <span className="text-sm">Agregar logo</span>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={disabled}
+                />
               </div>
             </div>
           </div>
