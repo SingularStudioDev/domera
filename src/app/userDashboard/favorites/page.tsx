@@ -154,8 +154,8 @@ const FavoritesPage = () => {
         href="/projects"
         className="bg-primaryColor inline-flex items-center gap-2 rounded-full px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
       >
-        <Grid3X3 className="h-5 w-5" />
         Ver Proyectos
+        <Grid3X3 className="h-5 w-5 ml-2" />
       </Link>
     </div>
   );

@@ -1,14 +1,11 @@
 import {
   BellIcon,
-  Building2Icon,
   BuildingIcon,
   CircleDollarSignIcon,
   GridIcon,
   HouseIcon,
-  Layers2Icon,
   LayersIcon,
   MessagesSquareIcon,
-  RulerIcon,
   ShoppingCartIcon,
   UserIcon,
 } from "lucide-react";

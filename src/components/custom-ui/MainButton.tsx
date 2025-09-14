@@ -26,8 +26,7 @@ export default function MainButton({
   type = "button",
   disabled = false,
 }: MainButtonProps) {
-  const baseClasses =
-    "flex items-center gap-5 rounded-full px-8 py-3 font-medium transition-colors duration-200";
+  const baseClasses = `flex items-center whitespace-nowrap w-fit gap-5 rounded-full  font-medium transition-colors duration-200 ${variant === "fill" ? "pl-5 pr-1 py-1" : "py-3 px-8"}`;
 
   const variantClasses = {
     outline:
@@ -39,14 +38,33 @@ export default function MainButton({
     ? "cursor-not-allowed opacity-50 hover:bg-inherit hover:text-inherit hover:border-inherit"
     : "cursor-pointer";
 
-  const combinedClasses = cn(baseClasses, variantClasses[variant], disabledClasses, className);
+  const arrowClass =
+    variant === "fill"
+      ? "bg-white/20 h-5 w-5 p-2 h-full w-full rounded-full text-white"
+      : "text-primaryColor";
+
+  const combinedClasses = cn(
+    baseClasses,
+    variantClasses[variant],
+    disabledClasses,
+    className,
+  );
 
   // Si tiene onClick, usar button
   if (onClick) {
     return (
-      <button type={type} onClick={disabled ? undefined : onClick} disabled={disabled} className={combinedClasses}>
+      <button
+        type={type}
+        onClick={disabled ? undefined : onClick}
+        disabled={disabled}
+        className={combinedClasses}
+      >
         {children}
-        {showArrow && <ArrowRightIcon className="h-5 w-5" />}
+        {showArrow && (
+          <div className={arrowClass}>
+            <ArrowRightIcon className="h-5 w-5" />
+          </div>
+        )}
       </button>
     );
   }

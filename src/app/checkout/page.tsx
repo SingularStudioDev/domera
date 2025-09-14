@@ -54,8 +54,6 @@ export default function CheckoutPage() {
     return null;
   }
 
-  console.log("items", items);
-
   // Si no hay items en el checkout, mostrar mensaje vacío
   if (items.length === 0) {
     return (

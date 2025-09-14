@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth/config";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { ErrorDialogProvider } from "@/contexts/ErrorDialogContext";
+import { ErrorDialog } from "@/components/ErrorDialog";
 
 import "./globals.css";
 
@@ -31,7 +33,10 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.className} antialiased`}>
-        <SessionProvider session={session}>{children}</SessionProvider>
+        <ErrorDialogProvider>
+          <SessionProvider session={session}>{children}</SessionProvider>
+          <ErrorDialog />
+        </ErrorDialogProvider>
       </body>
     </html>
   );

@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
+import { useCheckoutStore } from "@/stores/checkoutStore";
 import { formatCurrency } from "@/utils/utils";
 
 import { checkIsFavoriteAction } from "@/lib/actions/favourites";
 import { getUnitByIdAction } from "@/lib/actions/units";
+import { formatUnitType } from "@/lib/utils";
 import { useFeatureParser, useImageParser } from "@/hooks/useJsonArrayParser";
 import { useProjectHeroImage } from "@/hooks/useProjectImages";
+import { useShowError } from "@/hooks/useShowError";
+import MainButton from "@/components/custom-ui/MainButton";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
 
-import BottomCTA from "./_components/BottomCTA";
 import InvestmentSection from "./_components/InvestmentSection";
 import ProcessSection from "./_components/ProcessSection";
 import UnitDescription from "./_components/UnitDescription";
@@ -50,10 +53,13 @@ interface UnitData {
   };
 }
 
-const UnitDetailPage = () => {
+export default function UnitDetailPage() {
   const params = useParams();
   const projectSlug = params.slug as string;
   const unitId = params.unitId as string;
+  const router = useRouter();
+  const { addItem } = useCheckoutStore();
+  const showError = useShowError();
 
   const [unit, setUnit] = useState<UnitData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -143,6 +149,52 @@ const UnitDetailPage = () => {
 
   const mainImage = firstImage || "/placeholder-unit.jpg";
 
+  const handleAddToCheckout = () => {
+    if (!unit.project.id || !unit.project.name) {
+      showError("Información del proyecto no disponible");
+      return;
+    }
+
+    // Extraer el precio numérico del string formateado
+    const numericPrice = parseInt(formattedPrice.replace(/[^\d]/g, ""));
+
+    const checkoutItem = {
+      id: unit.id,
+      projectId: unit.project.id || unit.project.slug,
+      projectName: unit.project.name,
+      projectHeroImage: projectHeroImage,
+      unitId: unit.id,
+      unitTitle: `${formatUnitType(unit.unitType)} ${unit.unitNumber}`,
+      image: firstImage || `/images/unit-${unit.unitNumber}-main.png`,
+      bathrooms: unit.bathrooms,
+      bedrooms: unit.bedrooms,
+      builtArea: area,
+      completion: completion,
+      price: numericPrice,
+    };
+
+    const result = addItem(checkoutItem);
+
+    switch (result) {
+      case "success":
+        router.push("/checkout");
+        break;
+      case "already_exists":
+        router.push("/checkout");
+        break;
+      case "different_project":
+        showError(
+          "Solo puedes agregar unidades del mismo proyecto al checkout.",
+        );
+        break;
+      case "max_units_reached":
+        showError(
+          "No puedes agregar más de 2 unidades a tu carrito de compras. Para obtener más información sobre la compra de unidades adicionales, contacta con nuestro equipo.",
+        );
+        break;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -174,6 +226,7 @@ const UnitDetailPage = () => {
               projectId={unit.project.id || unit.project.slug}
               projectName={unit.project.name}
               projectHeroImage={projectHeroImage}
+              onAddToCheckout={handleAddToCheckout}
             />
           </div>
 
@@ -192,13 +245,15 @@ const UnitDetailPage = () => {
 
           <ProcessSection />
 
-          <BottomCTA />
+          <div className="flex w-full items-center justify-center pb-10">
+            <MainButton variant="fill" showArrow onClick={handleAddToCheckout}>
+              Comprar unidad
+            </MainButton>
+          </div>
         </div>
       </main>
 
       <Footer />
     </div>
   );
-};
-
-export default UnitDetailPage;
+}
