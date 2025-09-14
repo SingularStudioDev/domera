@@ -83,7 +83,6 @@ export default async function EditProjectPage({
         throw new Error("Ciudad es requerida");
       }
 
-      // Transform camelCase to snake_case for Prisma schema
       const projectData = {
         name: data.name,
         slug: data.slug,
@@ -97,13 +96,13 @@ export default async function EditProjectPage({
         status: data.status,
         basePrice: data.basePrice ?? undefined,
         currency: data.currency,
-        // Only update images if new ones were uploaded
-        ...(data.images &&
-        data.images.length > 0 &&
-        !data.images.some((img) => img.startsWith("blob:"))
-          ? { images: data.images }
-          : {}),
-        amenities: data.amenities?.map((amenity) => amenity.text) || [],
+        images: Array.isArray(data.images) 
+          ? data.images.map(img => typeof img === 'string' ? img : img.url || img.path || '')
+          : [],
+        amenities:
+          data.amenities?.map((amenity) =>
+            typeof amenity === "string" ? amenity : amenity.text,
+          ) || [],
         details: data.details || [],
         masterPlanFiles: data.masterPlanFiles || [],
         priority: data.priority || 0,
