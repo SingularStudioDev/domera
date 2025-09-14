@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 import { hasOrganizationLogo } from "@/lib/utils/organization";
 
 interface Organization {
@@ -29,7 +27,7 @@ export default function OrganizationDisplay({
 
   if (hasLogo && organization.logoUrl) {
     return (
-      <Image
+      <img
         src={organization.logoUrl}
         alt={`Logo de ${organization.name}`}
         width={width}

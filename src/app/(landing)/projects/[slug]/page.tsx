@@ -140,9 +140,12 @@ const ProjectDetailPage = async ({ params }: ProjectPageProps) => {
                 adress={project.address || "Direccion próximamente"}
                 organization={
                   (project as any).organization || {
+                    id: "temp",
                     name: "Organización próximamente",
+                    logoUrl: null,
                   }
                 }
+                images={project.images as ImagesData}
               />
 
               <ProjectDetails amenities={amenitiesData} details={detailsData} />

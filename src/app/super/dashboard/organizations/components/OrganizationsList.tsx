@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   Building,
@@ -50,6 +51,7 @@ interface OrganizationsData {
 }
 
 export default function OrganizationsList() {
+  const router = useRouter();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -215,6 +217,10 @@ export default function OrganizationsList() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const handleEditOrganization = (organizationId: string) => {
+    router.push(`/super/dashboard/organizations/${organizationId}/edit`);
+  };
+
   // Remove the early return that hides the UI during loading
   // We'll show a loading state within the component instead
 
@@ -367,13 +373,19 @@ export default function OrganizationsList() {
 
                   {/* Actions */}
                   <div className="ml-4 flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditOrganization(org.id)}
+                      title="Editar organización"
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       className="text-red-600 hover:text-red-700"
+                      title="Eliminar organización"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

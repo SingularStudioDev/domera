@@ -1,4 +1,6 @@
 import OrganizationDisplay from "@/components/custom-ui/OrganizationDisplay";
+import { useProjectImages } from "@/hooks/useProjectImages";
+import type { ImagesData } from "@/types/project-images";
 
 interface Organization {
   id: string;
@@ -10,13 +12,17 @@ interface ProjectDescriptionProps {
   description: string;
   adress: string;
   organization: Organization;
+  images: ImagesData;
 }
 
 export default function ProjectDescription({
   description,
   adress,
   organization,
+  images,
 }: ProjectDescriptionProps) {
+  const { builderImage } = useProjectImages(images);
+  
   return (
     <div className="grid grid-cols-1 flex-col items-start justify-between lg:grid-cols-3">
       <div className="flex flex-col gap-2 lg:col-span-2">
@@ -45,7 +51,15 @@ export default function ProjectDescription({
           <div>
             <p className="mb-2 font-semibold text-black">Construye:</p>
             <div className="flex gap-4">
-              <OrganizationDisplay organization={organization} />
+              {builderImage ? (
+                <img
+                  src={builderImage.url}
+                  alt="Logo de la constructora"
+                  className="h-8 w-auto object-contain"
+                />
+              ) : (
+                <span className="font-bold text-black">Constructora próximamente</span>
+              )}
             </div>
           </div>
         </div>

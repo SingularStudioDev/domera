@@ -37,11 +37,12 @@ export function CreateProjectUpload({
   projectId,
 }: CreateProjectUploadProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingBuilder, setIsEditingBuilder] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { cardImage } = useProjectImages(value.images);
+  const { cardImage, builderImage } = useProjectImages(value.images);
 
   const handleFileSelect = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,8 +104,9 @@ export function CreateProjectUpload({
 
   return (
     <>
-      {/* Card para imagen principal */}
+      {/* Cards para imágenes */}
       <div className="flex gap-5">
+        {/* Imagen principal */}
         <div>
           <p className="mb-2 font-semibold">Imágen preview</p>
           <div className="h-[567px] w-full max-w-sm rounded-2xl bg-white shadow-sm">
@@ -155,6 +157,45 @@ export function CreateProjectUpload({
             )}
           </div>
         </div>
+
+        {/* Logo de la constructora */}
+        {/* <div>
+          <p className="mb-2 font-semibold">Logo de la constructora</p>
+          <div className="h-[280px] w-full max-w-[280px] rounded-2xl bg-white shadow-sm">
+
+            <div
+              className="relative h-full cursor-pointer overflow-hidden rounded-2xl border"
+              onClick={() => setIsEditingBuilder(true)}
+            >
+              {builderImage ? (
+                <img
+                  src={builderImage.url}
+                  alt="Logo de la constructora"
+                  className="h-full w-full cursor-pointer rounded-2xl object-contain p-4"
+                  onClick={() => !disabled && setIsEditingBuilder(true)}
+                />
+              ) : (
+                <div
+                  className="flex h-full w-full cursor-pointer items-center justify-center bg-gray-100 p-4"
+                  onClick={() => !disabled && setIsEditingBuilder(true)}
+                >
+                  <div className="flex flex-col items-center justify-center gap-3 text-center text-gray-500">
+                    <ImageIcon
+                      className="h-16 w-16 text-gray-300"
+                      strokeWidth={1.5}
+                    />
+                    <div>
+                      <p className="text-sm">Haz clic para agregar logo</p>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Logo de la constructora del proyecto
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div> */}
 
         <div className="max-w-sm">
           <p className="mb-2 font-semibold">Brochure del proyecto</p>
@@ -218,6 +259,15 @@ export function CreateProjectUpload({
         disabled={disabled}
         projectId={projectId}
       />
+
+      {/* <ProjectBuilderImageDialog
+        isOpen={isEditingBuilder}
+        onOpenChange={setIsEditingBuilder}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        projectId={projectId}
+      /> */}
     </>
   );
 }

@@ -18,6 +18,7 @@ export interface UseProjectImagesReturn {
   cardImage: ProjectImage | undefined
   carouselImages: ProjectImage[]
   progressImages: ProjectImage[]
+  builderImage: ProjectImage | undefined
   
   // Imagen principal con fallback
   mainImage: ProjectImage | undefined
@@ -50,6 +51,7 @@ export function useProjectImages(imagesData: ImagesData): UseProjectImagesReturn
     const cardImage = manager.getCardImage()
     const carouselImages = manager.getCarouselImages()
     const progressImages = manager.getProgressImages()
+    const builderImage = manager.getBuilderImage()
     const mainImage = manager.getMainImage()
     
     // Estados derivados
@@ -57,6 +59,7 @@ export function useProjectImages(imagesData: ImagesData): UseProjectImagesReturn
     const hasImages = allImages.length > 0
     const hasHeroImage = manager.hasHeroImage()
     const hasCardImage = manager.hasCardImage()
+    const hasBuilderImage = manager.hasBuilderImage()
     const isLegacyFormat = manager.isFromLegacyFormat()
     
     return {
@@ -65,6 +68,7 @@ export function useProjectImages(imagesData: ImagesData): UseProjectImagesReturn
       cardImage,
       carouselImages,
       progressImages,
+      builderImage,
       mainImage,
       
       // Funciones utilitarias
@@ -76,6 +80,7 @@ export function useProjectImages(imagesData: ImagesData): UseProjectImagesReturn
       hasImages,
       hasHeroImage,
       hasCardImage,
+      hasBuilderImage,
       isLegacyFormat,
       
       // Manager para operaciones avanzadas

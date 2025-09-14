@@ -315,7 +315,6 @@ export async function updateOrganization(
       where: { id: organizationId },
       data: {
         ...validInput,
-        updatedBy: userId,
       },
     });
 

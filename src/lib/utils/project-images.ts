@@ -73,6 +73,13 @@ export class ProjectImagesManager {
   }
 
   /**
+   * Obtiene el logo de la constructora del proyecto
+   */
+  getBuilderImage(): ProjectImage | undefined {
+    return this.images.find(img => img.type === ImageType.BUILDER)
+  }
+
+  /**
    * Obtiene la imagen principal del proyecto (fallback hierarchy)
    * Prioridad: hero > card > primera disponible (SIN mezclar con carousel)
    * NOTA: Hero y carousel son completamente distintos
@@ -186,6 +193,13 @@ export class ProjectImagesManager {
    */
   hasCardImage(): boolean {
     return this.images.some(img => img.type === ImageType.CARD)
+  }
+
+  /**
+   * Verifica si tiene logo de constructora
+   */
+  hasBuilderImage(): boolean {
+    return this.images.some(img => img.type === ImageType.BUILDER)
   }
 
   /**

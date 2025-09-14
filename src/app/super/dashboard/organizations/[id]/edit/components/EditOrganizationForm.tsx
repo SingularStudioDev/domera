@@ -1,10 +1,14 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { Image, Plus, Upload, X } from "lucide-react";
+import { Building, Save } from "lucide-react";
 
-import { createOrganizationAction, uploadOrganizationLogoAction } from "@/lib/actions/organizations";
+import {
+  getOrganizationByIdAction,
+  updateOrganizationAction,
+  uploadOrganizationLogoAction,
+} from "@/lib/actions/organizations";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,16 +20,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { ImageUpload } from "@/components/image-upload/ImageUpload";
 
-interface CreateOrganizationFormProps {
-  onSuccess?: () => void;
+interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  taxId?: string;
+  websiteUrl?: string;
+  description?: string;
+  status: "active" | "inactive" | "pending_approval";
+  logoUrl?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function CreateOrganizationForm({
-  onSuccess,
-}: CreateOrganizationFormProps) {
-  const [isSubmitLoading, setIsSubmitLoading] = useState(false);
+interface EditOrganizationFormProps {
+  organizationId: string;
+}
+
+export default function EditOrganizationForm({
+  organizationId,
+}: EditOrganizationFormProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -36,125 +58,157 @@ export default function CreateOrganizationForm({
     taxId: "",
     websiteUrl: "",
     description: "",
+    status: "pending_approval" as Organization["status"],
   });
+
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
+  // Load organization data
+  useEffect(() => {
+    const loadOrganization = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const result = await getOrganizationByIdAction(organizationId);
+
+        if (result.success && result.data) {
+          const org = result.data as Organization;
+          setOrganization(org);
+          setFormData({
+            name: org.name || "",
+            slug: org.slug || "",
+            email: org.email || "",
+            phone: org.phone || "",
+            address: org.address || "",
+            taxId: org.taxId || "",
+            websiteUrl: org.websiteUrl || "",
+            description: org.description || "",
+            status: org.status,
+          });
+        } else {
+          setError(result.error || "Error cargando organización");
+        }
+      } catch (err) {
+        setError("Error inesperado cargando organización");
+        console.error("Error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (organizationId) {
+      loadOrganization();
+    }
+  }, [organizationId]);
+
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-
-    if (name === "name" && !formData.slug) {
-      const slug = value
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .trim();
-      setFormData((prev) => ({
-        ...prev,
-        slug: slug,
-      }));
-    }
   };
 
   const handleLogoChange = useCallback((file: File | null) => {
     setLogoFile(file);
   }, []);
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      slug: "",
-      email: "",
-      phone: "",
-      address: "",
-      taxId: "",
-      websiteUrl: "",
-      description: "",
-    });
-    setLogoFile(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitLoading(true);
+    setIsSaving(true);
     setError(null);
     setSuccess(null);
 
     try {
-      // First create the organization
-      const organizationData = {
-        name: formData.name,
-        slug: formData.slug,
-        email: formData.email,
-        phone: formData.phone || undefined,
-        address: formData.address || undefined,
-        taxId: formData.taxId || undefined,
-        websiteUrl: formData.websiteUrl || undefined,
-        description: formData.description || undefined,
-        status: "pending_approval" as const,
+      let logoUrl = organization?.logoUrl;
+
+      // Upload logo if a new one was selected
+      if (logoFile) {
+        const logoFormData = new FormData();
+        logoFormData.append("logo", logoFile);
+
+        const logoUploadResult = await uploadOrganizationLogoAction(
+          organizationId,
+          logoFormData,
+        );
+
+        if (logoUploadResult.success && logoUploadResult.data) {
+          logoUrl = (logoUploadResult.data as { logoUrl: string }).logoUrl;
+        } else {
+          setError(logoUploadResult.error || "Error subiendo logo");
+          return;
+        }
+      }
+
+      // Update organization data
+      const updateData = {
+        ...formData,
+        logoUrl,
       };
 
-      const result = await createOrganizationAction(organizationData);
+      const result = await updateOrganizationAction(organizationId, updateData);
 
-      if (result.success && result.data) {
-        let organizationId: string;
+      if (result.success) {
+        setSuccess("Organización actualizada exitosamente");
+        setLogoFile(null);
         
-        // Extract organization ID from the result
-        if (typeof result.data === 'object' && result.data && 'id' in result.data) {
-          organizationId = (result.data as { id: string }).id;
-        } else {
-          throw new Error("No se pudo obtener el ID de la organización creada");
+        // Update local organization state
+        if (result.data) {
+          const updatedOrg = result.data as Organization;
+          setOrganization(updatedOrg);
         }
-
-        // If there's a logo file, upload it
-        if (logoFile) {
-          const logoFormData = new FormData();
-          logoFormData.append("logo", logoFile);
-
-          const logoUploadResult = await uploadOrganizationLogoAction(
-            organizationId,
-            logoFormData,
-          );
-
-          if (!logoUploadResult.success) {
-            console.warn("Error uploading logo:", logoUploadResult.error);
-            // Don't fail the entire creation just because logo upload failed
-          }
-        }
-
-        setSuccess("Organización creada exitosamente");
-        resetForm();
-        // Call onSuccess callback to refresh the list
-        onSuccess?.();
 
         // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError(result.error || "Error al crear la organización");
+        setError(result.error || "Error actualizando organización");
       }
     } catch (err) {
-      setError("Error inesperado al crear la organización");
+      setError("Error inesperado actualizando organización");
       console.error("Error:", err);
     } finally {
-      setIsSubmitLoading(false);
+      setIsSaving(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="flex items-center justify-center">
+            <Building className="mr-2 h-6 w-6 animate-pulse text-gray-400" />
+            <p>Cargando datos de la organización...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!organization) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center text-red-600">
+            <p>No se pudo cargar la organización</p>
+            {error && <p className="mt-2 text-sm">{error}</p>}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="mb-8">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Plus className="h-5 w-5" />
-          Nueva Organización
+          <Building className="h-5 w-5" />
+          Editar Organización: {organization.name}
         </CardTitle>
         <CardDescription>
-          Completa los datos para crear una nueva organización
+          Actualiza los datos de la organización
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -281,7 +335,7 @@ export default function CreateOrganizationForm({
             </div>
           </div>
 
-          {/* Website and Logo */}
+          {/* Website and Status */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <label
@@ -300,21 +354,42 @@ export default function CreateOrganizationForm({
               />
             </div>
 
-            {/* Logo Upload */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Logo de la Organización
+              <label
+                htmlFor="status"
+                className="mb-2 block text-sm font-medium text-gray-700"
+              >
+                Estado
               </label>
-              <ImageUpload
-                value={logoFile}
-                onChange={handleLogoChange}
-                placeholder="Subir logo de la organización"
-                aspectRatio="aspect-square"
-                maxSize={5 * 1024 * 1024}
-                accept="image/jpeg,image/png,image/webp"
-                className="max-w-xs"
-              />
+              <select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="border-input bg-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+              >
+                <option value="pending_approval">Pendiente de Aprobación</option>
+                <option value="active">Activa</option>
+                <option value="inactive">Inactiva</option>
+              </select>
             </div>
+          </div>
+
+          {/* Logo Upload */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Logo de la Organización
+            </label>
+            <ImageUpload
+              value={logoFile}
+              onChange={handleLogoChange}
+              preview={organization.logoUrl}
+              placeholder="Subir logo de la organización"
+              aspectRatio="aspect-square"
+              maxSize={5 * 1024 * 1024}
+              accept="image/jpeg,image/png,image/webp"
+              className="max-w-xs"
+            />
           </div>
 
           {/* Description */}
@@ -352,8 +427,9 @@ export default function CreateOrganizationForm({
 
           {/* Submit Button */}
           <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitLoading} className="px-6">
-              {isSubmitLoading ? "Creando..." : "Crear Organización"}
+            <Button type="submit" disabled={isSaving} className="px-6">
+              <Save className="mr-2 h-4 w-4" />
+              {isSaving ? "Guardando..." : "Guardar Cambios"}
             </Button>
           </div>
         </form>

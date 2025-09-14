@@ -375,6 +375,110 @@ export async function getUserOrganizationsAction(): Promise<OrganizationActionRe
 }
 
 // =============================================================================
+// ORGANIZATION LOGO UPLOAD
+// =============================================================================
+
+/**
+ * Upload organization logo
+ * Requires admin role or organization owner
+ */
+export async function uploadOrganizationLogoAction(
+  organizationId: string,
+  formData: FormData,
+): Promise<OrganizationActionResult> {
+  try {
+    // Validate authentication and check if user is admin or organization owner
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isOrgOwner = user.userRoles.some(
+      (role) =>
+        role.role === "organization_owner" &&
+        role.organizationId === organizationId,
+    );
+
+    if (!isAdmin && !isOrgOwner) {
+      return {
+        success: false,
+        error:
+          "Solo administradores o propietarios de organización pueden subir logos",
+      };
+    }
+
+    // Extract logo file from FormData
+    const logoFile = formData.get("logo") as File;
+    if (!logoFile || !(logoFile instanceof File) || logoFile.size === 0) {
+      return { success: false, error: "No se encontró un archivo válido" };
+    }
+
+    // Validate file size (5MB max for logos)
+    if (logoFile.size > 5 * 1024 * 1024) {
+      return { success: false, error: "El logo no puede exceder 5MB" };
+    }
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(logoFile.type)) {
+      return {
+        success: false,
+        error: "Solo se permiten archivos JPG, PNG o WebP",
+      };
+    }
+
+    // Import storage utilities
+    const { uploadFile, STORAGE_BUCKETS, STORAGE_FOLDERS } = await import(
+      "@/lib/dal/storage"
+    );
+
+    // Upload logo to S3
+    const uploadResult = await uploadFile(logoFile, {
+      bucket: STORAGE_BUCKETS.IMAGES,
+      folder: `${STORAGE_FOLDERS.ORGANIZATIONS}/${organizationId}/logo`,
+      isPublic: true,
+      maxSize: 5 * 1024 * 1024,
+      allowedMimeTypes: allowedTypes,
+    });
+
+    if (!uploadResult.data) {
+      return {
+        success: false,
+        error: uploadResult.error || "Error subiendo logo",
+      };
+    }
+
+    // Update organization with new logo URL
+    const updateResult = await updateOrganization(
+      organizationId,
+      { logoUrl: uploadResult.data.url },
+      user.id,
+    );
+
+    if (!updateResult.data) {
+      return { success: false, error: updateResult.error };
+    }
+
+    // Revalidate relevant paths
+    revalidatePath("/super/dashboard/organizations");
+    revalidatePath(`/super/dashboard/organizations/${organizationId}`);
+
+    return { success: true, data: { logoUrl: uploadResult.data.url } };
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error uploading organization logo:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error subiendo logo de organización",
+    };
+  }
+}
+
+// =============================================================================
 // HELPER ACTIONS
 // =============================================================================
 
