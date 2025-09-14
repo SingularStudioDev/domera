@@ -55,7 +55,7 @@ export default async function EditProjectPage({
     redirect("/super/dashboard/projects");
   }
 
-  const project = projectResult.data as any;
+  const project = projectResult.data;
 
   const handleUpdateProject = async (data: ProjectFormData) => {
     "use server";
@@ -96,9 +96,7 @@ export default async function EditProjectPage({
         status: data.status,
         basePrice: data.basePrice ?? undefined,
         currency: data.currency,
-        images: Array.isArray(data.images) 
-          ? data.images.map(img => typeof img === 'string' ? img : img.url || img.path || '')
-          : [],
+        images: data.images || [], // Keep ProjectImage[] format same as create
         amenities:
           data.amenities?.map((amenity) =>
             typeof amenity === "string" ? amenity : amenity.text,

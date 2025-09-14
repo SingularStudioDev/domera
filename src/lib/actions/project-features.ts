@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 
 import type { ProjectStatus } from "@prisma/client";
 
+import { ProjectImage } from "@/types/project-images";
 import {
   requireRole,
   validateProjectAccess,
@@ -63,7 +64,7 @@ export interface ProjectWithFeatures {
   currency: string;
   totalUnits: number;
   availableUnits: number;
-  images: string[];
+  images: ProjectImage[];
   amenities: string[];
   features: ProjectFeatures;
   createdAt: Date;

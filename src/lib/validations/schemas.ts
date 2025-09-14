@@ -237,6 +237,21 @@ export const ProjectAmenitySchema = z.string().min(1, "Texto de amenidad es requ
 
 export const ProjectDetalleSchema = z.string().min(1, "Texto de característica es requerido");
 
+// Schema para ProjectImage
+export const ProjectImageMetadataSchema = z.object({
+  caption: z.string().optional(),
+  altText: z.string().optional(),
+  uploadedAt: z.string().optional(),
+  isMain: z.boolean().optional(),
+});
+
+export const ProjectImageSchema = z.object({
+  url: z.string().url("URL de imagen inválida"),
+  type: z.enum(["hero", "card", "carousel", "progress", "builder"]),
+  order: z.number().optional(),
+  metadata: ProjectImageMetadataSchema.optional(),
+});
+
 export const ProjectProgressUpdateSchema = z.object({
   date: DateOnlySchema,
   title: z.string().min(1, "Título es requerido"),
@@ -245,7 +260,7 @@ export const ProjectProgressUpdateSchema = z.object({
 });
 
 export const CreateProjectSchema = z.object({
-  organization_id: UUIDSchema,
+  organizationId: UUIDSchema,
   name: z.string().min(1, "Nombre es requerido").max(255, "Nombre muy largo"),
   slug: z
     .string()
@@ -256,7 +271,7 @@ export const CreateProjectSchema = z.object({
       "Slug solo puede contener letras minúsculas, números y guiones",
     ),
   description: z.string().max(5000, "Descripción muy larga").optional(),
-  short_description: z
+  shortDescription: z
     .string()
     .max(500, "Descripción corta muy larga")
     .optional(),
@@ -269,12 +284,11 @@ export const CreateProjectSchema = z.object({
   latitude: z.number().min(-90).max(90, "Latitud inválida").optional(),
   longitude: z.number().min(-180).max(180, "Longitud inválida").optional(),
   status: ProjectStatusSchema.default("planning"),
-  start_date: DateOnlySchema.optional(),
-  estimated_completion: DateOnlySchema.optional(),
-  base_price: z.number().positive("Precio base debe ser positivo").optional(),
+  startDate: z.date().optional(),
+  estimatedCompletion: z.date().optional(),
+  basePrice: z.number().positive("Precio base debe ser positivo").optional(),
   currency: CurrencySchema.default("USD"),
-  legal_regime: z.string().max(100, "Régimen legal muy largo").optional(),
-  images: z.array(z.string().url("URL de imagen inválida")).default([]),
+  images: z.array(ProjectImageSchema).default([]),
   amenities: z.array(ProjectAmenitySchema).default([]),
   detalles: z.array(ProjectDetalleSchema).default([]),
   details: z.array(z.string().max(255, "Detalle muy largo")).max(20, "Máximo 20 detalles").default([]),
@@ -291,7 +305,7 @@ export const CreateProjectSchema = z.object({
 });
 
 export const UpdateProjectSchema = CreateProjectSchema.partial().omit([
-  "organization_id",
+  "organizationId",
 ]);
 
 // =============================================================================

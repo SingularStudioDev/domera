@@ -46,58 +46,21 @@ interface ProjectFiltersInput {
   amenities?: string;
 }
 
-interface CreateProjectInput {
+interface ProjectInput {
   name: string;
   slug: string;
-  organizationId: string;
+  organizationId?: string; // Optional for updates
   description?: string;
   shortDescription?: string;
-  address: string;
+  address?: string; // Optional for updates  
   neighborhood?: string;
-  city: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  status: ProjectStatus;
-  basePrice?: number;
-  currency: string;
-  images: import("@/types/project-images").ProjectImage[];
-  amenities: string[];
-  details: string[];
-  masterPlanFiles?: Array<{
-    id: string;
-    name: string;
-    url: string;
-    path: string;
-    size?: number;
-    type?: string;
-  }>;
-  priority?: number;
-  startDate?: Date;
-  estimatedCompletion?: Date;
-  hasParking?: boolean;
-  hasStudio?: boolean;
-  has1Bedroom?: boolean;
-  has2Bedroom?: boolean;
-  has3Bedroom?: boolean;
-  has4Bedroom?: boolean;
-  has5Bedroom?: boolean;
-  hasCommercial?: boolean;
-}
-
-interface UpdateProjectInput {
-  name?: string;
-  slug?: string;
-  description?: string;
-  shortDescription?: string;
-  address?: string;
-  neighborhood?: string;
-  city?: string;
+  city?: string; // Optional for updates
   latitude?: number | null;
   longitude?: number | null;
   status?: ProjectStatus;
   basePrice?: number;
   currency?: string;
-  images?: string[];
+  images?: import("@/types/project-images").ProjectImage[];
   amenities?: string[];
   details?: string[];
   masterPlanFiles?: Array<{
@@ -387,7 +350,7 @@ export async function getProjectBySlug(
  * Create new project
  */
 export async function createProject(
-  input: CreateProjectInput,
+  input: ProjectInput,
   userId: string,
   ipAddress?: string,
   userAgent?: string,
@@ -480,7 +443,7 @@ export async function createProject(
  */
 export async function updateProject(
   projectId: string,
-  input: UpdateProjectInput,
+  input: ProjectInput,
   userId: string,
   ipAddress?: string,
   userAgent?: string,
