@@ -10,7 +10,7 @@ import { uploadProjectDocuments } from "@/lib/actions/storage";
 import { validateDocumentFiles } from "@/lib/utils/images";
 import { useProjectImages } from "@/hooks/useProjectImages";
 
-import { ProjectMainImageDialog } from "./UploadImageDialog";
+import { ProjectMainImageDialog, ProjectBuilderImageDialog } from "./UploadImageDialog";
 
 interface CreateProjectUploadProps {
   value: {
@@ -19,6 +19,7 @@ interface CreateProjectUploadProps {
   };
   onChange: (data: { images: string[] | ProjectImage[] }) => void;
   onCardImageChange?: (files: File[]) => void;
+  onBuilderImageChange?: (files: File[]) => void;
   masterPlanFiles: MasterPlanFile[];
   onMasterPlanFilesChange: (files: MasterPlanFile[]) => void;
   disabled?: boolean;
@@ -30,6 +31,7 @@ export function CreateProjectUpload({
   value,
   onChange,
   onCardImageChange,
+  onBuilderImageChange,
   masterPlanFiles,
   onMasterPlanFilesChange,
   disabled = false,
@@ -159,10 +161,9 @@ export function CreateProjectUpload({
         </div>
 
         {/* Logo de la constructora */}
-        {/* <div>
+        <div>
           <p className="mb-2 font-semibold">Logo de la constructora</p>
           <div className="h-[280px] w-full max-w-[280px] rounded-2xl bg-white shadow-sm">
-
             <div
               className="relative h-full cursor-pointer overflow-hidden rounded-2xl border"
               onClick={() => setIsEditingBuilder(true)}
@@ -195,7 +196,7 @@ export function CreateProjectUpload({
               )}
             </div>
           </div>
-        </div> */}
+        </div>
 
         <div className="max-w-sm">
           <p className="mb-2 font-semibold">Brochure del proyecto</p>
@@ -260,14 +261,15 @@ export function CreateProjectUpload({
         projectId={projectId}
       />
 
-      {/* <ProjectBuilderImageDialog
+      <ProjectBuilderImageDialog
         isOpen={isEditingBuilder}
         onOpenChange={setIsEditingBuilder}
         value={value}
         onChange={onChange}
+        onBuilderImageChange={onBuilderImageChange}
         disabled={disabled}
         projectId={projectId}
-      /> */}
+      />
     </>
   );
 }

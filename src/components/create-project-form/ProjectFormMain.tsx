@@ -59,11 +59,13 @@ export function ProjectFormMain({
     card: File[];
     carousel: File[];
     progress: File[];
+    builder: File[];
   }>({
     hero: [],
     card: [],
     carousel: [],
     progress: [],
+    builder: [],
   });
   const [slugCheckResult, setSlugCheckResult] = useState<{
     available?: boolean;
@@ -540,6 +542,38 @@ export function ProjectFormMain({
         });
       }
 
+      // Upload and add builder images
+      if (pendingImagesByType.builder.length > 0) {
+        console.log(
+          `About to process ${pendingImagesByType.builder.length} builder images`,
+        );
+
+        // Remove existing builder images first to avoid conflicts (including blob URLs)
+        const existingBuilderImages = updatedManager.getImagesByType(
+          ImageType.BUILDER,
+        );
+        existingBuilderImages.forEach((existingImg) => {
+          console.log("Removing existing builder image:", existingImg.url);
+          updatedManager = updatedManager.removeImage(
+            existingImg.url,
+            ImageType.BUILDER,
+          );
+        });
+
+        const builderImages = await processImagesByType(
+          pendingImagesByType.builder,
+          ImageType.BUILDER,
+        );
+        builderImages.forEach((img) => {
+          updatedManager = updatedManager.addImage(
+            img.url,
+            img.type,
+            img.order,
+            img.metadata,
+          );
+        });
+      }
+
       // Use the new ProjectImage[] format instead of legacy string array
       const finalImages = updatedManager.toArray();
       console.log("finalImages (ProjectImage[]):", finalImages);
@@ -696,6 +730,9 @@ export function ProjectFormMain({
               }}
               onCardImageChange={(files) =>
                 updateImagesByType(ImageType.CARD, files)
+              }
+              onBuilderImageChange={(files) =>
+                updateImagesByType(ImageType.BUILDER, files)
               }
               masterPlanFiles={watchedValues.masterPlanFiles || []}
               onMasterPlanFilesChange={(files) =>

@@ -189,3 +189,138 @@ export function ProjectMainImageDialog({
     </Dialog>
   );
 }
+
+interface ProjectBuilderImageDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  value: {
+    images: string[] | ProjectImage[];
+    name: string;
+  };
+  onChange: (data: { images: string[] | ProjectImage[] }) => void;
+  onBuilderImageChange?: (files: File[]) => void;
+  disabled?: boolean;
+  projectId?: string;
+}
+
+export function ProjectBuilderImageDialog({
+  isOpen,
+  onOpenChange,
+  value,
+  onChange,
+  onBuilderImageChange,
+  disabled = false,
+  projectId,
+}: ProjectBuilderImageDialogProps) {
+  const { builderImage } = useProjectImages(value.images);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const handleImagesChange = (imageUrls: string[]) => {
+    // Update the preview if there's a new image
+    if (imageUrls.length > 0) {
+      setPreviewImage(imageUrls[0]);
+    } else {
+      setPreviewImage(null);
+    }
+
+    // No llamamos onChange aquí - se maneja completamente con onBuilderImageChange
+    // Similar a como funciona HeroImageEditDialog
+  };
+
+  const handleSave = () => {
+    // No actualizamos images aquí - se maneja completamente con onBuilderImageChange
+    // Similar a como funciona HeroImageEditDialog
+    onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    setPreviewImage(null);
+    onOpenChange(false);
+  };
+
+  // Reset preview when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setPreviewImage(null);
+    }
+  }, [isOpen]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] w-full max-w-4xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Logo de la Constructora</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <h4 className="text-md mb-3 font-medium">
+              Seleccionar Logo de la Constructora
+            </h4>
+            <OptimizedImageUpload
+              value={builderImage ? [builderImage.url] : []}
+              onChange={handleImagesChange}
+              onFilesChange={onBuilderImageChange}
+              entityType="project"
+              maxImages={1}
+              placeholder="Seleccionar logo de la constructora"
+              aspectRatio="aspect-square"
+              disabled={disabled}
+              showUploadButton={true}
+              entityId={projectId}
+              deferUpload={true}
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              Logo de la empresa constructora del proyecto.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="text-md mb-3 font-medium">
+              Vista Previa del Logo
+            </h4>
+            <div className="relative block overflow-hidden rounded-3xl border bg-white transition-shadow duration-300">
+              <div className="group relative h-[280px] overflow-hidden">
+                {previewImage || builderImage ? (
+                  <img
+                    src={previewImage || builderImage?.url || ""}
+                    alt="Logo de la constructora"
+                    className="h-full w-full object-contain p-4"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gray-200">
+                    <div className="text-center text-gray-500">
+                      <svg
+                        className="mx-auto mb-2 h-12 w-12"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <p className="text-sm">No hay logo seleccionado</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={handleCancel}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={handleSave}>
+            Guardar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
