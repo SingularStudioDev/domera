@@ -56,6 +56,7 @@ export function ShoppingSheet({
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [projectInfo, setProjectInfo] = useState<any>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   // Get current active step (only in_progress steps allow document uploads)
   const getCurrentStep = () => {
@@ -202,7 +203,10 @@ export function ShoppingSheet({
       });
       
       if (result.success) {
+        setUploadSuccess(`✅ Archivo "${file.name}" subido correctamente`);
         await refreshDocuments();
+        // Clear success message after 5 seconds
+        setTimeout(() => setUploadSuccess(null), 5000);
       } else {
         alert("Error: " + (result.error || "Error subiendo documento"));
       }
@@ -463,6 +467,14 @@ export function ShoppingSheet({
                     </p>
                   </div>
                 )}
+                
+                {/* Success Message */}
+                {uploadSuccess && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800">{uploadSuccess}</p>
+                  </div>
+                )}
+                
                 <div className={`border-2 border-dashed rounded-lg p-8 text-center ${
                   getCurrentStep() ? 'border-gray-300' : 'border-gray-200 bg-gray-50'
                 }`}>

@@ -45,6 +45,7 @@ export default function OperationDetailPage() {
   const [stepDocuments, setStepDocuments] = useState<any[]>([]);
   const [stepComments, setStepComments] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"workflow" | "buyer">("workflow");
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   
 
@@ -216,7 +217,10 @@ export default function OperationDetailPage() {
       });
       
       if (result.success) {
+        setUploadSuccess(`✅ Archivo "${file.name}" subido correctamente`);
         await refreshDocuments();
+        // Clear success message after 5 seconds
+        setTimeout(() => setUploadSuccess(null), 5000);
       } else {
         alert("Error: " + (result.error || "Error subiendo documento"));
       }
@@ -512,6 +516,14 @@ export default function OperationDetailPage() {
                 </p>
               </div>
             )}
+            
+            {/* Success Message */}
+            {uploadSuccess && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">{uploadSuccess}</p>
+              </div>
+            )}
+            
             <div className={`border-2 border-dashed rounded-lg p-8 text-center ${
               getCurrentStep() ? 'border-gray-300' : 'border-gray-200 bg-gray-50'
             }`}>
