@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { useSession } from "next-auth/react";
 
 import { useActiveOperation } from "@/hooks/useActiveOperation";
 import PropertyCard from "@/components/custom-ui/PropertyCard";
+import { getProjectBasicInfoAction } from "@/lib/actions/projects";
 
 import { ShoppingSheet } from "./_components/ShoppingSheet";
 
@@ -21,6 +22,8 @@ export default function ShoppingDashboardPage() {
   } = useActiveOperation();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [projectInfo, setProjectInfo] = useState<any>(null);
+  const [projectLoading, setProjectLoading] = useState(false);
 
   // Helper function to get action label based on operation status
   const getOperationActionLabel = (status: string): string => {
@@ -50,9 +53,44 @@ export default function ShoppingDashboardPage() {
     }
   };
 
-  // TODO get project image and finishing date based on activeOperation
-  const projectImage = "/pro/pro-2.png";
-  const finishingDate = "Ene 2027";
+  // Load project information when active operation changes
+  useEffect(() => {
+    const loadProjectInfo = async () => {
+      if (!activeOperation?.operationUnits?.length) {
+        setProjectInfo(null);
+        return;
+      }
+
+      // Get project ID from the first unit
+      const projectId = activeOperation.operationUnits[0]?.unit?.project?.id;
+      if (!projectId) {
+        setProjectInfo(null);
+        return;
+      }
+
+      try {
+        setProjectLoading(true);
+        const result = await getProjectBasicInfoAction(projectId);
+        if (result.success && result.data) {
+          setProjectInfo(result.data);
+        } else {
+          console.error("Error loading project info:", result.error);
+          setProjectInfo(null);
+        }
+      } catch (error) {
+        console.error("Error loading project info:", error);
+        setProjectInfo(null);
+      } finally {
+        setProjectLoading(false);
+      }
+    };
+
+    loadProjectInfo();
+  }, [activeOperation]);
+
+  // Use real project data or fallbacks
+  const projectImage = projectInfo?.primaryImageUrl || "/register-img.png";
+  const finishingDate = projectInfo?.estimatedCompletion || "Por definir";
 
 
   // Helper function to calculate progress from operation steps
@@ -121,18 +159,18 @@ export default function ShoppingDashboardPage() {
             <PropertyCard
                 key={activeOperation.id}
                 imageUrl={projectImage}
-                location={activeOperation.operationUnits[0]?.unit.project.name || "Proyecto"} // Using project name as location
+                location={projectInfo?.city || activeOperation.operationUnits[0]?.unit.project.name || "Proyecto"}
                 deliveryDate={finishingDate} 
                 progress={calculateOperationProgress()}
                 title={
                   activeOperation.operationUnits.length === 1 
-                    ? `${activeOperation.operationUnits[0].unit.project.name} - Unidad ${activeOperation.operationUnits[0].unit.unitNumber}`
-                    : `${activeOperation.operationUnits[0].unit.project.name} - ${activeOperation.operationUnits.length} unidades`
+                    ? `${projectInfo?.name || activeOperation.operationUnits[0].unit.project.name} - Unidad ${activeOperation.operationUnits[0].unit.unitNumber}`
+                    : `${projectInfo?.name || activeOperation.operationUnits[0].unit.project.name} - ${activeOperation.operationUnits.length} unidades`
                 }
                 price={activeOperation.totalAmount.toString()}
-                address="Información disponible en documentos" // TODO: Get from project data when available
-                bedrooms={2} // TODO: Get from unit specifications when available
-                garages={1} // TODO: Get from unit specifications when available
+                address={projectInfo?.address || "Dirección por confirmar"}
+                bedrooms={activeOperation.operationUnits[0]?.unit?.bedrooms || 0}
+                garages={activeOperation.operationUnits.filter(ou => ou.unit.unitType === "garage").length || 0}
                 actionLabel={getOperationActionLabel(activeOperation.status)}
                 onAction={() => setIsSheetOpen(true)}
               />

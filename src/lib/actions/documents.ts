@@ -23,6 +23,7 @@ import {
   type Result,
 } from "@/lib/dal/base";
 import { getOperationById } from "@/lib/dal/operations";
+import { serializeObject } from "@/lib/utils/serialization";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -96,7 +97,7 @@ export async function getDocumentTemplatesAction(
 
     return {
       success: true,
-      data: templates,
+      data: serializeObject(templates),
     };
   } catch (error) {
     console.error("[SERVER_ACTION] Error fetching document templates:", error);
@@ -178,7 +179,7 @@ export async function createDocumentTemplateAction(
 
     return {
       success: true,
-      data: template,
+      data: serializeObject(template),
     };
   } catch (error) {
     console.error("[SERVER_ACTION] Error creating document template:", error);
@@ -195,6 +196,90 @@ export async function createDocumentTemplateAction(
 // =============================================================================
 // DOCUMENT MANAGEMENT FOR OPERATIONS
 // =============================================================================
+
+/**
+ * Get required documents for a specific step
+ */
+export async function getRequiredDocumentsForStepAction(
+  operationId: string,
+  stepId: string,
+): Promise<DocumentActionResult> {
+  try {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+
+    // Get operation using DAL (with user access validation if not admin)
+    const operationResult = await getOperationById(
+      operationId,
+      isAdmin ? undefined : user.id,
+    );
+    if (!operationResult.data) {
+      return {
+        success: false,
+        error: "Operación no encontrada",
+      };
+    }
+
+    const operation = operationResult.data;
+
+    // Find the specific step
+    const targetStep = operation.steps.find(step => step.id === stepId);
+    if (!targetStep) {
+      return {
+        success: false,
+        error: "Etapa no encontrada",
+      };
+    }
+
+    // Get document requirements for this specific step
+    const documentRequirements = getDocumentRequirementsByStep(targetStep.stepName);
+
+    // Get existing documents for this operation and step
+    const client = getDbClient();
+    const existingDocs = await client.document.findMany({
+      where: { 
+        operationId,
+        // Optionally filter by step in the future
+      },
+      include: {
+        uploader: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      success: true,
+      data: {
+        operation: serializeObject(operation),
+        step: serializeObject(targetStep),
+        requiredDocuments: documentRequirements,
+        existingDocuments: serializeObject(existingDocs),
+      },
+    };
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error fetching required documents for step:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo documentos requeridos para la etapa",
+    };
+  }
+}
 
 /**
  * Get required documents for an operation based on its current step
@@ -241,9 +326,9 @@ export async function getRequiredDocumentsForOperationAction(
     return {
       success: true,
       data: {
-        operation,
+        operation: serializeObject(operation),
         requiredDocuments: documentRequirements,
-        existingDocuments: existingDocs,
+        existingDocuments: serializeObject(existingDocs),
       },
     };
   } catch (error) {
@@ -259,23 +344,119 @@ export async function getRequiredDocumentsForOperationAction(
 }
 
 /**
- * Define document requirements based on operation status
+ * Define document requirements based on specific step
+ */
+function getDocumentRequirementsByStep(stepName: string): Array<{
+  type: DocumentType;
+  required: boolean;
+  description: string;
+  initialUploader: "developer" | "user";
+  allowsIterations: boolean;
+}> {
+  switch (stepName) {
+    case "document_generation":
+      // Step 1: Desarrolladora genera documentos iniciales
+      return [
+        {
+          type: "boleto_reserva" as DocumentType,
+          required: true,
+          description: "Boleto de reserva inicial",
+          initialUploader: "developer" as const,
+          allowsIterations: true,
+        },
+      ];
+
+    case "document_upload":
+      // Step 2: Flujo iterativo de documentos entre usuario y desarrolladora
+      return [
+        {
+          type: "boleto_reserva" as DocumentType,
+          required: true,
+          description: "Boleto de reserva firmado",
+          initialUploader: "developer" as const,
+          allowsIterations: true,
+        },
+        {
+          type: "cedula_identidad" as DocumentType,
+          required: true,
+          description: "Cédula de Identidad del comprador",
+          initialUploader: "user" as const,
+          allowsIterations: false,
+        },
+        {
+          type: "certificado_ingresos" as DocumentType,
+          required: true,
+          description: "Certificado de ingresos o comprobantes de sueldo",
+          initialUploader: "user" as const,
+          allowsIterations: false,
+        },
+      ];
+
+    case "professional_validation":
+      // Step 3: Documentos para validación profesional
+      return [
+        {
+          type: "compromiso_compraventa" as DocumentType,
+          required: true,
+          description: "Compromiso de compraventa",
+          initialUploader: "developer" as const,
+          allowsIterations: true,
+        },
+      ];
+
+    case "payment_confirmation":
+      // Step 4: Documentos de pago
+      return [
+        {
+          type: "comprobante_pago" as DocumentType,
+          required: true,
+          description: "Comprobantes de pago",
+          initialUploader: "user" as const,
+          allowsIterations: false,
+        },
+      ];
+
+    case "operation_completion":
+      // Step 5: Documentos finales
+      return [
+        {
+          type: "escritura" as DocumentType,
+          required: true,
+          description: "Escritura final",
+          initialUploader: "developer" as const,
+          allowsIterations: false,
+        },
+      ];
+
+    default:
+      return [];
+  }
+}
+
+/**
+ * Define document requirements based on operation status (LEGACY - kept for compatibility)
  */
 function getDocumentRequirementsByStatus(status: string): Array<{
   type: DocumentType;
   required: boolean;
   description: string;
+  initialUploader: "developer" | "user";
+  allowsIterations: boolean;
 }> {
   const baseRequirements = [
     {
       type: "cedula_identidad" as DocumentType,
       required: true,
       description: "Cédula de Identidad del comprador",
+      initialUploader: "user" as const,
+      allowsIterations: false,
     },
     {
       type: "certificado_ingresos" as DocumentType,
       required: true,
       description: "Certificado de ingresos o comprobantes de sueldo",
+      initialUploader: "user" as const,
+      allowsIterations: false,
     },
   ];
 
@@ -292,6 +473,8 @@ function getDocumentRequirementsByStatus(status: string): Array<{
           type: "boleto_reserva" as DocumentType,
           required: true,
           description: "Boleto de reserva firmado",
+          initialUploader: "developer" as const,
+          allowsIterations: true,
         },
       ];
 
@@ -303,11 +486,15 @@ function getDocumentRequirementsByStatus(status: string): Array<{
           type: "boleto_reserva" as DocumentType,
           required: true,
           description: "Boleto de reserva firmado",
+          initialUploader: "developer" as const,
+          allowsIterations: true,
         },
         {
           type: "compromiso_compraventa" as DocumentType,
           required: true,
           description: "Compromiso de compraventa",
+          initialUploader: "developer" as const,
+          allowsIterations: true,
         },
       ];
 
@@ -319,16 +506,22 @@ function getDocumentRequirementsByStatus(status: string): Array<{
           type: "boleto_reserva" as DocumentType,
           required: true,
           description: "Boleto de reserva firmado",
+          initialUploader: "developer" as const,
+          allowsIterations: true,
         },
         {
           type: "compromiso_compraventa" as DocumentType,
           required: true,
           description: "Compromiso de compraventa firmado",
+          initialUploader: "developer" as const,
+          allowsIterations: true,
         },
         {
           type: "comprobante_pago" as DocumentType,
           required: true,
           description: "Comprobantes de pago",
+          initialUploader: "user" as const,
+          allowsIterations: false,
         },
       ];
 
@@ -373,7 +566,7 @@ export async function uploadDocumentAction(
 
     // Get user's organization
     const userRole = user.userRoles.find((role) => role.organizationId);
-    const organizationId = userRole?.organizationId || null;
+    const organizationId = userRole?.organizationId || undefined;
 
     const document = await client.document.create({
       data: {
@@ -423,7 +616,7 @@ export async function uploadDocumentAction(
 
     return {
       success: true,
-      data: document,
+      data: serializeObject(document),
     };
   } catch (error) {
     console.error("[SERVER_ACTION] Error uploading document:", error);
@@ -511,7 +704,7 @@ export async function validateDocumentAction(
 
     return {
       success: true,
-      data: updatedDocument,
+      data: serializeObject(updatedDocument),
     };
   } catch (error) {
     console.error("[SERVER_ACTION] Error validating document:", error);
@@ -594,7 +787,7 @@ export async function getUserDocumentsAction(): Promise<DocumentActionResult> {
 
     return {
       success: true,
-      data: documents,
+      data: serializeObject(documents),
     };
   } catch (error) {
     console.error("[SERVER_ACTION] Error fetching user documents:", error);
@@ -604,6 +797,146 @@ export async function getUserDocumentsAction(): Promise<DocumentActionResult> {
         error instanceof Error
           ? error.message
           : "Error obteniendo documentos del usuario",
+    };
+  }
+}
+
+/**
+ * Get document versions for a specific document type in an operation
+ */
+export async function getDocumentVersionsAction(
+  operationId: string,
+  documentType: DocumentType,
+): Promise<DocumentActionResult> {
+  try {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+
+    // Get operation using DAL (with user access validation if not admin)
+    const operationResult = await getOperationById(
+      operationId,
+      isAdmin ? undefined : user.id,
+    );
+    if (!operationResult.data) {
+      return {
+        success: false,
+        error: "Operación no encontrada o no autorizada",
+      };
+    }
+
+    const client = getDbClient();
+    const documentVersions = await client.document.findMany({
+      where: { 
+        operationId,
+        documentType 
+      },
+      include: {
+        uploader: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        validator: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      success: true,
+      data: serializeObject(documentVersions),
+    };
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error fetching document versions:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo versiones del documento",
+    };
+  }
+}
+
+/**
+ * Get all documents for a specific operation
+ */
+export async function getOperationDocumentsAction(
+  operationId: string,
+): Promise<DocumentActionResult> {
+  try {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+
+    // Get operation using DAL (with user access validation if not admin)
+    const operationResult = await getOperationById(
+      operationId,
+      isAdmin ? undefined : user.id,
+    );
+    if (!operationResult.data) {
+      return {
+        success: false,
+        error: "Operación no encontrada o no autorizada",
+      };
+    }
+
+    const client = getDbClient();
+    const documents = await client.document.findMany({
+      where: { operationId },
+      include: {
+        uploader: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        validator: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      success: true,
+      data: serializeObject(documents),
+    };
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error fetching operation documents:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo documentos de la operación",
     };
   }
 }

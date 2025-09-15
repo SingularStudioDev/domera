@@ -79,17 +79,6 @@ export function useActiveOperation() {
     fetchActiveOperation();
   }, [session, status]);
 
-  // Refresh when user comes back to the tab/window
-  useEffect(() => {
-    const handleFocus = () => {
-      if (session?.user?.id) {
-        fetchActiveOperation();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [session?.user?.id]);
 
   const refreshActiveOperation = async () => {
     await fetchActiveOperation();

@@ -139,7 +139,7 @@ export function serializeObject(obj: any): any {
     for (const [key, value] of Object.entries(obj)) {
       if (value instanceof Date) {
         serialized[key] = value.toISOString();
-      } else if (value && typeof value.toNumber === "function") {
+      } else if (value instanceof Decimal) {
         serialized[key] = value.toNumber();
       } else if (typeof value === "object") {
         serialized[key] = serializeObject(value);

@@ -471,6 +471,74 @@ export async function updateProjectAction(
 }
 
 /**
+ * Get basic project information for UI display (lightweight)
+ * Used for showing project details in operation cards without heavy data
+ */
+export async function getProjectBasicInfoAction(
+  projectId: string,
+): Promise<ProjectActionResult> {
+  try {
+    const client = getDbClient();
+
+    const project = await client.project.findUnique({
+      where: { id: projectId },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        city: true,
+        neighborhood: true,
+        estimatedCompletion: true,
+        images: true,
+        currency: true,
+        basePrice: true,
+        status: true,
+      },
+    });
+
+    if (!project) {
+      return { success: false, error: "Proyecto no encontrado" };
+    }
+
+    // Parse images and get the first one
+    const images = Array.isArray(project.images) ? project.images : [];
+    const primaryImage = images.length > 0 ? images[0] : null;
+
+    // Format completion date if available
+    const formattedCompletion = project.estimatedCompletion
+      ? new Intl.DateTimeFormat("es-UY", {
+          month: "short",
+          year: "numeric",
+        }).format(new Date(project.estimatedCompletion))
+      : null;
+
+    const basicInfo = {
+      id: project.id,
+      name: project.name,
+      address: project.address,
+      city: project.city,
+      neighborhood: project.neighborhood,
+      estimatedCompletion: formattedCompletion,
+      primaryImageUrl: primaryImage?.url || null,
+      currency: project.currency,
+      basePrice: project.basePrice ? Number(project.basePrice) : null,
+      status: project.status,
+    };
+
+    return { success: true, data: basicInfo };
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error getting project basic info:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo información básica del proyecto",
+    };
+  }
+}
+
+/**
  * Get project statistics
  * Requires project access
  */

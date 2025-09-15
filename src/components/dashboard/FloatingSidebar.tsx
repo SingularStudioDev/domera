@@ -57,6 +57,9 @@ export function FloatingSidebar({ menuItems }: FloatingSidebarProps) {
     // Normal animation: move up when scrolling
     const baseTranslateY = Math.min(0, Math.max(-88, scrollY * -1));
 
+    // Check if we're in the browser (client-side)
+    if (typeof window === 'undefined') return baseTranslateY;
+
     // Get footer position
     const footerElement = document.querySelector("footer");
     if (!footerElement) return baseTranslateY;

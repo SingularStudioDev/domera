@@ -476,9 +476,10 @@ export default function SalesDetailPage() {
               <div className="space-y-2 pt-2">
                 {processedOperations.length > 0 ? (
                   processedOperations.map((operation) => (
-                    <div
+                    <Link
                       key={operation.id}
-                      className="grid grid-cols-5 rounded-lg border border-t border-transparent hover:border-[#0004FF]"
+                      href={`/dashboard/operations/${operation.id}`}
+                      className="grid grid-cols-5 rounded-lg border border-t border-transparent hover:border-[#0004FF] hover:bg-blue-50 transition-colors cursor-pointer"
                     >
                       {/* Cliente */}
                       <div className="px-4 py-3">
@@ -539,7 +540,7 @@ export default function SalesDetailPage() {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
                   <div className="flex items-center justify-center py-12">
