@@ -27,6 +27,7 @@ import {
   validateUnitsSameOrganization,
 } from "@/lib/services/operations";
 import { serializeOperation, serializeObject } from "@/lib/utils/serialization";
+import { getDbClient } from "@/lib/dal/base";
 
 // Input types
 interface CreateOperationInput {

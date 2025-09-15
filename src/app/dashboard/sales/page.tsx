@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 import {
@@ -14,89 +14,53 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
-
-// Mock data for the table
-const mockProjects = [
-  {
-    id: 1,
-    name: "Torres del Río",
-    soldPercentage: 85,
-    sales: {
-      studios: 12,
-      oneBedroom: 8,
-      twoBedroom: 15,
-      threeBedroom: 6,
-      parking: 23,
-      commercial: 3,
-    },
-  },
-  {
-    id: 2,
-    name: "Urban Living Cordón",
-    soldPercentage: 42,
-    sales: {
-      studios: 5,
-      oneBedroom: 12,
-      twoBedroom: 8,
-      threeBedroom: 2,
-      parking: 18,
-      commercial: 1,
-    },
-  },
-  {
-    id: 3,
-    name: "Residencial Pocitos",
-    soldPercentage: 73,
-    sales: {
-      studios: 0,
-      oneBedroom: 6,
-      twoBedroom: 14,
-      threeBedroom: 9,
-      parking: 20,
-      commercial: 0,
-    },
-  },
-  {
-    id: 4,
-    name: "Vista al Puerto",
-    soldPercentage: 28,
-    sales: {
-      studios: 3,
-      oneBedroom: 4,
-      twoBedroom: 2,
-      threeBedroom: 1,
-      parking: 7,
-      commercial: 2,
-    },
-  },
-  {
-    id: 5,
-    name: "Carrasco Premium",
-    soldPercentage: 91,
-    sales: {
-      studios: 0,
-      oneBedroom: 0,
-      twoBedroom: 8,
-      threeBedroom: 12,
-      parking: 15,
-      commercial: 0,
-    },
-  },
-];
+import { getProjectsAction } from "@/lib/actions/projects";
 
 export default function SalesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const pageSize = 10;
 
+  // Fetch projects on component mount
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        const result = await getProjectsAction({
+          page: currentPage,
+          pageSize: 100, // Get all projects for the organization
+        });
+
+        if (result.success && result.data) {
+          setProjects(result.data.data || []);
+        } else {
+          setError(result.error || "Error cargando proyectos");
+        }
+      } catch (err) {
+        setError("Error inesperado cargando proyectos");
+        console.error("Error fetching projects:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [currentPage]);
+
   // Filter projects based on search term
-  const filteredProjects = mockProjects.filter((project) =>
+  const filteredProjects = projects.filter((project) =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const projects = filteredProjects;
-  const totalPages = Math.ceil(projects.length / pageSize);
-  const total = projects.length;
+  const totalPages = Math.ceil(filteredProjects.length / pageSize);
+  const total = filteredProjects.length;
+
+  // Get current page projects
+  const startIndex = (currentPage - 1) * pageSize;
+  const currentPageProjects = filteredProjects.slice(startIndex, startIndex + pageSize);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -108,6 +72,56 @@ export default function SalesPage() {
     if (percentage >= 40) return "text-orange-600 bg-orange-50";
     return "text-red-600 bg-red-50";
   };
+
+  // Calculate project sales statistics (mock data for now - will be replaced with real operations data)
+  const getProjectStats = (project: any) => {
+    // TODO: Replace with real operations data
+    return {
+      soldPercentage: Math.floor(Math.random() * 100),
+      sales: {
+        studios: Math.floor(Math.random() * 20),
+        oneBedroom: Math.floor(Math.random() * 15),
+        twoBedroom: Math.floor(Math.random() * 25),
+        threeBedroom: Math.floor(Math.random() * 15),
+        parking: Math.floor(Math.random() * 30),
+        commercial: Math.floor(Math.random() * 5),
+      },
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="dashboard-title w-full">Ventas por proyecto</h1>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <p className="text-gray-600">Cargando proyectos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="dashboard-title w-full">Ventas por proyecto</h1>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <p className="mb-2 text-red-600">❌ {error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="text-blue-600 hover:underline"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -189,74 +203,77 @@ export default function SalesPage() {
                 </div>
               </div>
               <div className="space-y-2 pt-2">
-                {projects.map((project) => (
-                  <Link
-                    key={project.id}
-                    href={`/dashboard/sales/${project.id}`}
-                    className={`flex cursor-pointer rounded-lg border border-t border-transparent transition-colors hover:border-[#0004FF] hover:bg-blue-50`}
-                  >
-                    {/* Project Name */}
-                    <div className="flex-1 px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <ChevronRightIcon className="h-5 w-5 text-[#C6C6C6]" />
-                        <span className="font-medium text-gray-900">
-                          {project.name}
+                {currentPageProjects.map((project) => {
+                  const stats = getProjectStats(project);
+                  return (
+                    <Link
+                      key={project.id}
+                      href={`/dashboard/sales/${project.id}`}
+                      className={`flex cursor-pointer rounded-lg border border-t border-transparent transition-colors hover:border-[#0004FF] hover:bg-blue-50`}
+                    >
+                      {/* Project Name */}
+                      <div className="flex-1 px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <ChevronRightIcon className="h-5 w-5 text-[#C6C6C6]" />
+                          <span className="font-medium text-gray-900">
+                            {project.name}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Sales Percentage */}
+                      <div className="flex w-32 items-center justify-center px-4 py-3 text-center">
+                        <span
+                          className={`inline-flex w-full items-center justify-center rounded-full px-3 py-1 text-sm font-semibold ${getPercentageColor(stats.soldPercentage)}`}
+                        >
+                          {stats.soldPercentage}%
                         </span>
                       </div>
-                    </div>
 
-                    {/* Sales Percentage */}
-                    <div className="flex w-32 items-center justify-center px-4 py-3 text-center">
-                      <span
-                        className={`inline-flex w-full items-center justify-center rounded-full px-3 py-1 text-sm font-semibold ${getPercentageColor(project.soldPercentage)}`}
-                      >
-                        {project.soldPercentage}%
-                      </span>
-                    </div>
+                      {/* Studio Sales (0 bedrooms) */}
+                      <div className="w-24 px-4 py-3 text-center">
+                        <span className="text-lg font-semibold text-gray-700">
+                          {stats.sales.studios}
+                        </span>
+                      </div>
 
-                    {/* Studio Sales (0 bedrooms) */}
-                    <div className="w-24 px-4 py-3 text-center">
-                      <span className="text-lg font-semibold text-gray-700">
-                        {project.sales.studios}
-                      </span>
-                    </div>
+                      {/* 1 Bedroom Sales */}
+                      <div className="w-24 px-4 py-3 text-center">
+                        <span className="text-lg font-semibold text-gray-700">
+                          {stats.sales.oneBedroom}
+                        </span>
+                      </div>
 
-                    {/* 1 Bedroom Sales */}
-                    <div className="w-24 px-4 py-3 text-center">
-                      <span className="text-lg font-semibold text-gray-700">
-                        {project.sales.oneBedroom}
-                      </span>
-                    </div>
+                      {/* 2 Bedroom Sales */}
+                      <div className="w-24 px-4 py-3 text-center">
+                        <span className="text-lg font-semibold text-gray-700">
+                          {stats.sales.twoBedroom}
+                        </span>
+                      </div>
 
-                    {/* 2 Bedroom Sales */}
-                    <div className="w-24 px-4 py-3 text-center">
-                      <span className="text-lg font-semibold text-gray-700">
-                        {project.sales.twoBedroom}
-                      </span>
-                    </div>
+                      {/* 3 Bedroom Sales */}
+                      <div className="w-24 px-4 py-3 text-center">
+                        <span className="text-lg font-semibold text-gray-700">
+                          {stats.sales.threeBedroom}
+                        </span>
+                      </div>
 
-                    {/* 3 Bedroom Sales */}
-                    <div className="w-24 px-4 py-3 text-center">
-                      <span className="text-lg font-semibold text-gray-700">
-                        {project.sales.threeBedroom}
-                      </span>
-                    </div>
+                      {/* Parking Sales */}
+                      <div className="w-24 px-4 py-3 text-center">
+                        <span className="text-lg font-semibold text-gray-700">
+                          {stats.sales.parking}
+                        </span>
+                      </div>
 
-                    {/* Parking Sales */}
-                    <div className="w-24 px-4 py-3 text-center">
-                      <span className="text-lg font-semibold text-gray-700">
-                        {project.sales.parking}
-                      </span>
-                    </div>
-
-                    {/* Commercial Sales */}
-                    <div className="w-24 px-4 py-3 text-center">
-                      <span className="text-lg font-semibold text-gray-700">
-                        {project.sales.commercial}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
+                      {/* Commercial Sales */}
+                      <div className="w-24 px-4 py-3 text-center">
+                        <span className="text-lg font-semibold text-gray-700">
+                          {stats.sales.commercial}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>

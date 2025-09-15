@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
 
 import {
   ArrowLeftIcon,
@@ -13,6 +14,8 @@ import {
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { getProjectByIdAction } from "@/lib/actions/projects";
+import { getOperationsByProjectAction } from "@/lib/actions/operations";
 
 // Mock data for specific project
 const projectDetails = {
@@ -122,71 +125,186 @@ const COLORS = [
 
 export default function SalesDetailPage() {
   const params = useParams();
-  const salesId = Number(params.salesId);
-  const project = projectDetails[salesId as keyof typeof projectDetails];
+  const salesId = params.salesId as string;
+  
+  const [project, setProject] = useState<any>(null);
+  const [operations, setOperations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!project) {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch project details
+        const projectResult = await getProjectByIdAction(salesId);
+        if (projectResult.success && projectResult.data) {
+          setProject(projectResult.data);
+        } else {
+          setError(projectResult.error || "Error cargando proyecto");
+          return;
+        }
+
+        // Fetch operations for this project
+        const operationsResult = await getOperationsByProjectAction(salesId);
+        if (operationsResult.success && operationsResult.data) {
+          setOperations(operationsResult.data);
+        } else {
+          console.error("Error loading operations:", operationsResult.error);
+          // Don't set error here, just log it - we can still show the project
+        }
+      } catch (err) {
+        setError("Error inesperado cargando datos");
+        console.error("Error fetching project data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [salesId]);
+
+  if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <p className="text-gray-500">Proyecto no encontrado</p>
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard/sales"
+            className="text-primaryColor hover:text-primaryColor-hover flex h-10 w-10 items-center justify-center transition-colors"
+          >
+            <ArrowLeftIcon className="h-6 w-6" />
+          </Link>
+          <h1 className="dashboard-title">Cargando...</h1>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <p className="text-gray-600">Cargando datos del proyecto...</p>
+        </div>
       </div>
     );
   }
 
-  // Prepare data for percentage progress indicators
+  if (error || !project) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard/sales"
+            className="text-primaryColor hover:text-primaryColor-hover flex h-10 w-10 items-center justify-center transition-colors"
+          >
+            <ArrowLeftIcon className="h-6 w-6" />
+          </Link>
+          <h1 className="dashboard-title">Error</h1>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <p className="mb-2 text-red-600">❌ {error || "Proyecto no encontrado"}</p>
+            <Link href="/dashboard/sales" className="text-blue-600 hover:underline">
+              Volver a proyectos
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Helper function to get stage display info
+  const getStageInfo = (status: string, steps: any[]) => {
+    const completedSteps = steps.filter((step) => step.status === "completed").length;
+    const progress = Math.round((completedSteps / steps.length) * 100);
+    
+    const stageMap: { [key: string]: string } = {
+      "initiated": "Firma boleto de reserva",
+      "documents_pending": "Subir documentos",
+      "documents_uploaded": "Documentos subidos",
+      "under_validation": "En validación",
+      "professional_assigned": "Profesional asignado",
+      "waiting_signature": "Esperando firma",
+      "signature_completed": "Firma completada",
+      "payment_pending": "Pago pendiente",
+      "payment_confirmed": "Pago confirmado",
+      "completed": "Completada",
+      "cancelled": "Cancelada",
+    };
+
+    return {
+      stage: stageMap[status] || status,
+      progress,
+    };
+  };
+
+  // Process operations data for the table
+  const processedOperations = operations.map((operation) => {
+    const stageInfo = getStageInfo(operation.status, operation.steps);
+    const unitCount = operation.operationUnits?.length || 1;
+    const unitTypes = operation.operationUnits?.map((ou: any) => ou.unit.unitNumber).join(", ") || "N/A";
+    
+    return {
+      id: operation.id,
+      clientName: `${operation.user.firstName} ${operation.user.lastName}`,
+      email: operation.user.email,
+      unitTypes,
+      unitCount,
+      initDate: new Date(operation.startedAt).toLocaleDateString("es-UY"),
+      paymentMethod: "Financiamiento", // TODO: Get from operation data when available
+      stage: stageInfo.stage,
+      progress: stageInfo.progress,
+    };
+  });
+
+  // Calculate basic stats (using mock data for now - will be replaced with real calculations)
+  const totalOperations = operations.length;
+  const totalRevenue = operations.reduce((sum, op) => sum + (op.totalAmount || 0), 0);
+
+  // Prepare data for charts (mock data for now)
   const progressData = [
     {
       name: "Studio",
-      sold: project.sales.studios,
+      sold: Math.floor(Math.random() * 15),
       total: 15,
-      percentage: (project.sales.studios / 15) * 100,
+      percentage: Math.random() * 100,
       icon: HomeIcon,
     },
     {
       name: "1 Dormitorio",
-      sold: project.sales.oneBedroom,
+      sold: Math.floor(Math.random() * 12),
       total: 12,
-      percentage: (project.sales.oneBedroom / 12) * 100,
+      percentage: Math.random() * 100,
       icon: BedIcon,
     },
     {
       name: "2 Dormitorios",
-      sold: project.sales.twoBedroom,
+      sold: Math.floor(Math.random() * 20),
       total: 20,
-      percentage: (project.sales.twoBedroom / 20) * 100,
+      percentage: Math.random() * 100,
       icon: BedIcon,
     },
     {
       name: "3 Dormitorios",
-      sold: project.sales.threeBedroom,
+      sold: Math.floor(Math.random() * 10),
       total: 10,
-      percentage: (project.sales.threeBedroom / 10) * 100,
+      percentage: Math.random() * 100,
       icon: BedIcon,
     },
     {
       name: "Parking",
-      sold: project.sales.parking,
+      sold: Math.floor(Math.random() * 30),
       total: 30,
-      percentage: (project.sales.parking / 30) * 100,
+      percentage: Math.random() * 100,
       icon: CarIcon,
     },
     {
       name: "Comercial",
-      sold: project.sales.commercial,
+      sold: Math.floor(Math.random() * 5),
       total: 5,
-      percentage: (project.sales.commercial / 5) * 100,
+      percentage: Math.random() * 100,
       icon: StoreIcon,
     },
   ];
 
-  const pieChartData = [
-    { name: "Studio", value: project.sales.studios },
-    { name: "1 Dormitorio", value: project.sales.oneBedroom },
-    { name: "2 Dormitorios", value: project.sales.twoBedroom },
-    { name: "3 Dormitorios", value: project.sales.threeBedroom },
-    { name: "Parking", value: project.sales.parking },
-    { name: "Comercial", value: project.sales.commercial },
-  ].filter((item) => item.value > 0);
+  const pieChartData = progressData
+    .filter((item) => item.sold > 0)
+    .map((item) => ({ name: item.name, value: item.sold }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -228,14 +346,14 @@ export default function SalesDetailPage() {
               <div>
                 <p className="text-gray-400">Unidades</p>
                 <h3 className="mb-2 text-3xl font-bold text-gray-900">
-                  112/142
+                  {totalOperations}/100
                 </h3>
               </div>
 
               <div>
                 <p className="text-gray-400">Ingresos</p>
                 <h3 className="mb-2 text-3xl font-bold text-gray-900">
-                  USD ${project.totalRevenue.toLocaleString()}
+                  U$S {totalRevenue.toLocaleString()}
                 </h3>
               </div>
             </div>
@@ -303,7 +421,7 @@ export default function SalesDetailPage() {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-lg font-bold text-gray-900">
-                      {project.soldPercentage}%
+                      {totalOperations > 0 ? Math.round((totalOperations / 100) * 100) : 0}%
                     </div>
                   </div>
                 </div>
@@ -356,73 +474,82 @@ export default function SalesDetailPage() {
                 </div>
               </div>
               <div className="space-y-2 pt-2">
-                {project.buyers.map((buyer) => (
-                  <div
-                    key={buyer.id}
-                    className="grid grid-cols-5 rounded-lg border border-t border-transparent hover:border-[#0004FF]"
-                  >
-                    {/* Cliente */}
-                    <div className="px-4 py-3">
-                      <span className="font-medium text-gray-900">
-                        {buyer.name}
-                      </span>
-                    </div>
+                {processedOperations.length > 0 ? (
+                  processedOperations.map((operation) => (
+                    <div
+                      key={operation.id}
+                      className="grid grid-cols-5 rounded-lg border border-t border-transparent hover:border-[#0004FF]"
+                    >
+                      {/* Cliente */}
+                      <div className="px-4 py-3">
+                        <span className="font-medium text-gray-900">
+                          {operation.clientName}
+                        </span>
+                      </div>
 
-                    {/* Tipología */}
-                    <div className="px-4 py-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <HomeIcon className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-700">
-                              {buyer.apartments}
+                      {/* Tipología */}
+                      <div className="px-4 py-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <HomeIcon className="h-4 w-4 text-gray-400" />
+                              <span className="text-sm text-gray-700">
+                                {operation.unitCount}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm text-gray-700">
+                                {operation.unitTypes}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Fecha Iniciación */}
+                      <div className="px-4 py-3">
+                        <span className="text-gray-700">
+                          {operation.initDate}
+                        </span>
+                      </div>
+
+                      {/* Método Pago */}
+                      <div className="px-4 py-3">
+                        <span className="text-gray-700">
+                          {operation.paymentMethod}
+                        </span>
+                      </div>
+
+                      {/* Progreso */}
+                      <div className="px-4 py-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-700">
+                              {operation.stage}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {operation.progress}%
                             </span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <CarIcon className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-700">
-                              {buyer.garages}
-                            </span>
+                          <div className="h-2 w-full rounded-full bg-gray-200">
+                            <div
+                              className="h-2 rounded-full bg-[#2563eb] transition-all duration-300"
+                              style={{ width: `${operation.progress}%` }}
+                            ></div>
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Fecha Iniciación */}
-                    <div className="px-4 py-3">
-                      <span className="text-gray-700">
-                        {buyer.purchaseDate}
-                      </span>
-                    </div>
-
-                    {/* Método Pago */}
-                    <div className="px-4 py-3">
-                      <span className="text-gray-700">
-                        {buyer.paymentMethod}
-                      </span>
-                    </div>
-
-                    {/* Progreso */}
-                    <div className="px-4 py-3">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700">
-                            {buyer.currentStage}
-                          </span>
-                          <span className="text-sm text-gray-500">
-                            {buyer.stageProgress}%
-                          </span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-gray-200">
-                          <div
-                            className="h-2 rounded-full bg-[#2563eb] transition-all duration-300"
-                            style={{ width: `${buyer.stageProgress}%` }}
-                          ></div>
-                        </div>
-                      </div>
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <p className="text-gray-500">
+                        No hay operaciones para este proyecto aún.
+                      </p>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
