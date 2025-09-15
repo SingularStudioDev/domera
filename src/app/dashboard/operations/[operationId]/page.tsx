@@ -87,6 +87,22 @@ export default function OperationDetailPage() {
         alert("No se puede completar la etapa: Todos los documentos requeridos deben estar validados primero.");
         return;
       }
+      
+      // Add confirmation dialog for step completion
+      if (newStatus === "completed") {
+        const currentStep = getCurrentStep();
+        const stepName = currentStep?.stepName || "esta etapa";
+        
+        const confirmed = confirm(
+          `¿Estás seguro de que deseas completar "${stepName}"?\n\n` +
+          `Esta acción avanzará la operación a la siguiente etapa y no se puede deshacer fácilmente.\n\n` +
+          `Confirma que todos los documentos han sido validados y la etapa está lista para finalizar.`
+        );
+        
+        if (!confirmed) {
+          return;
+        }
+      }
 
       const result = await updateOperationStepAction(operationId, stepId, newStatus);
       
@@ -478,12 +494,12 @@ export default function OperationDetailPage() {
               return (
                 <div className="space-y-3">
                   {availableFloorPlans.map((opUnit: any) => (
-                    <div key={opUnit.unit.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <div key={opUnit.unit.id} className="flex items-center cursor-pointer gap-3 p-3 border rounded-lg hover:bg-gray-50">
                       <EyeIcon className="h-4 w-4 text-blue-600" />
                       <FileTextIcon className="h-4 w-4 text-blue-600" />
                       <button
                         onClick={() => window.open(opUnit.unit.floorPlanUrl, '_blank')}
-                        className="text-blue-600 hover:text-blue-800 text-left flex-1"
+                        className="text-blue-600 hover:text-blue-800 text-left cursor-pointer flex-1"
                       >
                         Planos unidad {opUnit.unit.unitNumber}
                       </button>
@@ -565,31 +581,32 @@ export default function OperationDetailPage() {
                     .map((doc: any) => {
                       const isOrganization = doc.uploader?.organizationId;
                       return (
-                    <div key={doc.id} className={`flex items-center justify-between p-3 border rounded-lg ${
+                    <div key={doc.id} className={`p-3 border rounded-lg ${
                       isOrganization ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
                     }`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${
-                          isOrganization ? 'bg-blue-500' : 'bg-green-500'
-                        }`}>
-                          {isOrganization ? 'ORG' : 'USER'}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{doc.fileName}</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs text-gray-600">
-                              {new Date(doc.createdAt).toLocaleDateString("es-UY")}
-                            </p>
-                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                              isOrganization 
-                                ? 'bg-blue-100 text-blue-700' 
-                                : 'bg-green-100 text-green-700'
-                            }`}>
-                              {isOrganization ? 'Organización' : 'Usuario'}
-                            </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${
+                            isOrganization ? 'bg-blue-500' : 'bg-green-500'
+                          }`}>
+                            {isOrganization ? 'ORG' : 'USER'}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{doc.fileName}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-gray-600">
+                                {new Date(doc.createdAt).toLocaleDateString("es-UY")}
+                              </p>
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                isOrganization 
+                                  ? 'bg-blue-100 text-blue-700' 
+                                  : 'bg-green-100 text-green-700'
+                              }`}>
+                                {isOrganization ? 'Organización' : 'Usuario'}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -632,6 +649,15 @@ export default function OperationDetailPage() {
                           <Badge className="bg-red-100 text-red-800">Rechazado</Badge>
                         )}
                       </div>
+                      </div>
+                      
+                      {/* Rejection Reason */}
+                      {doc.status === "rejected" && doc.notes && (
+                        <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded">
+                          <p className="text-xs font-medium text-red-700 mb-1">Motivo del rechazo:</p>
+                          <p className="text-xs text-red-600">{doc.notes}</p>
+                        </div>
+                      )}
                     </div>
                     );
                   })}
@@ -659,10 +685,10 @@ export default function OperationDetailPage() {
                       <div className="flex gap-2">
                         <Button 
                           onClick={() => handleStepValidation(currentStep.id, "completed")}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 font-semibold"
                           disabled={!areDocumentsReadyForStepCompletion() || uploading}
                         >
-                          Completar Etapa
+                          ✅ Completar Etapa
                         </Button>
                       </div>
                       {!areDocumentsReadyForStepCompletion() && (

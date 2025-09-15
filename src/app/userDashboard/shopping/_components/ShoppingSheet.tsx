@@ -1,6 +1,6 @@
-import { Dispatch, SetStateAction, useState, useEffect } from "react";
+import { Dispatch, SetStateAction, useState, useEffect, Fragment } from "react";
 
-import { FileText, DownloadIcon, EyeIcon, SendIcon } from "lucide-react";
+import { FileText, DownloadIcon, EyeIcon, SendIcon, ChevronRight, ChevronDown } from "lucide-react";
 
 import { getRequiredDocumentsForStepAction, uploadDocumentAction } from "@/lib/actions/documents";
 import { addStepCommentAction, getStepCommentsAction } from "@/lib/actions/operations";
@@ -57,6 +57,10 @@ export function ShoppingSheet({
   const [uploading, setUploading] = useState(false);
   const [projectInfo, setProjectInfo] = useState<any>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [viewingStepDocs, setViewingStepDocs] = useState<string | null>(null);
+  const [stepDocsCache, setStepDocsCache] = useState<Record<string, any[]>>({});
+  const [stepCommentsCache, setStepCommentsCache] = useState<Record<string, any[]>>({});
+  const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
 
   // Get current active step (only in_progress steps allow document uploads)
   const getCurrentStep = () => {
@@ -91,6 +95,61 @@ export function ShoppingSheet({
       console.error("Error loading step documents:", error);
     } finally {
       setLoadingDocuments(false);
+    }
+  };
+
+  // Load documents and comments for any specific step
+  const loadStepDocuments = async (stepId: string) => {
+    if (!operation) return;
+    
+    // Check cache first
+    if (stepDocsCache[stepId] && stepCommentsCache[stepId]) {
+      return;
+    }
+    
+    try {
+      // Load documents
+      const docsResult = await getRequiredDocumentsForStepAction(operation.id, stepId);
+      if (docsResult.success && docsResult.data) {
+        const data = docsResult.data as any;
+        const documents = data.existingDocuments || [];
+        
+        // Cache the documents
+        setStepDocsCache(prev => ({
+          ...prev,
+          [stepId]: documents
+        }));
+      }
+      
+      // Load comments
+      const commentsResult = await getStepCommentsAction(stepId);
+      if (commentsResult.success && commentsResult.data) {
+        // Cache the comments
+        setStepCommentsCache(prev => ({
+          ...prev,
+          [stepId]: commentsResult.data as any[]
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading step documents/comments:", error);
+    }
+  };
+
+  // Toggle step expansion
+  const toggleStepExpansion = async (stepId: string) => {
+    const isExpanded = expandedSteps.has(stepId);
+    
+    if (isExpanded) {
+      // Collapse the step
+      const newExpanded = new Set(expandedSteps);
+      newExpanded.delete(stepId);
+      setExpandedSteps(newExpanded);
+    } else {
+      // Expand the step
+      await loadStepDocuments(stepId);
+      const newExpanded = new Set(expandedSteps);
+      newExpanded.add(stepId);
+      setExpandedSteps(newExpanded);
     }
   };
 
@@ -335,7 +394,7 @@ export function ShoppingSheet({
                         <th className="text-left p-3 font-medium">Etapa</th>
                         <th className="text-left p-3 font-medium">Descripción</th>
                         <th className="text-left p-3 font-medium">Estado</th>
-                        <th className="w-10"></th>
+                        <th className="text-center p-3 font-medium w-24">Ver docs</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -377,36 +436,294 @@ export function ShoppingSheet({
                           }
                         };
                         
+                        const isExpanded = expandedSteps.has(step.id);
+                        
                         return (
-                          <tr key={step.id} className="border-t border-gray-200">
-                            <td className="p-3 font-medium">{formatStepName(step.stepName)}</td>
-                            <td className="p-3 text-gray-600">{getStepDescription(step.stepName)}</td>
-                            <td className="p-3">
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                step.status === 'completed' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : step.status === 'in_progress'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {step.status === 'completed' ? 'Completo' : 
-                                 step.status === 'in_progress' ? 'En progreso' : 'Pendiente'}
-                              </span>
-                            </td>
-                            <td className="p-3">
-                              {step.status === 'completed' && (
-                                <Button variant="ghost" size="sm">
-                                  <FileText className="h-4 w-4 text-blue-600" />
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
+                          <Fragment key={step.id}>
+                            <tr className="border-t border-gray-200">
+                              <td className="p-3 font-medium">{formatStepName(step.stepName)}</td>
+                              <td className="p-3 text-gray-600">{getStepDescription(step.stepName)}</td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  step.status === 'completed' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : step.status === 'in_progress'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {step.status === 'completed' ? 'Completo' : 
+                                   step.status === 'in_progress' ? 'En progreso' : 'Pendiente'}
+                                </span>
+                              </td>
+                              <td className="p-3 text-center">
+                                {step.status === 'completed' && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => toggleStepExpansion(step.id)}
+                                    className="hover:bg-blue-50"
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="h-4 w-4 text-blue-600" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4 text-blue-600" />
+                                    )}
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                            {/* Expanded content row */}
+                            {isExpanded && step.status === 'completed' && (
+                              <tr className="border-t border-gray-100">
+                                <td colSpan={4} className="p-0">
+                                  <div className="p-4 bg-gray-50 border-l-4 border-l-blue-200">
+                                    {/* Documents Section */}
+                                    <div className="mb-4">
+                                      <h4 className="font-medium text-sm mb-2 text-gray-800">Documentos</h4>
+                                      {stepDocsCache[step.id] && stepDocsCache[step.id].length > 0 ? (
+                                        <div className="space-y-2">
+                                          {stepDocsCache[step.id]
+                                            .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                            .map((doc: any) => {
+                                              const isOrganization = doc.uploader?.organizationId;
+                                              return (
+                                              <div key={doc.id} className={`p-2 border rounded text-xs ${
+                                                isOrganization ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
+                                              }`}>
+                                                <div className="flex items-center justify-between">
+                                                  <div className="flex items-center gap-2">
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ${
+                                                      isOrganization ? 'bg-blue-500' : 'bg-green-500'
+                                                    }`}>
+                                                      {isOrganization ? 'ORG' : 'USER'}
+                                                    </div>
+                                                    <div>
+                                                      <p className="font-medium">{doc.fileName}</p>
+                                                      <div className="flex items-center gap-1">
+                                                        <p className="text-gray-600">
+                                                          {new Date(doc.createdAt).toLocaleDateString("es-UY")}
+                                                        </p>
+                                                        <span className={`px-1 py-0.5 rounded font-medium ${
+                                                          isOrganization 
+                                                            ? 'bg-blue-100 text-blue-700' 
+                                                            : 'bg-green-100 text-green-700'
+                                                        }`}>
+                                                          {isOrganization ? 'Organización' : 'Usuario'}
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center gap-1">
+                                                    <Button
+                                                      variant="outline"
+                                                      size="sm"
+                                                      onClick={() => window.open(doc.fileUrl, '_blank')}
+                                                      className="h-6 w-6 p-0"
+                                                    >
+                                                      <DownloadIcon className="h-3 w-3" />
+                                                    </Button>
+                                                    {doc.status === "validated" && (
+                                                      <Badge className="bg-green-100 text-green-800 text-xs">Validado</Badge>
+                                                    )}
+                                                    {doc.status === "rejected" && (
+                                                      <Badge className="bg-red-100 text-red-800 text-xs">Rechazado</Badge>
+                                                    )}
+                                                    {doc.status === "uploaded" && (
+                                                      <Badge className="bg-blue-100 text-blue-800 text-xs">Subido</Badge>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                                
+                                                {/* Rejection Reason */}
+                                                {doc.status === "rejected" && doc.notes && (
+                                                  <div className="mt-1 p-1 bg-red-50 border border-red-200 rounded">
+                                                    <p className="text-xs font-medium text-red-700">Motivo del rechazo:</p>
+                                                    <p className="text-xs text-red-600">{doc.notes}</p>
+                                                  </div>
+                                                )}
+                                              </div>
+                                              );
+                                            })}
+                                        </div>
+                                      ) : (
+                                        <div className="p-2 bg-white border border-gray-200 rounded text-center">
+                                          <p className="text-gray-600 text-xs">
+                                            📄 No hay documentos disponibles para esta etapa
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Comments Section */}
+                                    <div>
+                                      <h4 className="font-medium text-sm mb-2 text-gray-800">Comentarios</h4>
+                                      {stepCommentsCache[step.id] && stepCommentsCache[step.id].length > 0 ? (
+                                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                                          {stepCommentsCache[step.id]
+                                            .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                            .map((comment: any) => (
+                                            <div key={comment.id} className="bg-white rounded p-2 border-l-2 border-l-blue-200 text-xs">
+                                              <div className="flex items-center gap-1 mb-1">
+                                                <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                                                  <span className="text-xs font-medium text-blue-600">
+                                                    {(comment.authorName || "U").charAt(0).toUpperCase()}
+                                                  </span>
+                                                </div>
+                                                <span className="font-medium text-gray-900">
+                                                  {comment.authorName || "Usuario"}
+                                                </span>
+                                                <span className="text-gray-500">
+                                                  {new Date(comment.createdAt).toLocaleDateString("es-UY")}
+                                                </span>
+                                              </div>
+                                              <p className="text-gray-700 ml-5">{comment.content}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="p-2 bg-white border border-gray-200 rounded text-center">
+                                          <p className="text-gray-600 text-xs">
+                                            💬 No hay comentarios para esta etapa
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
                         );
                       })}
                     </tbody>
                   </table>
                 </div>
               </div>
+
+              {/* Step Documents and Comments Display */}
+              {viewingStepDocs && stepDocsCache[viewingStepDocs] && (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-lg">
+                      Documentos y comentarios de: {getSortedSteps().find(s => s.id === viewingStepDocs)?.stepName || 'Etapa'}
+                    </h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setViewingStepDocs(null)}
+                    >
+                      Cerrar
+                    </Button>
+                  </div>
+                  
+                  {stepDocsCache[viewingStepDocs].length === 0 ? (
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                      <p className="text-gray-600 text-sm">
+                        📄 No hay documentos disponibles para esta etapa
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 bg-gray-50 p-4 rounded-lg border">
+                      {stepDocsCache[viewingStepDocs]
+                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                        .map((doc: any) => {
+                          const isOrganization = doc.uploader?.organizationId;
+                          return (
+                          <div key={doc.id} className={`p-3 border rounded-lg ${
+                            isOrganization ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium ${
+                                  isOrganization ? 'bg-blue-500' : 'bg-green-500'
+                                }`}>
+                                  {isOrganization ? 'ORG' : 'USER'}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">{doc.fileName}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-xs text-gray-600">
+                                      {new Date(doc.createdAt).toLocaleDateString("es-UY")}
+                                    </p>
+                                    <span className={`text-xs px-1 py-0.5 rounded font-medium ${
+                                      isOrganization 
+                                        ? 'bg-blue-100 text-blue-700' 
+                                        : 'bg-green-100 text-green-700'
+                                    }`}>
+                                      {isOrganization ? 'Organización' : 'Usuario'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => window.open(doc.fileUrl, '_blank')}
+                                >
+                                  <DownloadIcon className="h-4 w-4" />
+                                </Button>
+                                {doc.status === "validated" && (
+                                  <Badge className="bg-green-100 text-green-800">Validado</Badge>
+                                )}
+                                {doc.status === "rejected" && (
+                                  <Badge className="bg-red-100 text-red-800">Rechazado</Badge>
+                                )}
+                                {doc.status === "uploaded" && (
+                                  <Badge className="bg-blue-100 text-blue-800">Subido</Badge>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Rejection Reason */}
+                            {doc.status === "rejected" && doc.notes && (
+                              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                                <p className="text-xs font-medium text-red-700 mb-1">Motivo del rechazo:</p>
+                                <p className="text-xs text-red-600">{doc.notes}</p>
+                              </div>
+                            )}
+                          </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                  
+                  {/* Step Comments Section */}
+                  <div className="mt-6">
+                    <h4 className="font-medium mb-3">Comentarios de esta etapa</h4>
+                    {stepCommentsCache[viewingStepDocs] && stepCommentsCache[viewingStepDocs].length > 0 ? (
+                      <div className="space-y-3 bg-gray-50 p-4 rounded-lg border max-h-64 overflow-y-auto">
+                        {stepCommentsCache[viewingStepDocs]
+                          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                          .map((comment: any) => (
+                          <div key={comment.id} className="bg-white rounded-lg p-3 border-l-4 border-l-blue-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
+                                <span className="text-xs font-medium text-blue-600">
+                                  {(comment.authorName || "U").charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <span className="text-xs font-medium text-gray-900">
+                                {comment.authorName || "Usuario"}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(comment.createdAt).toLocaleDateString("es-UY")}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-700 ml-7">{comment.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                        <p className="text-gray-600 text-sm">
+                          💬 No hay comentarios para esta etapa
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Plans Section */}
               <div className="mb-6">
@@ -516,31 +833,32 @@ export function ShoppingSheet({
                         .map((doc: any) => {
                           const isOrganization = doc.uploader?.organizationId;
                           return (
-                        <div key={doc.id} className={`flex items-center justify-between p-3 border rounded-lg ${
+                        <div key={doc.id} className={`p-3 border rounded-lg ${
                           isOrganization ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
                         }`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${
-                              isOrganization ? 'bg-blue-500' : 'bg-green-500'
-                            }`}>
-                              {isOrganization ? 'ORG' : 'USER'}
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{doc.fileName}</p>
-                              <div className="flex items-center gap-2">
-                                <p className="text-xs text-gray-600">
-                                  {new Date(doc.createdAt).toLocaleDateString("es-UY")}
-                                </p>
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                  isOrganization 
-                                    ? 'bg-blue-100 text-blue-700' 
-                                    : 'bg-green-100 text-green-700'
-                                }`}>
-                                  {isOrganization ? 'Organización' : 'Usuario'}
-                                </span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${
+                                isOrganization ? 'bg-blue-500' : 'bg-green-500'
+                              }`}>
+                                {isOrganization ? 'ORG' : 'USER'}
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{doc.fileName}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs text-gray-600">
+                                    {new Date(doc.createdAt).toLocaleDateString("es-UY")}
+                                  </p>
+                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                    isOrganization 
+                                      ? 'bg-blue-100 text-blue-700' 
+                                      : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    {isOrganization ? 'Organización' : 'Usuario'}
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
                           <div className="flex items-center gap-2">
                             <Button
                               variant="outline"
@@ -559,6 +877,15 @@ export function ShoppingSheet({
                               <Badge className="bg-blue-100 text-blue-800">Subido</Badge>
                             )}
                           </div>
+                          </div>
+                          
+                          {/* Rejection Reason */}
+                          {doc.status === "rejected" && doc.notes && (
+                            <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded">
+                              <p className="text-xs font-medium text-red-700 mb-1">Motivo del rechazo:</p>
+                              <p className="text-xs text-red-600">{doc.notes}</p>
+                            </div>
+                          )}
                         </div>
                         );
                       })}
@@ -604,20 +931,33 @@ export function ShoppingSheet({
 
               {/* Add Comment */}
               <div className="space-y-3">
+                {!getCurrentStep() && (
+                  <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm text-orange-800 font-medium mb-1">⚠️ No se pueden agregar comentarios</p>
+                    <p className="text-xs text-orange-600">
+                      Solo se pueden agregar comentarios cuando hay una etapa activa en progreso.
+                    </p>
+                  </div>
+                )}
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder={uploading ? "Subiendo archivo..." : "Agregar anotación..."}
+                  placeholder={
+                    uploading ? "Subiendo archivo..." : 
+                    !getCurrentStep() ? "No hay etapa activa para comentar..." : 
+                    "Agregar anotación..."
+                  }
                   className="w-full p-3 border rounded-lg text-sm min-h-[100px] resize-none"
-                  disabled={uploading}
+                  disabled={uploading || !getCurrentStep()}
                 />
                 <Button
                   onClick={handleAddStepComment}
-                  disabled={!newComment.trim() || isAddingComment || uploading}
+                  disabled={!newComment.trim() || isAddingComment || uploading || !getCurrentStep()}
                   className="w-full"
                 >
                   <SendIcon className="h-4 w-4 mr-2" />
-                  {isAddingComment ? "Enviando..." : "Enviar"}
+                  {isAddingComment ? "Enviando..." : 
+                   !getCurrentStep() ? "Sin etapa activa" : "Enviar"}
                 </Button>
               </div>
 
