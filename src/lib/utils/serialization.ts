@@ -13,37 +13,20 @@ export function serializeDecimal(value: any): number | null {
     return null;
   }
 
-  // Check for Decimal instance
-  if (value instanceof Decimal) {
-    return value.toNumber();
-  }
-
-  // Check if it's a Decimal-like object with toNumber method
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "toNumber" in value &&
-    typeof value.toNumber === "function"
-  ) {
-    return value.toNumber();
-  }
-
   // If it's already a number, return as is
   if (typeof value === "number") {
     return value;
+  }
+
+  // If it has a toNumber method (Decimal objects), use it
+  if (value && typeof value.toNumber === "function") {
+    return value.toNumber();
   }
 
   // If it's a string that represents a number, parse it
   if (typeof value === "string" && !isNaN(parseFloat(value))) {
     return parseFloat(value);
   }
-
-  // Debug logging for problematic values
-  console.warn("serializeDecimal: Could not serialize value", {
-    value,
-    type: typeof value,
-    constructor: value?.constructor?.name,
-  });
 
   return null;
 }
@@ -81,6 +64,8 @@ export function serializeUnit(unit: any): any {
     price: serializeDecimal(unit.price),
     totalArea: serializeDecimal(unit.totalArea),
     builtArea: serializeDecimal(unit.builtArea),
+    // Serialize project if it exists
+    project: unit.project ? serializeProject(unit.project) : null,
     // Handle dates
     createdAt: unit.createdAt?.toISOString() || null,
     updatedAt: unit.updatedAt?.toISOString() || null,
@@ -111,6 +96,12 @@ export function serializeOperation(operation: any): any {
     ...operation,
     totalAmount: serializeDecimal(operation.totalAmount),
     platformFee: serializeDecimal(operation.platformFee),
+    // Serialize operation units if they exist
+    operationUnits: operation.operationUnits?.map((operationUnit: any) => ({
+      ...operationUnit,
+      priceAtReservation: serializeDecimal(operationUnit.priceAtReservation),
+      unit: operationUnit.unit ? serializeUnit(operationUnit.unit) : null,
+    })) || [],
     // Handle dates
     startedAt: operation.startedAt?.toISOString() || null,
     completedAt: operation.completedAt?.toISOString() || null,
@@ -133,13 +124,23 @@ export function serializeObject(obj: any): any {
   }
 
   if (typeof obj === "object") {
+    // Check if this is a Date
+    if (obj instanceof Date) {
+      return obj.toISOString();
+    }
+
+    // Check if this object has a toNumber method (Decimal)
+    if (typeof obj.toNumber === "function") {
+      return obj.toNumber();
+    }
+
     const serialized: any = {};
 
     for (const [key, value] of Object.entries(obj)) {
-      if (value instanceof Decimal) {
-        serialized[key] = value.toNumber();
-      } else if (value instanceof Date) {
+      if (value instanceof Date) {
         serialized[key] = value.toISOString();
+      } else if (value && typeof value.toNumber === "function") {
+        serialized[key] = value.toNumber();
       } else if (typeof value === "object") {
         serialized[key] = serializeObject(value);
       } else {

@@ -26,6 +26,7 @@ import {
   createOperationWithValidation,
   validateUnitsSameOrganization,
 } from "@/lib/services/operations";
+import { serializeOperation, serializeObject } from "@/lib/utils/serialization";
 
 // Input types
 interface CreateOperationInput {
@@ -108,9 +109,10 @@ export async function createOperationAction(
     // Revalidate relevant paths
     revalidatePath("/dashboard");
     revalidatePath("/userDashboard");
+    revalidatePath("/userDashboard/shopping");
     revalidatePath("/projects");
 
-    return { success: true, data: result.data };
+    return { success: true, data: serializeObject(result.data) };
   } catch (error) {
     console.error("[SERVER_ACTION] Error creating operation:", error);
     return {
@@ -146,7 +148,10 @@ export async function getOperationByIdAction(
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    // Serialize the operation data to handle Decimal fields
+    const serializedOperation = serializeObject(result.data);
+
+    return { success: true, data: serializedOperation };
   } catch (error) {
     console.error("[SERVER_ACTION] Error getting operation:", error);
     return {
@@ -222,7 +227,7 @@ export async function updateOperationAction(
     revalidatePath("/userDashboard");
     revalidatePath(`/operations/${operationId}`);
 
-    return { success: true, data: result.data };
+    return { success: true, data: serializeObject(result.data) };
   } catch (error) {
     console.error("[SERVER_ACTION] Error updating operation:", error);
     return {
@@ -297,10 +302,11 @@ export async function cancelOperationAction(
     // Revalidate relevant paths
     revalidatePath("/dashboard");
     revalidatePath("/userDashboard");
+    revalidatePath("/userDashboard/shopping");
     revalidatePath("/projects");
     revalidatePath(`/operations/${operationId}`);
 
-    return { success: true, data: result.data };
+    return { success: true, data: serializeObject(result.data) };
   } catch (error) {
     console.error("[SERVER_ACTION] Error cancelling operation:", error);
     return {
@@ -331,7 +337,10 @@ export async function getUserActiveOperationAction(): Promise<OperationActionRes
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    // Serialize the operation data to handle Decimal fields
+    const serializedOperation = result.data ? serializeObject(result.data) : null;
+
+    return { success: true, data: serializedOperation };
   } catch (error) {
     console.error("[SERVER_ACTION] Error getting active operation:", error);
     return {
@@ -401,7 +410,7 @@ export async function validateUnitsSameOrganizationAction(
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.data };
+    return { success: true, data: serializeObject(result.data) };
   } catch (error) {
     console.error(
       "[SERVER_ACTION] Error validating units organization:",
@@ -453,14 +462,108 @@ export async function createOperationSimpleAction(
     // Revalidate relevant paths
     revalidatePath("/dashboard");
     revalidatePath("/userDashboard");
+    revalidatePath("/userDashboard/shopping");
     revalidatePath("/projects");
 
-    return { success: true, data: result.data };
+    return { success: true, data: serializeObject(result.data) };
   } catch (error) {
     console.error("[SERVER_ACTION] Error creating operation:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error creando operación",
+    };
+  }
+}
+
+/**
+ * Get operations by project for dashboard view
+ */
+export async function getOperationsByProjectAction(
+  projectId: string,
+): Promise<OperationActionResult> {
+  try {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+
+    // Check if user has access to this project (admin, organization_owner, sales_manager, etc.)
+    const hasPermission = user.userRoles.some((role) =>
+      ["admin", "organization_owner", "sales_manager", "site_manager", "finance"].includes(role.role),
+    );
+
+    if (!hasPermission) {
+      return {
+        success: false,
+        error: "No tienes permisos para ver las operaciones de este proyecto",
+      };
+    }
+
+    const client = getDbClient();
+
+    // Get operations for the project
+    const operations = await client.operation.findMany({
+      where: {
+        operationUnits: {
+          some: {
+            unit: {
+              projectId: projectId,
+            },
+          },
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        operationUnits: {
+          include: {
+            unit: {
+              include: {
+                project: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        steps: {
+          orderBy: {
+            stepOrder: "asc",
+          },
+        },
+      },
+      orderBy: {
+        startedAt: "desc",
+      },
+    });
+
+    // Serialize the operations data to handle Decimal fields
+    const serializedOperations = operations.map((operation) =>
+      serializeObject(operation),
+    );
+
+    return { success: true, data: serializedOperations };
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error getting operations by project:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo operaciones del proyecto",
     };
   }
 }

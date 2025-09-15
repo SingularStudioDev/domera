@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useCheckoutStore } from "@/stores/checkoutStore";
-import { ArrowLeft, ChevronDownIcon } from "lucide-react";
+import { ArrowLeft, ChevronDownIcon, AlertTriangle } from "lucide-react";
+import { hasActiveOperationAction } from "@/lib/actions/operations";
 
 import Footer from "@/components/Footer";
 import Header from "@/components/header/Header";
@@ -18,7 +20,61 @@ interface CheckoutLayoutProps {
 
 export default function CheckoutLayout({ children }: CheckoutLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { currentProject } = useCheckoutStore();
+  const [hasActiveOperation, setHasActiveOperation] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkActiveOperation = async () => {
+      try {
+        const result = await hasActiveOperationAction();
+        const hasActive = result.success && result.data === true;
+        setHasActiveOperation(hasActive);
+        
+        // If user has active operation and is trying to access checkout, redirect
+        if (hasActive && pathname.startsWith('/checkout') && pathname !== '/checkout/success') {
+          router.push('/userDashboard/shopping');
+        }
+      } catch (error) {
+        console.log('Could not check active operation status');
+        setHasActiveOperation(false);
+      }
+    };
+
+    checkActiveOperation();
+  }, [pathname, router]);
+
+  // Show loading while checking operation status
+  if (hasActiveOperation === null) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="border-primaryColor mx-auto h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <p className="mt-2 text-gray-600">Verificando estado...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user has active operation, show redirect message
+  if (hasActiveOperation && pathname.startsWith('/checkout') && pathname !== '/checkout/success') {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="mx-auto max-w-md p-8 text-center">
+          <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-yellow-500" />
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">
+            Ya tienes una compra en proceso
+          </h1>
+          <p className="mb-4 text-gray-600">
+            No puedes iniciar una nueva compra hasta que completes tu reserva actual.
+          </p>
+          <p className="text-sm text-gray-500">
+            Redirigiendo a tus compras...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const getStep = () => {
     if (pathname === "/checkout") {

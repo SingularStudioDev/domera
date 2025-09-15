@@ -1,12 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
+import { useCheckoutStore } from "@/stores/checkoutStore";
 import MainButton from "@/components/custom-ui/MainButton";
+import { createOperationSimpleAction } from "@/lib/actions/operations";
 
 import { TermsModal } from "./_components/TermsModal";
 
 export default function ConfirmationPage() {
+  const router = useRouter();
+  const { items, clearCheckout } = useCheckoutStore();
+
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -24,6 +30,7 @@ export default function ConfirmationPage() {
   const [useOwnNotary, setUseOwnNotary] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [operationError, setOperationError] = useState<string | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -41,14 +48,38 @@ export default function ConfirmationPage() {
   };
 
   const handleFinalSubmit = async () => {
-    setIsSubmitting(true);
-    console.log("Form submitted:", { ...formData, useOwnNotary });
+    if (items.length === 0) {
+      setOperationError("No hay unidades en el carrito");
+      return;
+    }
 
-    setTimeout(() => {
+    setIsSubmitting(true);
+    setOperationError(null);
+
+    try {
+      // Create operation with checkout data
+      const unitIds = items.map((item) => item.unitId);
+      const operationInput = {
+        unitIds,
+        notes: `Operación creada desde confirmación. Datos: ${formData.nombre} ${formData.apellido}, ${formData.email}. Notario propio: ${useOwnNotary ? 'Si' : 'No'}`,
+      };
+
+      const result = await createOperationSimpleAction(operationInput);
+
+      if (result.success) {
+        // Clear checkout and redirect to success
+        clearCheckout();
+        setShowTermsModal(false);
+        router.push("/checkout/success");
+      } else {
+        setOperationError(result.error || "Error creando operación");
+      }
+    } catch (error) {
+      setOperationError("Error interno creando operación");
+      console.error("Error creating operation:", error);
+    } finally {
       setIsSubmitting(false);
-      setShowTermsModal(false);
-      alert("Formulario enviado exitosamente"); // TODO: Esto no tiene que estar
-    }, 2000);
+    }
   };
 
   return (
@@ -68,6 +99,13 @@ export default function ConfirmationPage() {
             firmado digitalmente (Agesic, Abitab).
           </p>
         </div>
+
+        {/* Operation Error Display */}
+        {operationError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-red-700">❌ {operationError}</p>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">

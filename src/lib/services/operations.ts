@@ -123,10 +123,10 @@ export async function createOperationWithValidation(
       return failure(operationResult.error || "Error al crear operación");
     }
 
-    // Update units status to 'in_process'
+    // Update units status to 'reserved'
     const statusUpdateResult = await updateUnitsStatus(
       input.unitIds,
-      "in_process",
+      "reserved",
       userId,
       ipAddress,
       userAgent,

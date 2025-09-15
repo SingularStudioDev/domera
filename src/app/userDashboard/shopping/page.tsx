@@ -50,6 +50,11 @@ export default function ShoppingDashboardPage() {
     }
   };
 
+  // TODO get project image and finishing date based on activeOperation
+  const projectImage = "/pro/pro-2.png";
+  const finishingDate = "Ene 2027";
+
+
   // Helper function to calculate progress from operation steps
   const calculateOperationProgress = () => {
     if (!activeOperation?.steps) return 0;
@@ -108,26 +113,29 @@ export default function ShoppingDashboardPage() {
           </div>
         )}
 
+
         <div className="grid grid-cols-3 gap-5">
           {/* Show active operation or message */}
           {hasActiveOperation && activeOperation ? (
-            // Display the first unit from the active operation
-            activeOperation.operationUnits.map((operationUnit, index) => (
-              <PropertyCard
-                key={operationUnit.unit.id}
-                imageUrl="/pro/pro-2.png" // TODO: Get from unit data when available
-                location={operationUnit.unit.project.name} // Using project name as location
-                deliveryDate="Ene 2027" // TODO: Get from project data when available
+            // Display single card for the operation with summary of units
+            <PropertyCard
+                key={activeOperation.id}
+                imageUrl={projectImage}
+                location={activeOperation.operationUnits[0]?.unit.project.name || "Proyecto"} // Using project name as location
+                deliveryDate={finishingDate} 
                 progress={calculateOperationProgress()}
-                title={`${operationUnit.unit.project.name} - Unidad ${operationUnit.unit.unitNumber}`}
-                price={`${activeOperation.currency} $${operationUnit.priceAtReservation.toLocaleString()}`}
+                title={
+                  activeOperation.operationUnits.length === 1 
+                    ? `${activeOperation.operationUnits[0].unit.project.name} - Unidad ${activeOperation.operationUnits[0].unit.unitNumber}`
+                    : `${activeOperation.operationUnits[0].unit.project.name} - ${activeOperation.operationUnits.length} unidades`
+                }
+                price={activeOperation.totalAmount.toString()}
                 address="Información disponible en documentos" // TODO: Get from project data when available
                 bedrooms={2} // TODO: Get from unit specifications when available
                 garages={1} // TODO: Get from unit specifications when available
                 actionLabel={getOperationActionLabel(activeOperation.status)}
                 onAction={() => setIsSheetOpen(true)}
               />
-            ))
           ) : canStartNewOperation ? (
             // Show message when no active operation but can start new one
             <div className="col-span-3 flex items-center justify-center py-12 text-center">

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import MainButton from "@/components/custom-ui/MainButton";
 
@@ -49,12 +49,12 @@ export function TermsModal({
         className="flex max-h-[80dvh] w-2xl max-w-2xl flex-col"
         showCloseButton={false}
       >
+        <DialogTitle className="text-2xl font-semibold">Términos y Condiciones</DialogTitle>
         <div
           className="w-full flex-1 overflow-y-auto pr-2"
           onScroll={handleTermsScroll}
         >
           <div className="w-full space-y-4 text-sm text-gray-700">
-            <h1 className="text-2xl font-semibold">Términos y Condiciones</h1>
             <p>
               Al completar este formulario, usted acepta que Domera S.A. utilice
               la información proporcionada para generar el boleto de reserva

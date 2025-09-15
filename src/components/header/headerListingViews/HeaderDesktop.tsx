@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useCheckoutStore } from "@/stores/checkoutStore";
+import { hasActiveOperationAction } from "@/lib/actions/operations";
 import { syne } from "@/lib/utils/Fonts";
 import {
   BuildingIcon,
@@ -30,9 +31,29 @@ export default function HeaderDesktop() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const isAdmin = useIsAdmin();
   const pathname = usePathname();
+  const router = useRouter();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [loginDropdownOpen, setLoginDropdownOpen] = useState(false);
+  const [hasActiveOperation, setHasActiveOperation] = useState(false);
   const itemCount = useCheckoutStore((state) => state.getItemCount());
+
+  // Check for active operation
+  useEffect(() => {
+    const checkActiveOperation = async () => {
+      if (isAuthenticated) {
+        try {
+          const result = await hasActiveOperationAction();
+          setHasActiveOperation(result.success && result.data === true);
+        } catch (error) {
+          setHasActiveOperation(false);
+        }
+      } else {
+        setHasActiveOperation(false);
+      }
+    };
+
+    checkActiveOperation();
+  }, [isAuthenticated]);
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" });
@@ -80,7 +101,16 @@ export default function HeaderDesktop() {
                     </Link>
                   );
                 })}
-                <Link href="/checkout" className="relative">
+                <button 
+                  onClick={() => {
+                    if (hasActiveOperation) {
+                      router.push('/userDashboard/shopping');
+                    } else {
+                      router.push('/checkout');
+                    }
+                  }}
+                  className="relative"
+                >
                   <ShoppingBagIcon
                     className={`inline-flex h-5 w-5 items-center justify-center rounded-md bg-transparent py-0 text-base transition-colors duration-200 hover:bg-gray-100 ${
                       isCheckOutActive
@@ -93,7 +123,7 @@ export default function HeaderDesktop() {
                       {itemCount}
                     </span>
                   )}
-                </Link>
+                </button>
               </div>
             </div>
           </div>

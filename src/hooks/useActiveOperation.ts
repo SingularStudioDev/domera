@@ -47,52 +47,52 @@ export function useActiveOperation() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchActiveOperation() {
-      if (status === "loading") return;
+  const fetchActiveOperation = async () => {
+    if (status === "loading") return;
 
-      if (!session?.user?.id) {
-        setActiveOperation(null);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const result = await getUserActiveOperationAction();
-        if (result.success) {
-          setActiveOperation(result.data as ActiveOperation | null);
-        } else {
-          throw new Error(result.error || "Error obteniendo operación activa");
-        }
-      } catch (err) {
-        console.error("Error fetching active operation:", err);
-        setError("Error al cargar la operación activa");
-      } finally {
-        setLoading(false);
-      }
+    if (!session?.user?.id) {
+      setActiveOperation(null);
+      setLoading(false);
+      return;
     }
 
-    fetchActiveOperation();
-  }, [session, status]);
-
-  const refreshActiveOperation = async () => {
-    if (!session?.user?.id) return;
-
     try {
+      setLoading(true);
       setError(null);
+
       const result = await getUserActiveOperationAction();
       if (result.success) {
-        setActiveOperation(result.data as ActiveOperation | null);
+        const operation = result.data as ActiveOperation | null;
+        setActiveOperation(operation);
       } else {
         throw new Error(result.error || "Error obteniendo operación activa");
       }
     } catch (err) {
-      console.error("Error refreshing active operation:", err);
-      setError("Error al actualizar la operación activa");
+      console.error("Error fetching active operation:", err);
+      setError("Error al cargar la operación activa");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchActiveOperation();
+  }, [session, status]);
+
+  // Refresh when user comes back to the tab/window
+  useEffect(() => {
+    const handleFocus = () => {
+      if (session?.user?.id) {
+        fetchActiveOperation();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [session?.user?.id]);
+
+  const refreshActiveOperation = async () => {
+    await fetchActiveOperation();
   };
 
   const hasActiveOperation = Boolean(activeOperation);

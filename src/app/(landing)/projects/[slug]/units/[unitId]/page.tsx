@@ -8,6 +8,7 @@ import { formatCurrency } from "@/utils/utils";
 
 import { checkIsFavoriteAction } from "@/lib/actions/favourites";
 import { getUnitByIdAction } from "@/lib/actions/units";
+import { hasActiveOperationAction } from "@/lib/actions/operations";
 import { formatUnitType } from "@/lib/utils";
 import { useFeatureParser, useImageParser } from "@/hooks/useJsonArrayParser";
 import { useProjectHeroImage } from "@/hooks/useProjectImages";
@@ -65,6 +66,7 @@ export default function UnitDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [hasActiveOperation, setHasActiveOperation] = useState(false);
 
   useEffect(() => {
     async function fetchUnitAndFavoriteStatus() {
@@ -92,6 +94,17 @@ export default function UnitDetailPage() {
             "Could not load favorite status (user might not be authenticated)",
           );
           setIsFavorite(false);
+        }
+
+        // Check for active operation (don't block if this fails - user might not be authenticated)
+        try {
+          const activeOperationResult = await hasActiveOperationAction();
+          setHasActiveOperation(activeOperationResult.success && activeOperationResult.data === true);
+        } catch (operationError) {
+          console.log(
+            "Could not check active operation status (user might not be authenticated)",
+          );
+          setHasActiveOperation(false);
         }
       } catch (err) {
         setError("Error inesperado cargando unidad");
@@ -150,6 +163,12 @@ export default function UnitDetailPage() {
   const mainImage = firstImage || "/placeholder-unit.jpg";
 
   const handleAddToCheckout = () => {
+    // Check if user has active operation that blocks new purchases
+    if (hasActiveOperation) {
+      router.push("/userDashboard/shopping");
+      return;
+    }
+
     if (!unit.project.id || !unit.project.name) {
       showError("Información del proyecto no disponible");
       return;

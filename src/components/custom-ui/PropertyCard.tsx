@@ -79,7 +79,7 @@ const PropertyCard = ({
             {title}
           </h3>
           <p className="text-xl font-bold text-gray-900">
-            {formatCurrency(Number(price))}
+            U$S {Number(price).toLocaleString()}
           </p>
           <p className="text-sm leading-relaxed text-gray-600">{address}</p>
         </div>

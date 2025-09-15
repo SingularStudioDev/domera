@@ -62,8 +62,8 @@ export function Ticket({
         // Clear checkout store after successful operation creation
         clearCheckout();
         setOperationError(null);
-        // TODO: Redirect to success page or dashboard
-        window.location.href = "/userDashboard/shopping";
+        // Redirect to success page
+        window.location.href = "/checkout/success";
       } else {
         setOperationError(result.error || "Error creando operación");
       }
