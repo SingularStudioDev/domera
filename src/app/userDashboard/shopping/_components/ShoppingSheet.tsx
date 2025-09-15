@@ -511,19 +511,34 @@ export function ShoppingSheet({
                   <div className="mt-6">
                     <h4 className="font-medium mb-3">Documentos subidos</h4>
                     <div className="space-y-2">
-                      {stepDocuments.map((doc: any) => (
-                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      {stepDocuments
+                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                        .map((doc: any) => {
+                          const isOrganization = doc.uploader?.organizationId;
+                          return (
+                        <div key={doc.id} className={`flex items-center justify-between p-3 border rounded-lg ${
+                          isOrganization ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
+                        }`}>
                           <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
-                              doc.uploader?.organizationId ? 'bg-blue-500' : 'bg-green-500'
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${
+                              isOrganization ? 'bg-blue-500' : 'bg-green-500'
                             }`}>
-                              {doc.uploader?.organizationId ? 'D' : 'U'}
+                              {isOrganization ? 'ORG' : 'USER'}
                             </div>
                             <div>
                               <p className="font-medium text-sm">{doc.fileName}</p>
-                              <p className="text-xs text-gray-600">
-                                {new Date(doc.createdAt).toLocaleDateString("es-UY")}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-gray-600">
+                                  {new Date(doc.createdAt).toLocaleDateString("es-UY")}
+                                </p>
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                  isOrganization 
+                                    ? 'bg-blue-100 text-blue-700' 
+                                    : 'bg-green-100 text-green-700'
+                                }`}>
+                                  {isOrganization ? 'Organización' : 'Usuario'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -545,7 +560,8 @@ export function ShoppingSheet({
                             )}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -559,7 +575,9 @@ export function ShoppingSheet({
               {/* Comments List */}
               <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                 {stepComments.length > 0 ? (
-                  stepComments.map((comment: any) => (
+                  stepComments
+                    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .map((comment: any) => (
                     <div key={comment.id} className="bg-white rounded-lg p-4 border-l-4 border-l-blue-200">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
@@ -589,12 +607,13 @@ export function ShoppingSheet({
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Agregar anotación..."
+                  placeholder={uploading ? "Subiendo archivo..." : "Agregar anotación..."}
                   className="w-full p-3 border rounded-lg text-sm min-h-[100px] resize-none"
+                  disabled={uploading}
                 />
                 <Button
                   onClick={handleAddStepComment}
-                  disabled={!newComment.trim() || isAddingComment}
+                  disabled={!newComment.trim() || isAddingComment || uploading}
                   className="w-full"
                 >
                   <SendIcon className="h-4 w-4 mr-2" />
