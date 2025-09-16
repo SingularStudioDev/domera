@@ -1,5 +1,5 @@
 # Domera
-
+ 
 Domera, una plataforma de inversión en propiedades en pozo sin comisiones inmobiliarias.
 
 ## 🚀 Tecnologías Utilizadas
