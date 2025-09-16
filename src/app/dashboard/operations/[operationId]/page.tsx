@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -13,6 +13,8 @@ import {
   DownloadIcon,
   SendIcon,
   EyeIcon,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,9 @@ export default function OperationDetailPage() {
   const [stepComments, setStepComments] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"workflow" | "buyer">("workflow");
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [stepDocsCache, setStepDocsCache] = useState<Record<string, any[]>>({});
+  const [stepCommentsCache, setStepCommentsCache] = useState<Record<string, any[]>>({});
+  const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
 
   
 
@@ -137,7 +142,7 @@ export default function OperationDetailPage() {
   };
   
 
-  // Load documents for the current step
+  // Load documents for the current step only
   const loadCurrentStepDocuments = async () => {
     const currentStep = getCurrentStep();
     if (!currentStep) {
@@ -151,12 +156,69 @@ export default function OperationDetailPage() {
       if (result.success && result.data) {
         // Extract the existingDocuments array from the response
         const data = result.data as any;
+        // Documents are now filtered by stepId in the API
         setStepDocuments(data.existingDocuments || []);
       }
     } catch (error) {
       console.error("Error loading step documents:", error);
     } finally {
       setLoadingDocuments(false);
+    }
+  };
+
+  // Load documents and comments for any specific step
+  const loadStepDocuments = async (stepId: string) => {
+    if (!operation) return;
+    
+    // Check cache first
+    if (stepDocsCache[stepId] && stepCommentsCache[stepId]) {
+      return;
+    }
+    
+    try {
+      // Load documents
+      const docsResult = await getRequiredDocumentsForStepAction(operationId, stepId);
+      if (docsResult.success && docsResult.data) {
+        const data = docsResult.data as any;
+        // Documents are now filtered by stepId in the API
+        const documents = data.existingDocuments || [];
+        
+        // Cache the documents
+        setStepDocsCache(prev => ({
+          ...prev,
+          [stepId]: documents
+        }));
+      }
+      
+      // Load comments
+      const commentsResult = await getStepCommentsAction(stepId);
+      if (commentsResult.success && commentsResult.data) {
+        // Cache the comments
+        setStepCommentsCache(prev => ({
+          ...prev,
+          [stepId]: commentsResult.data as any[]
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading step documents/comments:", error);
+    }
+  };
+
+  // Toggle step expansion
+  const toggleStepExpansion = async (stepId: string) => {
+    const isExpanded = expandedSteps.has(stepId);
+    
+    if (isExpanded) {
+      // Collapse the step
+      const newExpanded = new Set(expandedSteps);
+      newExpanded.delete(stepId);
+      setExpandedSteps(newExpanded);
+    } else {
+      // Expand the step
+      await loadStepDocuments(stepId);
+      const newExpanded = new Set(expandedSteps);
+      newExpanded.add(stepId);
+      setExpandedSteps(newExpanded);
     }
   };
 
@@ -189,6 +251,20 @@ export default function OperationDetailPage() {
     }
   };
 
+  // Check if user can upload more documents
+  const canUploadDocument = () => {
+    const currentStep = getCurrentStep();
+    if (!currentStep) return false;
+    
+    // Check if there are any PENDING/UPLOADED documents (not validated or rejected)
+    // Organization can upload documents, but should validate existing ones first
+    const pendingDocs = stepDocuments.filter((doc: any) => 
+      doc.status === "uploaded" || doc.status === "pending"
+    );
+    
+    return pendingDocs.length === 0;
+  };
+
   // Handle file upload (only for in_progress steps)
   const handleFileUpload = async (file: File) => {
     if (!file || uploading) return;
@@ -196,6 +272,11 @@ export default function OperationDetailPage() {
     const currentStep = getCurrentStep();
     if (!currentStep) {
       alert("No hay una etapa activa para subir documentos. Solo se pueden subir documentos a etapas en progreso.");
+      return;
+    }
+    
+    if (!canUploadDocument()) {
+      alert("No se puede subir un nuevo documento mientras hay documentos pendientes de validación en esta etapa.");
       return;
     }
     
@@ -223,6 +304,7 @@ export default function OperationDetailPage() {
       
       const result = await uploadDocumentAction({
         operationId,
+        stepId: currentStep.id,
         documentType: documentType as any,
         title: `${currentStep.stepName} - ${file.name}`,
         description: `Documento para ${currentStep.stepName} - ${file.name}`,
@@ -297,9 +379,19 @@ export default function OperationDetailPage() {
 
   // Check if all required documents are validated for step completion
   const areDocumentsReadyForStepCompletion = () => {
-    if (!stepDocuments || stepDocuments.length === 0) return false;
+    const currentStep = getCurrentStep();
+    if (!currentStep || !stepDocuments || stepDocuments.length === 0) return false;
     
-    // For document generation step, we need at least one validated document
+    // All documents should already be filtered by stepId from the API
+    // Check if there are any pending/uploaded documents (not validated or rejected)
+    const pendingDocs = stepDocuments.filter((doc: any) => 
+      doc.status === "uploaded" || doc.status === "pending"
+    );
+    
+    // Cannot complete step if there are pending documents
+    if (pendingDocs.length > 0) return false;
+    
+    // For step completion, we need at least one validated document
     const validatedDocs = stepDocuments.filter((doc: any) => doc.status === "validated");
     return validatedDocs.length > 0;
   };
@@ -441,31 +533,158 @@ export default function OperationDetailPage() {
                 </thead>
                 <tbody>
                   {getSortedSteps().map((step: any) => {
+                    const isExpanded = expandedSteps.has(step.id);
                     
                     return (
-                      <tr key={step.id} className="border-t border-gray-200">
-                        <td className="p-3 font-medium">{step.stepName}</td>
-                        <td className="p-3">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            step.status === 'completed' 
-                              ? 'bg-green-100 text-green-800' 
-                              : step.status === 'in_progress'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {step.status === 'completed' ? 'completo' : 
-                             step.status === 'in_progress' ? 'En progreso' : 'Pendiente'}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          {step.status === 'completed' && (
-                            <Button variant="ghost" size="sm">
-                              {/* TODO after completed, on click show the comments for this step */}
-                              <FileTextIcon className="h-4 w-4 text-blue-600" />
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
+                      <Fragment key={step.id}>
+                        <tr className="border-t border-gray-200">
+                          <td className="p-3 font-medium">{step.stepName}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              step.status === 'completed' 
+                                ? 'bg-green-100 text-green-800' 
+                                : step.status === 'in_progress'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {step.status === 'completed' ? 'completo' : 
+                               step.status === 'in_progress' ? 'En progreso' : 'Pendiente'}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            {step.status === 'completed' && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => toggleStepExpansion(step.id)}
+                                className="hover:bg-blue-50"
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4 text-blue-600" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-blue-600" />
+                                )}
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                        {/* Expanded content row */}
+                        {isExpanded && step.status === 'completed' && (
+                          <tr className="border-t border-gray-100">
+                            <td colSpan={3} className="p-0">
+                              <div className="p-4 bg-gray-50 border-l-4 border-l-blue-200">
+                                {/* Documents Section */}
+                                <div className="mb-4">
+                                  <h4 className="font-medium text-sm mb-2 text-gray-800">Documentos</h4>
+                                  {stepDocsCache[step.id] && stepDocsCache[step.id].length > 0 ? (
+                                    <div className="space-y-2">
+                                      {stepDocsCache[step.id]
+                                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                        .map((doc: any) => {
+                                          const isOrganization = doc.uploader?.organizationId;
+                                          return (
+                                          <div key={doc.id} className={`p-2 border rounded text-xs ${
+                                            isOrganization ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
+                                          }`}>
+                                            <div className="flex items-center justify-between">
+                                              <div className="flex items-center gap-2">
+                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ${
+                                                  isOrganization ? 'bg-blue-500' : 'bg-green-500'
+                                                }`}>
+                                                  {(doc.uploader?.name || doc.uploader?.email || 'U').substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                  <p className="font-medium">{doc.fileName}</p>
+                                                  <div className="flex items-center gap-1">
+                                                    <p className="text-gray-600">
+                                                      {new Date(doc.createdAt).toLocaleDateString("es-UY")}
+                                                    </p>
+                                                    <span className="text-gray-600">
+                                                      por {doc.uploader?.name || doc.uploader?.email || 'Usuario desconocido'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div className="flex items-center gap-1">
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => window.open(doc.fileUrl, '_blank')}
+                                                  className="h-6 w-6 p-0"
+                                                >
+                                                  <DownloadIcon className="h-3 w-3" />
+                                                </Button>
+                                                {doc.status === "validated" && (
+                                                  <Badge className="bg-green-100 text-green-800 text-xs">Validado</Badge>
+                                                )}
+                                                {doc.status === "rejected" && (
+                                                  <Badge className="bg-red-100 text-red-800 text-xs">Rechazado</Badge>
+                                                )}
+                                                {doc.status === "uploaded" && (
+                                                  <Badge className="bg-blue-100 text-blue-800 text-xs">Subido</Badge>
+                                                )}
+                                              </div>
+                                            </div>
+                                            
+                                            {/* Rejection Reason */}
+                                            {doc.status === "rejected" && doc.notes && (
+                                              <div className="mt-1 p-1 bg-red-50 border border-red-200 rounded">
+                                                <p className="text-xs font-medium text-red-700">Motivo del rechazo:</p>
+                                                <p className="text-xs text-red-600">{doc.notes}</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                          );
+                                        })}
+                                    </div>
+                                  ) : (
+                                    <div className="p-2 bg-white border border-gray-200 rounded text-center">
+                                      <p className="text-gray-600 text-xs">
+                                        📄 No hay documentos disponibles para esta etapa
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Comments Section */}
+                                <div>
+                                  <h4 className="font-medium text-sm mb-2 text-gray-800">Comentarios</h4>
+                                  {stepCommentsCache[step.id] && stepCommentsCache[step.id].length > 0 ? (
+                                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                                      {stepCommentsCache[step.id]
+                                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                        .map((comment: any) => (
+                                        <div key={comment.id} className="bg-white rounded p-2 border-l-2 border-l-blue-200 text-xs">
+                                          <div className="flex items-center gap-1 mb-1">
+                                            <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                                              <span className="text-xs font-medium text-blue-600">
+                                                {(comment.authorName || "U").charAt(0).toUpperCase()}
+                                              </span>
+                                            </div>
+                                            <span className="font-medium text-gray-900">
+                                              {comment.authorName || "Usuario"}
+                                            </span>
+                                            <span className="text-gray-500">
+                                              {new Date(comment.createdAt).toLocaleDateString("es-UY")}
+                                            </span>
+                                          </div>
+                                          <p className="text-gray-700 ml-5">{comment.content}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="p-2 bg-white border border-gray-200 rounded text-center">
+                                      <p className="text-gray-600 text-xs">
+                                        💬 No hay comentarios para esta etapa
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
                   })}
                 </tbody>
@@ -565,9 +784,11 @@ export default function OperationDetailPage() {
               <Button
                 variant="outline"
                 onClick={() => document.getElementById('file-upload')?.click()}
-                disabled={uploading || !getCurrentStep()}
+                disabled={uploading || !getCurrentStep() || !canUploadDocument()}
               >
-                {uploading ? "Subiendo..." : getCurrentStep() ? "Cargar archivo" : "Sin etapas activas"}
+                {uploading ? "Subiendo..." : 
+                 !getCurrentStep() ? "Sin etapas activas" :
+                 !canUploadDocument() ? "Documentos pendientes" : "Cargar archivo"}
               </Button>
             </div>
 
@@ -589,7 +810,7 @@ export default function OperationDetailPage() {
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${
                             isOrganization ? 'bg-blue-500' : 'bg-green-500'
                           }`}>
-                            {isOrganization ? 'ORG' : 'USER'}
+                            {(doc.uploader?.name || doc.uploader?.email || 'U').substring(0, 2).toUpperCase()}
                           </div>
                           <div>
                             <p className="font-medium text-sm">{doc.fileName}</p>
@@ -597,12 +818,8 @@ export default function OperationDetailPage() {
                               <p className="text-xs text-gray-600">
                                 {new Date(doc.createdAt).toLocaleDateString("es-UY")}
                               </p>
-                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                isOrganization 
-                                  ? 'bg-blue-100 text-blue-700' 
-                                  : 'bg-green-100 text-green-700'
-                              }`}>
-                                {isOrganization ? 'Organización' : 'Usuario'}
+                              <span className="text-xs text-gray-600">
+                                por {doc.uploader?.name || doc.uploader?.email || 'Usuario desconocido'}
                               </span>
                             </div>
                           </div>

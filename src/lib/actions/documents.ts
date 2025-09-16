@@ -37,6 +37,7 @@ interface DocumentActionResult {
 
 interface CreateDocumentInput {
   operationId?: string;
+  stepId?: string;
   documentType: DocumentType;
   title: string;
   description?: string;
@@ -245,7 +246,7 @@ export async function getRequiredDocumentsForStepAction(
     const existingDocs = await client.document.findMany({
       where: { 
         operationId,
-        // Optionally filter by step in the future
+        stepId: stepId,
       },
       include: {
         uploader: {
@@ -254,6 +255,7 @@ export async function getRequiredDocumentsForStepAction(
             firstName: true,
             lastName: true,
             email: true,
+            organizationId: true,
           },
         },
       },
@@ -571,6 +573,7 @@ export async function uploadDocumentAction(
     const document = await client.document.create({
       data: {
         operationId: input.operationId,
+        stepId: input.stepId,
         userId: user.id,
         organizationId,
         documentType: input.documentType,

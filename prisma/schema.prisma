@@ -400,8 +400,9 @@ model OperationStep {
   updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  operation    Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
-  assignedUser User?     @relation(fields: [assignedTo], references: [id])
+  operation    Operation   @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  assignedUser User?       @relation(fields: [assignedTo], references: [id])
+  documents    Document[]
 
   @@unique([operationId, stepName])
   @@map("operation_steps")
@@ -414,6 +415,7 @@ model OperationStep {
 model Document {
   id              String         @id @default(uuid()) @db.Uuid
   operationId     String?        @map("operation_id") @db.Uuid
+  stepId          String?        @map("step_id") @db.Uuid
   userId          String         @map("user_id") @db.Uuid
   organizationId  String?        @map("organization_id") @db.Uuid
   documentType    DocumentType   @map("document_type")
@@ -438,13 +440,14 @@ model Document {
   correctionOf    String?        @map("correction_of") @db.Uuid
 
   // Relations
-  operation    Operation?    @relation(fields: [operationId], references: [id], onDelete: Cascade)
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  uploader     User          @relation("DocumentUploader", fields: [uploadedBy], references: [id])
-  validator    User?         @relation("DocumentValidator", fields: [validatedBy], references: [id])
-  correctedBy  Document?     @relation("DocumentCorrections", fields: [correctionOf], references: [id])
-  corrections  Document[]    @relation("DocumentCorrections")
+  operation    Operation?     @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  step         OperationStep? @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploader     User           @relation("DocumentUploader", fields: [uploadedBy], references: [id])
+  validator    User?          @relation("DocumentValidator", fields: [validatedBy], references: [id])
+  correctedBy  Document?      @relation("DocumentCorrections", fields: [correctionOf], references: [id])
+  corrections  Document[]     @relation("DocumentCorrections")
 
   @@map("documents")
 }

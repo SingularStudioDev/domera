@@ -57,7 +57,6 @@ export function ShoppingSheet({
   const [uploading, setUploading] = useState(false);
   const [projectInfo, setProjectInfo] = useState<any>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
-  const [viewingStepDocs, setViewingStepDocs] = useState<string | null>(null);
   const [stepDocsCache, setStepDocsCache] = useState<Record<string, any[]>>({});
   const [stepCommentsCache, setStepCommentsCache] = useState<Record<string, any[]>>({});
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
@@ -75,7 +74,7 @@ export function ShoppingSheet({
     return [...operation.steps].sort((a, b) => a.stepOrder - b.stepOrder);
   };
 
-  // Load documents for the current step
+  // Load documents for the current step only
   const loadCurrentStepDocuments = async () => {
     const currentStep = getCurrentStep();
     if (!currentStep || !operation) {
@@ -89,6 +88,7 @@ export function ShoppingSheet({
       if (result.success && result.data) {
         // Extract the existingDocuments array from the response
         const data = result.data as any;
+        // Documents are now filtered by stepId in the API
         setStepDocuments(data.existingDocuments || []);
       }
     } catch (error) {
@@ -112,6 +112,7 @@ export function ShoppingSheet({
       const docsResult = await getRequiredDocumentsForStepAction(operation.id, stepId);
       if (docsResult.success && docsResult.data) {
         const data = docsResult.data as any;
+        // Documents are now filtered by stepId in the API
         const documents = data.existingDocuments || [];
         
         // Cache the documents
@@ -218,6 +219,20 @@ export function ShoppingSheet({
     await onOperationUpdate();
   };
 
+  // Check if user can upload more documents
+  const canUploadDocument = () => {
+    const currentStep = getCurrentStep();
+    if (!currentStep) return false;
+    
+    // Check if there are any PENDING/UPLOADED documents (not validated or rejected)
+    // User can only upload one document at a time per step
+    const pendingDocs = stepDocuments.filter((doc: any) => 
+      doc.status === "uploaded" || doc.status === "pending"
+    );
+    
+    return pendingDocs.length === 0;
+  };
+
   // Handle file upload (only for in_progress steps)
   const handleFileUpload = async (file: File) => {
     if (!file || uploading) return;
@@ -225,6 +240,11 @@ export function ShoppingSheet({
     const currentStep = getCurrentStep();
     if (!currentStep) {
       alert("No hay una etapa activa para subir documentos. Solo se pueden subir documentos a etapas en progreso.");
+      return;
+    }
+    
+    if (!canUploadDocument()) {
+      alert("No se puede subir un nuevo documento mientras hay documentos pendientes de validación en esta etapa.");
       return;
     }
     
@@ -252,6 +272,7 @@ export function ShoppingSheet({
       
       const result = await uploadDocumentAction({
         operationId: operation!.id,
+        stepId: currentStep.id,
         documentType: documentType as any,
         title: `${currentStep.stepName} - ${file.name}`,
         description: `Documento para ${currentStep.stepName} - ${file.name}`,
@@ -495,7 +516,7 @@ export function ShoppingSheet({
                                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ${
                                                       isOrganization ? 'bg-blue-500' : 'bg-green-500'
                                                     }`}>
-                                                      {isOrganization ? 'ORG' : 'USER'}
+                                                      {(doc.uploader?.name || doc.uploader?.email || 'U').substring(0, 2).toUpperCase()}
                                                     </div>
                                                     <div>
                                                       <p className="font-medium">{doc.fileName}</p>
@@ -503,12 +524,8 @@ export function ShoppingSheet({
                                                         <p className="text-gray-600">
                                                           {new Date(doc.createdAt).toLocaleDateString("es-UY")}
                                                         </p>
-                                                        <span className={`px-1 py-0.5 rounded font-medium ${
-                                                          isOrganization 
-                                                            ? 'bg-blue-100 text-blue-700' 
-                                                            : 'bg-green-100 text-green-700'
-                                                        }`}>
-                                                          {isOrganization ? 'Organización' : 'Usuario'}
+                                                        <span className="text-gray-600">
+                                                          por {doc.uploader?.name || doc.uploader?.email || 'Usuario desconocido'}
                                                         </span>
                                                       </div>
                                                     </div>
@@ -600,130 +617,6 @@ export function ShoppingSheet({
                 </div>
               </div>
 
-              {/* Step Documents and Comments Display */}
-              {viewingStepDocs && stepDocsCache[viewingStepDocs] && (
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-lg">
-                      Documentos y comentarios de: {getSortedSteps().find(s => s.id === viewingStepDocs)?.stepName || 'Etapa'}
-                    </h3>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setViewingStepDocs(null)}
-                    >
-                      Cerrar
-                    </Button>
-                  </div>
-                  
-                  {stepDocsCache[viewingStepDocs].length === 0 ? (
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                      <p className="text-gray-600 text-sm">
-                        📄 No hay documentos disponibles para esta etapa
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 bg-gray-50 p-4 rounded-lg border">
-                      {stepDocsCache[viewingStepDocs]
-                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                        .map((doc: any) => {
-                          const isOrganization = doc.uploader?.organizationId;
-                          return (
-                          <div key={doc.id} className={`p-3 border rounded-lg ${
-                            isOrganization ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
-                          }`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium ${
-                                  isOrganization ? 'bg-blue-500' : 'bg-green-500'
-                                }`}>
-                                  {isOrganization ? 'ORG' : 'USER'}
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm">{doc.fileName}</p>
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-xs text-gray-600">
-                                      {new Date(doc.createdAt).toLocaleDateString("es-UY")}
-                                    </p>
-                                    <span className={`text-xs px-1 py-0.5 rounded font-medium ${
-                                      isOrganization 
-                                        ? 'bg-blue-100 text-blue-700' 
-                                        : 'bg-green-100 text-green-700'
-                                    }`}>
-                                      {isOrganization ? 'Organización' : 'Usuario'}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => window.open(doc.fileUrl, '_blank')}
-                                >
-                                  <DownloadIcon className="h-4 w-4" />
-                                </Button>
-                                {doc.status === "validated" && (
-                                  <Badge className="bg-green-100 text-green-800">Validado</Badge>
-                                )}
-                                {doc.status === "rejected" && (
-                                  <Badge className="bg-red-100 text-red-800">Rechazado</Badge>
-                                )}
-                                {doc.status === "uploaded" && (
-                                  <Badge className="bg-blue-100 text-blue-800">Subido</Badge>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Rejection Reason */}
-                            {doc.status === "rejected" && doc.notes && (
-                              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
-                                <p className="text-xs font-medium text-red-700 mb-1">Motivo del rechazo:</p>
-                                <p className="text-xs text-red-600">{doc.notes}</p>
-                              </div>
-                            )}
-                          </div>
-                          );
-                        })}
-                    </div>
-                  )}
-                  
-                  {/* Step Comments Section */}
-                  <div className="mt-6">
-                    <h4 className="font-medium mb-3">Comentarios de esta etapa</h4>
-                    {stepCommentsCache[viewingStepDocs] && stepCommentsCache[viewingStepDocs].length > 0 ? (
-                      <div className="space-y-3 bg-gray-50 p-4 rounded-lg border max-h-64 overflow-y-auto">
-                        {stepCommentsCache[viewingStepDocs]
-                          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                          .map((comment: any) => (
-                          <div key={comment.id} className="bg-white rounded-lg p-3 border-l-4 border-l-blue-200">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
-                                <span className="text-xs font-medium text-blue-600">
-                                  {(comment.authorName || "U").charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <span className="text-xs font-medium text-gray-900">
-                                {comment.authorName || "Usuario"}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {new Date(comment.createdAt).toLocaleDateString("es-UY")}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-700 ml-7">{comment.content}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                        <p className="text-gray-600 text-sm">
-                          💬 No hay comentarios para esta etapa
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Plans Section */}
               <div className="mb-6">
@@ -812,14 +705,16 @@ export function ShoppingSheet({
                         handleFileUpload(file);
                       }
                     }}
-                    disabled={uploading || !getCurrentStep()}
+                    disabled={uploading || !getCurrentStep() || !canUploadDocument()}
                   />
                   <Button
                     variant="outline"
                     onClick={() => document.getElementById('file-upload-user')?.click()}
-                    disabled={uploading || !getCurrentStep()}
+                    disabled={uploading || !getCurrentStep() || !canUploadDocument()}
                   >
-                    {uploading ? "Subiendo..." : getCurrentStep() ? "Cargar archivo" : "Sin etapas activas"}
+                    {uploading ? "Subiendo..." : 
+                     !getCurrentStep() ? "Sin etapas activas" :
+                     !canUploadDocument() ? "Documentos pendientes" : "Cargar archivo"}
                   </Button>
                 </div>
 
@@ -841,7 +736,7 @@ export function ShoppingSheet({
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${
                                 isOrganization ? 'bg-blue-500' : 'bg-green-500'
                               }`}>
-                                {isOrganization ? 'ORG' : 'USER'}
+                                {(doc.uploader?.name || doc.uploader?.email || 'U').substring(0, 2).toUpperCase()}
                               </div>
                               <div>
                                 <p className="font-medium text-sm">{doc.fileName}</p>
@@ -849,12 +744,8 @@ export function ShoppingSheet({
                                   <p className="text-xs text-gray-600">
                                     {new Date(doc.createdAt).toLocaleDateString("es-UY")}
                                   </p>
-                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                    isOrganization 
-                                      ? 'bg-blue-100 text-blue-700' 
-                                      : 'bg-green-100 text-green-700'
-                                  }`}>
-                                    {isOrganization ? 'Organización' : 'Usuario'}
+                                  <span className="text-xs text-gray-600">
+                                    por {doc.uploader?.name || doc.uploader?.email || 'Usuario desconocido'}
                                   </span>
                                 </div>
                               </div>
