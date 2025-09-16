@@ -516,7 +516,9 @@ export function ShoppingSheet({
                                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ${
                                                       isOrganization ? 'bg-blue-500' : 'bg-green-500'
                                                     }`}>
-                                                      {(doc.uploader?.name || doc.uploader?.email || 'U').substring(0, 2).toUpperCase()}
+                                                      {doc.uploader?.firstName && doc.uploader?.lastName 
+                                                        ? `${doc.uploader.firstName.charAt(0)}${doc.uploader.lastName.charAt(0)}`.toUpperCase()
+                                                        : (doc.uploader?.email || 'U').substring(0, 2).toUpperCase()}
                                                     </div>
                                                     <div>
                                                       <p className="font-medium">{doc.fileName}</p>
@@ -525,7 +527,9 @@ export function ShoppingSheet({
                                                           {new Date(doc.createdAt).toLocaleDateString("es-UY")}
                                                         </p>
                                                         <span className="text-gray-600">
-                                                          por {doc.uploader?.name || doc.uploader?.email || 'Usuario desconocido'}
+                                                          por {doc.uploader?.firstName && doc.uploader?.lastName 
+                                                          ? `${doc.uploader.firstName} ${doc.uploader.lastName}`
+                                                          : doc.uploader?.email || 'Usuario desconocido'}
                                                         </span>
                                                       </div>
                                                     </div>
@@ -736,7 +740,9 @@ export function ShoppingSheet({
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ${
                                 isOrganization ? 'bg-blue-500' : 'bg-green-500'
                               }`}>
-                                {(doc.uploader?.name || doc.uploader?.email || 'U').substring(0, 2).toUpperCase()}
+                                {doc.uploader?.firstName && doc.uploader?.lastName 
+                                                        ? `${doc.uploader.firstName.charAt(0)}${doc.uploader.lastName.charAt(0)}`.toUpperCase()
+                                                        : (doc.uploader?.email || 'U').substring(0, 2).toUpperCase()}
                               </div>
                               <div>
                                 <p className="font-medium text-sm">{doc.fileName}</p>
@@ -745,7 +751,9 @@ export function ShoppingSheet({
                                     {new Date(doc.createdAt).toLocaleDateString("es-UY")}
                                   </p>
                                   <span className="text-xs text-gray-600">
-                                    por {doc.uploader?.name || doc.uploader?.email || 'Usuario desconocido'}
+                                    por {doc.uploader?.firstName && doc.uploader?.lastName 
+                                                          ? `${doc.uploader.firstName} ${doc.uploader.lastName}`
+                                                          : doc.uploader?.email || 'Usuario desconocido'}
                                   </span>
                                 </div>
                               </div>
