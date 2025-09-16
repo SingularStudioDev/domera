@@ -255,7 +255,11 @@ export async function getRequiredDocumentsForStepAction(
             firstName: true,
             lastName: true,
             email: true,
-            organizationId: true,
+            userRoles: {
+              select: {
+                organizationId: true,
+              },
+            },
           },
         },
       },

@@ -581,7 +581,7 @@ export default function OperationDetailPage() {
                                       {stepDocsCache[step.id]
                                         .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                                         .map((doc: any) => {
-                                          const isOrganization = doc.uploader?.organizationId;
+                                          const isOrganization = doc.uploader?.userRoles?.some((role: any) => role.organizationId);
                                           return (
                                           <div key={doc.id} className={`p-2 border rounded text-xs ${
                                             isOrganization ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
@@ -800,7 +800,7 @@ export default function OperationDetailPage() {
                   {stepDocuments
                     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .map((doc: any) => {
-                      const isOrganization = doc.uploader?.organizationId;
+                      const isOrganization = doc.uploader?.userRoles?.some((role: any) => role.organizationId);
                       return (
                     <div key={doc.id} className={`p-3 border rounded-lg ${
                       isOrganization ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
