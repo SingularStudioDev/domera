@@ -68,3 +68,4 @@ This is a Next.js 15 real estate platform for Domera, a pre-construction propert
 **Input Validation**: Zod schemas for all inputs
 **Multi-tenant**: Organization-based data isolation
 **No Direct DB Access**: Always through DAL, and with proper validations
+- do not open new terminals, if its not strict neccesary and or if i have other terminar running, i need to see the logs myself.
