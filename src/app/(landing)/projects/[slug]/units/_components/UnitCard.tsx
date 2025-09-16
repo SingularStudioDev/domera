@@ -29,6 +29,7 @@ interface Unit {
   image: string;
   unitNumber: string;
   available: boolean;
+  status: string;
   statusIcon: boolean | string;
   isFavorite?: boolean;
 }
@@ -82,7 +83,11 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
   };
 
   return (
-    <div className="group hover:border-primaryColor flex flex-grow flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition duration-300">
+    <div className={`group flex flex-grow flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition duration-300 ${
+      unit.available 
+        ? "hover:border-primaryColor" 
+        : "opacity-75 border-gray-300"
+    }`}>
       <div className="relative">
         <img
           src={unit.image}
@@ -93,17 +98,38 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
           <span className="flex items-center justify-center rounded-2xl bg-gray-200 px-4 py-2 text-sm font-medium text-black">
             {formatUnitType(unit.type)}
           </span>
-          <button
-            onClick={handleFavoriteClick}
-            className="cursor-pointer rounded-2xl bg-gray-200 px-4 py-2 text-sm font-medium text-black transition-colors duration-300 hover:bg-gray-300"
-          >
-            {isCurrentlyFavorite ? (
-              <Heart fill="#0040ff" className="h-5 w-5 text-blue-600" />
-            ) : (
-              <Heart className="h-5 w-5 text-black" />
-            )}
-          </button>
+          {unit.status === "reserved" && (
+            <span className="flex items-center justify-center rounded-2xl bg-orange-500 px-4 py-2 text-sm font-medium text-white">
+              Reservada
+            </span>
+          )}
+          {unit.status === "sold" && (
+            <span className="flex items-center justify-center rounded-2xl bg-red-500 px-4 py-2 text-sm font-medium text-white">
+              Vendida
+            </span>
+          )}
+          {unit.available && (
+            <button
+              onClick={handleFavoriteClick}
+              className="cursor-pointer rounded-2xl bg-gray-200 px-4 py-2 text-sm font-medium text-black transition-colors duration-300 hover:bg-gray-300"
+            >
+              {isCurrentlyFavorite ? (
+                <Heart fill="#0040ff" className="h-5 w-5 text-blue-600" />
+              ) : (
+                <Heart className="h-5 w-5 text-black" />
+              )}
+            </button>
+          )}
         </div>
+        
+        {/* Overlay for non-available units */}
+        {!unit.available && (
+          <div className="absolute inset-0 bg-black bg-opacity-30 rounded-t-2xl flex items-center justify-center">
+            <span className="text-white text-lg font-semibold bg-black bg-opacity-50 px-4 py-2 rounded">
+              {unit.status === "reserved" ? "No Disponible" : "Vendida"}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-4">
@@ -144,13 +170,22 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
             </p>
           </div>
 
-          <Link
-            href={`/projects/${projectSlug}/units/${unit.id}`}
-            className="border-primaryColor text-primaryColor hover:bg-primaryColor flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition-colors hover:text-white"
-          >
-            Ver mas
-            <ArrowLeft className="h-4 w-4 rotate-180" />
-          </Link>
+          {unit.available ? (
+            <Link
+              href={`/projects/${projectSlug}/units/${unit.id}`}
+              className="border-primaryColor text-primaryColor hover:bg-primaryColor flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition-colors hover:text-white"
+            >
+              Ver mas
+              <ArrowLeft className="h-4 w-4 rotate-180" />
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="flex items-center gap-2 rounded-full border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-500 cursor-not-allowed"
+            >
+              {unit.status === "reserved" ? "Reservada" : "Vendida"}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -123,7 +123,9 @@ export async function createOperationWithValidation(
       return failure(operationResult.error || "Error al crear operación");
     }
 
-    // Update units status to 'reserved'
+    // Update units status to 'reserved' - CRITICAL: This must succeed
+    console.log(`[SERVICE] Attempting to update ${input.unitIds.length} units to 'reserved' status:`, input.unitIds);
+    
     const statusUpdateResult = await updateUnitsStatus(
       input.unitIds,
       "reserved",
@@ -132,10 +134,21 @@ export async function createOperationWithValidation(
       userAgent,
     );
 
+    console.log(`[SERVICE] Unit status update result:`, {
+      success: statusUpdateResult.data,
+      error: statusUpdateResult.error
+    });
+
     if (!statusUpdateResult.data) {
-      console.error("Error updating unit status:", statusUpdateResult.error);
-      // Don't fail the operation creation if status update fails
+      console.error("CRITICAL: Error updating unit status after operation creation:", statusUpdateResult.error);
+      // If status update fails, the operation should not be considered successful
+      // The operation exists in DB but units are not properly reserved
+      return failure(
+        `Operación creada pero error actualizando estado de unidades: ${statusUpdateResult.error}. Contacte al administrador.`
+      );
     }
+
+    console.log(`[SERVICE] Successfully updated ${input.unitIds.length} units to 'reserved' status`);
 
     return success(operationResult.data);
   } catch (error) {
@@ -157,17 +170,98 @@ export async function cancelOperationWithUnitsRelease(
   userAgent?: string,
 ): Promise<Result<any>> {
   try {
-    // First, get the operation to find associated units
-    // This should be done through the operations DAL
-    // ... implementation would use operations DAL methods
+    // Import operations DAL function
+    const { getOperationById, cancelOperation } = await import("@/lib/dal/operations");
+    
+    // Get the operation to find associated units
+    const operationResult = await getOperationById(operationId, userId);
+    if (!operationResult.data) {
+      return failure(operationResult.error || "Operación no encontrada");
+    }
 
-    // Then release units back to available status
-    // This would use the units DAL
+    const operation = operationResult.data;
+    
+    // Extract unit IDs from operation units
+    const unitIds = operation.operationUnits?.map((ou: any) => ou.unitId) || [];
+    
+    // Cancel the operation first
+    const cancelResult = await cancelOperation(operationId, userId, reason, ipAddress, userAgent);
+    if (!cancelResult.data) {
+      return failure(cancelResult.error || "Error al cancelar operación");
+    }
 
-    // This is a placeholder - the actual implementation would coordinate
-    // between the operations DAL and units DAL
+    // Release units back to available status
+    if (unitIds.length > 0) {
+      const statusUpdateResult = await updateUnitsStatus(
+        unitIds,
+        "available",
+        userId,
+        ipAddress,
+        userAgent,
+      );
+      
+      if (!statusUpdateResult.data) {
+        console.error("Error releasing unit status:", statusUpdateResult.error);
+        // Don't fail the cancellation if status update fails
+      }
+    }
 
-    return success(true);
+    return success(cancelResult.data);
+  } catch (error) {
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
+  }
+}
+
+/**
+ * Complete operation and mark units as sold
+ * Coordinates between operations and units DALs
+ */
+export async function completeOperationWithUnitsSold(
+  operationId: string,
+  userId: string,
+  ipAddress?: string,
+  userAgent?: string,
+): Promise<Result<any>> {
+  try {
+    // Import operations DAL function
+    const { getOperationById, completeOperation } = await import("@/lib/dal/operations");
+    
+    // Get the operation to find associated units
+    const operationResult = await getOperationById(operationId, userId);
+    if (!operationResult.data) {
+      return failure(operationResult.error || "Operación no encontrada");
+    }
+
+    const operation = operationResult.data;
+    
+    // Extract unit IDs from operation units
+    const unitIds = operation.operationUnits?.map((ou: any) => ou.unitId) || [];
+    
+    // Complete the operation first
+    const completeResult = await completeOperation(operationId, userId, ipAddress, userAgent);
+    if (!completeResult.data) {
+      return failure(completeResult.error || "Error al completar operación");
+    }
+
+    // Mark units as sold
+    if (unitIds.length > 0) {
+      const statusUpdateResult = await updateUnitsStatus(
+        unitIds,
+        "sold",
+        userId,
+        ipAddress,
+        userAgent,
+      );
+      
+      if (!statusUpdateResult.data) {
+        console.error("Error updating unit status to sold:", statusUpdateResult.error);
+        // Don't fail the completion if status update fails
+      }
+    }
+
+    return success(completeResult.data);
   } catch (error) {
     return failure(
       error instanceof Error ? error.message : "Error desconocido",

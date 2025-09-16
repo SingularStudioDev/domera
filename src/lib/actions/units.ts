@@ -225,6 +225,61 @@ export async function getAvailableUnitsAction(
 }
 
 /**
+ * Get all units for a project (including reserved/sold units)
+ * Used for displaying all units with proper status indicators
+ */
+export async function getAllUnitsForProjectAction(
+  projectId: string,
+): Promise<UnitActionResult> {
+  try {
+    const { getAllUnitsForProject } = await import("@/lib/dal/units");
+    const result = await getAllUnitsForProject(projectId);
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    // Transform Decimal fields to numbers for client serialization
+    const transformedUnits = result.data.map((unit) => {
+      // Cast to any to handle the dynamic include types
+      const unitWithProject = unit as any;
+
+      return {
+        ...unit,
+        totalArea: unit.totalArea ? Number(unit.totalArea) : null,
+        builtArea: unit.builtArea ? Number(unit.builtArea) : null,
+        price: Number(unit.price),
+        // Transform project data if it exists (due to include)
+        ...(unitWithProject.project && {
+          project: {
+            ...unitWithProject.project,
+            basePrice: unitWithProject.project.basePrice
+              ? Number(unitWithProject.project.basePrice)
+              : null,
+            latitude: unitWithProject.project.latitude
+              ? Number(unitWithProject.project.latitude)
+              : null,
+            longitude: unitWithProject.project.longitude
+              ? Number(unitWithProject.project.longitude)
+              : null,
+          },
+        }),
+      };
+    });
+
+    return { success: true, data: transformedUnits };
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error getting all units for project:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error obteniendo unidades del proyecto",
+    };
+  }
+}
+
+/**
  * Get available units for a project excluding units already in checkout
  * Public access for checkout process
  */

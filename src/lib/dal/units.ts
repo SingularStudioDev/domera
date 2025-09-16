@@ -222,16 +222,27 @@ export async function updateUnitsStatus(
   userAgent?: string,
 ): Promise<Result<boolean>> {
   try {
+    console.log(`[DAL] updateUnitsStatus called with:`, {
+      unitIds,
+      status,
+      userId,
+      unitCount: unitIds.length
+    });
+
     const client = getDbClient();
 
-    await client.unit.updateMany({
+    const updateResult = await client.unit.updateMany({
       where: {
         id: { in: unitIds },
       },
       data: {
         status,
-        updatedBy: userId,
       },
+    });
+
+    console.log(`[DAL] updateMany result:`, {
+      count: updateResult.count,
+      expectedCount: unitIds.length
     });
 
     // Log audit for each unit
@@ -359,6 +370,40 @@ export async function getAvailableUnits(
       where: {
         projectId,
         status: "available",
+      },
+      include: {
+        project: {
+          include: {
+            organization: true,
+          },
+        },
+      },
+      orderBy: {
+        unitNumber: "asc",
+      },
+    });
+
+    return success(units);
+  } catch (error) {
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
+  }
+}
+
+/**
+ * Get all units for a project with their status information
+ * Used for displaying units with visual indicators for availability
+ */
+export async function getAllUnitsForProject(
+  projectId: string,
+): Promise<Result<Unit[]>> {
+  try {
+    const client = getDbClient();
+
+    const units = await client.unit.findMany({
+      where: {
+        projectId,
       },
       include: {
         project: {

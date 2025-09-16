@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { formatCurrency } from "@/utils/utils";
 
 import { getMultipleFavoriteStatusAction } from "@/lib/actions/favourites";
-import { getAvailableUnitsAction } from "@/lib/actions/units";
+import { getAllUnitsForProjectAction } from "@/lib/actions/units";
 
 import UnitCard from "./UnitCard";
 import UnitFilter from "./UnitFilter";
@@ -56,7 +56,7 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
         setLoading(true);
 
         // Fetch units
-        const unitsResult = await getAvailableUnitsAction(projectId);
+        const unitsResult = await getAllUnitsForProjectAction(projectId);
         if (!unitsResult.success || !unitsResult.data) {
           setError(unitsResult.error || "Error cargando unidades");
           return;
@@ -225,6 +225,7 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
     image: parseUnitImages(unit.images),
     unitNumber: unit.unitNumber,
     available: unit.status === "available",
+    status: unit.status,
     statusIcon: unit.status === "available",
     isFavorite: favoriteStatuses[unit.id] || false,
   }));
@@ -233,13 +234,13 @@ export default function AvailableUnits({ projectId }: AvailableUnitsProps) {
     <div className="bg-neutral-100 px-4 py-4 md:px-0 md:py-10">
       <div className="container mx-auto py-10">
         <h2 className="mb-2 text-3xl font-bold text-black">
-          Unidades disponibles
+          Unidades
         </h2>
         <p className="mb-8 text-gray-600">
-          {mappedUnits.length}{" "}
-          {mappedUnits.length === 1
-            ? "Unidad disponible"
-            : "Unidades disponibles"}
+          {mappedUnits.filter(unit => unit.available).length}{" "}
+          {mappedUnits.filter(unit => unit.available).length === 1
+            ? "disponible"
+            : "disponibles"} de {mappedUnits.length} unidades
         </p>
 
         <UnitFilter filters={filters} setFilters={setFilters} />

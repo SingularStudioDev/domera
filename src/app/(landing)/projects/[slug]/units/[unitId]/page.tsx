@@ -163,6 +163,13 @@ export default function UnitDetailPage() {
   const mainImage = firstImage || "/placeholder-unit.jpg";
 
   const handleAddToCheckout = () => {
+    // Check if unit is not available
+    if (unit.status !== "available") {
+      const statusMessage = unit.status === "reserved" ? "reservada" : unit.status === "sold" ? "vendida" : "no disponible";
+      showError(`Esta unidad está ${statusMessage} y no puede ser comprada.`);
+      return;
+    }
+
     // Check if user has active operation that blocks new purchases
     if (hasActiveOperation) {
       router.push("/userDashboard/shopping");
@@ -246,6 +253,8 @@ export default function UnitDetailPage() {
               projectName={unit.project.name}
               projectHeroImage={projectHeroImage}
               onAddToCheckout={handleAddToCheckout}
+              isAvailable={unit.status === "available"}
+              unitStatus={unit.status}
             />
           </div>
 
@@ -265,9 +274,18 @@ export default function UnitDetailPage() {
           <ProcessSection />
 
           <div className="flex w-full items-center justify-center pb-10">
-            <MainButton variant="fill" showArrow onClick={handleAddToCheckout}>
-              Comprar unidad
-            </MainButton>
+            {unit.status === "available" ? (
+              <MainButton variant="fill" showArrow onClick={handleAddToCheckout}>
+                Comprar unidad
+              </MainButton>
+            ) : (
+              <button
+                disabled
+                className="flex items-center gap-2 rounded-full border border-gray-300 bg-gray-100 px-6 py-3 text-lg font-medium text-gray-500 cursor-not-allowed"
+              >
+                {unit.status === "reserved" ? "Unidad Reservada" : unit.status === "sold" ? "Unidad Vendida" : "No Disponible"}
+              </button>
+            )}
           </div>
         </div>
       </main>

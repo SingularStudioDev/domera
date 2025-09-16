@@ -302,8 +302,9 @@ export async function cancelOperationAction(
       };
     }
 
-    // Cancel operation
-    const result = await cancelOperationDAL(
+    // Cancel operation and release units using service layer
+    const { cancelOperationWithUnitsRelease } = await import("@/lib/services/operations");
+    const result = await cancelOperationWithUnitsRelease(
       operationId,
       user.id,
       reason,
@@ -313,8 +314,6 @@ export async function cancelOperationAction(
     if (!result.data) {
       return { success: false, error: result.error };
     }
-
-    // NOTE: Service layer should handle unit status updates when operation is cancelled
     // Revalidate relevant paths
     revalidatePath("/dashboard");
     revalidatePath("/userDashboard");
@@ -937,6 +936,82 @@ export async function getStepCommentsAction(
   }
 }
 
+/**
+ * Complete operation and mark units as sold
+ */
+export async function completeOperationAction(
+  operationId: string,
+  ipAddress?: string,
+  userAgent?: string,
+): Promise<OperationActionResult> {
+  try {
+    // Validate authentication
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+
+    // Check if user can access this operation
+    const operationResult = await getOperationById(
+      operationId,
+      isAdmin ? undefined : user.id,
+    );
+    if (!operationResult.data) {
+      return { success: false, error: operationResult.error };
+    }
+
+    const operation = operationResult.data;
+
+    // Validate access: user owns operation, is admin, or has organization access
+    const canComplete =
+      operation.userId === user.id ||
+      isAdmin ||
+      user.userRoles.some(
+        (role) =>
+          role.organizationId === operation.organizationId &&
+          ["organization_owner", "sales_manager"].includes(role.role),
+      );
+
+    if (!canComplete) {
+      return {
+        success: false,
+        error: "No tienes permisos para completar esta operación",
+      };
+    }
+
+    // Complete operation and mark units as sold using service layer
+    const { completeOperationWithUnitsSold } = await import("@/lib/services/operations");
+    const result = await completeOperationWithUnitsSold(
+      operationId,
+      user.id,
+      ipAddress,
+      userAgent,
+    );
+    if (!result.data) {
+      return { success: false, error: result.error };
+    }
+
+    // Revalidate relevant paths
+    revalidatePath("/dashboard");
+    revalidatePath("/userDashboard");
+    revalidatePath("/userDashboard/shopping");
+    revalidatePath("/projects");
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error completing operation:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error completando operación",
+    };
+  }
+}
+
 // Export wrappers for compatibility with existing imports
 export const createOperation = createOperationAction;
 export const cancelOperation = cancelOperationAction;
+export const completeOperation = completeOperationAction;

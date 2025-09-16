@@ -34,6 +34,8 @@ interface UnitInfoProps {
   projectName?: string;
   projectHeroImage?: string;
   onAddToCheckout: () => void;
+  isAvailable: boolean;
+  unitStatus: string;
 }
 
 export default function UnitInfo({
@@ -54,6 +56,8 @@ export default function UnitInfo({
   projectName,
   projectHeroImage,
   onAddToCheckout,
+  isAvailable,
+  unitStatus,
 }: UnitInfoProps) {
   const [isCurrentlyFavorite, setIsCurrentlyFavorite] = useState(
     isFavorite || false,
@@ -103,19 +107,28 @@ export default function UnitInfo({
         {/* Unit Title and Star */}
         <div className="flex items-center justify-between">
           <div className="flex items-center justify-start gap-2">
-            <button
-              onClick={handleFavoriteClick}
-              className="cursor-pointer rounded-2xl bg-gray-200 p-3 text-sm font-medium text-black transition-colors duration-300 hover:bg-gray-300"
-            >
-              {isCurrentlyFavorite ? (
-                <Heart fill="#0040ff" className="h-6 w-6 text-blue-600" />
-              ) : (
-                <Heart className="h-6 w-6 text-black" />
-              )}
-            </button>
+            {isAvailable && (
+              <button
+                onClick={handleFavoriteClick}
+                className="cursor-pointer rounded-2xl bg-gray-200 p-3 text-sm font-medium text-black transition-colors duration-300 hover:bg-gray-300"
+              >
+                {isCurrentlyFavorite ? (
+                  <Heart fill="#0040ff" className="h-6 w-6 text-blue-600" />
+                ) : (
+                  <Heart className="h-6 w-6 text-black" />
+                )}
+              </button>
+            )}
             <h1 className="text-4xl font-bold text-black">
               Unidad {unitNumber} - Piso {floor || "N/A"}
             </h1>
+            {!isAvailable && (
+              <span className={`ml-4 px-4 py-2 rounded-2xl text-sm font-medium text-white ${
+                unitStatus === "reserved" ? "bg-orange-500" : unitStatus === "sold" ? "bg-red-500" : "bg-gray-500"
+              }`}>
+                {unitStatus === "reserved" ? "Reservada" : unitStatus === "sold" ? "Vendida" : "No Disponible"}
+              </span>
+            )}
           </div>
         </div>
 
@@ -180,18 +193,33 @@ export default function UnitInfo({
       </div>
 
       {/* Price Section - Always at bottom */}
-      <div className="border-primaryColor mt-6 rounded-2xl border py-6 pr-4 pl-6">
+      <div className={`mt-6 rounded-2xl border py-6 pr-4 pl-6 ${
+        isAvailable ? "border-primaryColor" : "border-gray-300"
+      }`}>
         <div className="flex items-end justify-between">
           <div className="">
-            <p className="text-primaryColor text-xl">Precio</p>
-            <h2 className="text-primaryColor text-3xl font-bold">
+            <p className={`text-xl ${
+              isAvailable ? "text-primaryColor" : "text-gray-500"
+            }`}>Precio</p>
+            <h2 className={`text-3xl font-bold ${
+              isAvailable ? "text-primaryColor" : "text-gray-500"
+            }`}>
               {formattedPrice}
             </h2>
           </div>
 
-          <MainButton variant="fill" showArrow onClick={onAddToCheckout}>
-            Comprar
-          </MainButton>
+          {isAvailable ? (
+            <MainButton variant="fill" showArrow onClick={onAddToCheckout}>
+              Comprar
+            </MainButton>
+          ) : (
+            <button
+              disabled
+              className="flex items-center gap-2 rounded-full border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-500 cursor-not-allowed"
+            >
+              {unitStatus === "reserved" ? "Reservada" : unitStatus === "sold" ? "Vendida" : "No Disponible"}
+            </button>
+          )}
         </div>
       </div>
     </div>
