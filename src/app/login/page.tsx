@@ -81,8 +81,17 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Credenciales incorrectas");
       } else if (result?.ok) {
-        // Redirect to specified redirect parameter or home page as default
-        const redirectUrl = searchParams.get("redirect") || "/";
+        // Get redirect URL from search params or determine based on user role
+        let redirectUrl = searchParams.get("redirect");
+
+        if (!redirectUrl) {
+          // Wait a moment for the session to be updated
+          setTimeout(() => {
+            window.location.href = "/"; // Let the app handle role-based redirection
+          }, 100);
+          return;
+        }
+
         router.push(redirectUrl);
       }
     } catch (error) {

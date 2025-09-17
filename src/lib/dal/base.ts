@@ -152,7 +152,7 @@ export interface PaginationParams {
 
 export interface PaginatedResult<T> {
   data: T[];
-  count: number;
+  total: number;
   page: number;
   pageSize: number;
   totalPages: number;
@@ -166,16 +166,16 @@ export function calculatePagination(page: number, pageSize: number) {
 
 export function formatPaginatedResult<T>(
   data: T[],
-  count: number,
+  total: number,
   page: number,
   pageSize: number,
 ): PaginatedResult<T> {
   return {
     data,
-    count,
+    total,
     page,
     pageSize,
-    totalPages: Math.ceil(count / pageSize),
+    totalPages: Math.ceil(total / pageSize),
   };
 }
 

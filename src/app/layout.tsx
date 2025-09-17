@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
 import { getServerSession } from "next-auth";
+import { Toaster } from "sonner";
 
 import { authOptions } from "@/lib/auth/config";
 import { SessionProvider } from "@/components/providers/SessionProvider";
@@ -36,6 +37,7 @@ export default async function RootLayout({
         <ErrorDialogProvider>
           <SessionProvider session={session}>{children}</SessionProvider>
           <ErrorDialog />
+          <Toaster richColors position="top-right" />
         </ErrorDialogProvider>
       </body>
     </html>

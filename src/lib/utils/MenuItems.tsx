@@ -7,6 +7,8 @@ import {
   LayersIcon,
   MessagesSquareIcon,
   ShoppingCartIcon,
+  BookmarkIcon,
+  CreditCardIcon,
   UserIcon,
 } from "lucide-react";
 
@@ -17,8 +19,13 @@ export const OrgMenuItems = [
     icon: GridIcon,
   },
   {
-    title: "Ventas",
+    title: "Reservas",
     url: "/dashboard/sales",
+    icon: BookmarkIcon,
+  },
+  {
+    title: "Ventas",
+    url: "/dashboard/purchases",
     icon: ShoppingCartIcon,
   },
   {
@@ -33,12 +40,12 @@ export const OrgMenuItems = [
   },
   {
     title: "Notificaciones",
-    url: "/dashboard/analytics",
+    url: "/dashboard/notifications",
     icon: BellIcon,
   },
   {
     title: "Perfil",
-    url: "/dashboard/notifications",
+    url: "/dashboard/profile",
     icon: UserIcon,
   },
 ];

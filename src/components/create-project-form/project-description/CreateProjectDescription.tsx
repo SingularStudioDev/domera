@@ -27,7 +27,7 @@ export function CreateProjectDescription({
   const { builderImage } = useProjectImages(value.images);
 
   // Debug: Log the selected organization
-  console.log("selectedOrganization:", selectedOrganization.logoUrl);
+  console.log("selectedOrganization:", selectedOrganization?.logoUrl);
 
   const handleFieldChange = (field: keyof typeof value, newValue: string) => {
     onChange({

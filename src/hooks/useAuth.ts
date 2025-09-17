@@ -59,6 +59,28 @@ export function useIsAdmin() {
 }
 
 /**
+ * Hook to check if user can access dashboard (admin or organization roles)
+ */
+export function useCanAccessDashboard() {
+  const { user } = useAuth();
+
+  if (!user?.roles) return false;
+
+  // Global admin can access everything
+  if (isAdmin(user.roles)) return true;
+
+  // Organization roles that can access dashboard
+  const dashboardRoles = [
+    "organization_owner",
+    "sales_manager",
+    "finance_manager",
+    "site_manager"
+  ];
+
+  return user.roles.some(role => dashboardRoles.includes(role.role));
+}
+
+/**
  * Hook to check if user belongs to organization
  */
 export function useBelongsToOrganization(organizationId: string) {
@@ -88,8 +110,8 @@ export function usePrimaryOrganization() {
 
   if (!user?.roles) return null;
 
-  const orgRole = user.roles.find((role) => role.organization_id);
-  return orgRole?.organizations || null;
+  const orgRole = user.roles.find((role) => role.organizationId);
+  return orgRole?.organization || null;
 }
 
 // =============================================================================
@@ -209,7 +231,7 @@ export function useOrganizationRole(organizationId: string) {
   if (!user?.roles) return null;
 
   const orgRole = user.roles.find(
-    (role) => role.organization_id === organizationId,
+    (role) => role.organizationId === organizationId,
   );
   return orgRole?.role || null;
 }

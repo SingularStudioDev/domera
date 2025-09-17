@@ -129,30 +129,25 @@ export async function getUnitsAction(
     }
 
     // Transform Decimal fields to numbers for client serialization
-    const transformedData = {
-      ...result.data,
-      data: result.data.data.map((unit) => {
-        // Cast to any to handle the dynamic include types
-        const unitWithProject = unit as any;
+    // Use JSON.parse(JSON.stringify()) to convert all Decimal objects to numbers
+    const serializedData = JSON.parse(JSON.stringify(result.data));
 
+    const transformedData = {
+      ...serializedData,
+      data: serializedData.data.map((unit: any) => {
         return {
           ...unit,
+          // Ensure critical numeric fields are properly converted
           totalArea: unit.totalArea ? Number(unit.totalArea) : null,
           builtArea: unit.builtArea ? Number(unit.builtArea) : null,
           price: Number(unit.price),
-          // Transform project data if it exists (due to include)
-          ...(unitWithProject.project && {
+          // Transform project data if it exists
+          ...(unit.project && {
             project: {
-              ...unitWithProject.project,
-              basePrice: unitWithProject.project.basePrice
-                ? Number(unitWithProject.project.basePrice)
-                : null,
-              latitude: unitWithProject.project.latitude
-                ? Number(unitWithProject.project.latitude)
-                : null,
-              longitude: unitWithProject.project.longitude
-                ? Number(unitWithProject.project.longitude)
-                : null,
+              ...unit.project,
+              basePrice: unit.project.basePrice ? Number(unit.project.basePrice) : null,
+              latitude: unit.project.latitude ? Number(unit.project.latitude) : null,
+              longitude: unit.project.longitude ? Number(unit.project.longitude) : null,
             },
           }),
         };
@@ -184,28 +179,20 @@ export async function getAvailableUnitsAction(
     }
 
     // Transform Decimal fields to numbers for client serialization
-    const transformedUnits = result.data.map((unit) => {
-      // Cast to any to handle the dynamic include types
-      const unitWithProject = unit as any;
-
+    const serializedUnits = JSON.parse(JSON.stringify(result.data));
+    const transformedUnits = serializedUnits.map((unit: any) => {
       return {
         ...unit,
         totalArea: unit.totalArea ? Number(unit.totalArea) : null,
         builtArea: unit.builtArea ? Number(unit.builtArea) : null,
         price: Number(unit.price),
-        // Transform project data if it exists (due to include)
-        ...(unitWithProject.project && {
+        // Transform project data if it exists
+        ...(unit.project && {
           project: {
-            ...unitWithProject.project,
-            basePrice: unitWithProject.project.basePrice
-              ? Number(unitWithProject.project.basePrice)
-              : null,
-            latitude: unitWithProject.project.latitude
-              ? Number(unitWithProject.project.latitude)
-              : null,
-            longitude: unitWithProject.project.longitude
-              ? Number(unitWithProject.project.longitude)
-              : null,
+            ...unit.project,
+            basePrice: unit.project.basePrice ? Number(unit.project.basePrice) : null,
+            latitude: unit.project.latitude ? Number(unit.project.latitude) : null,
+            longitude: unit.project.longitude ? Number(unit.project.longitude) : null,
           },
         }),
       };

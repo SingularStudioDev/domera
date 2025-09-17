@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 
 import { AlertTriangle, ArrowRightIcon, BuildingIcon } from "lucide-react";
 
-import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { useAuth, useCanAccessDashboard } from "@/hooks/useAuth";
 import { Card, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
 import { ChartLineMultiple } from "@/components/dashboard/ChartLineMultiple";
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
-  const isAdmin = useIsAdmin();
+  const canAccessDashboard = useCanAccessDashboard();
   const router = useRouter();
 
   useEffect(() => {
@@ -21,14 +21,14 @@ export default function Dashboard() {
         return;
       }
 
-      if (!isAdmin) {
+      if (!canAccessDashboard) {
         // Show access denied message and redirect to home after 3 seconds
         setTimeout(() => {
           router.push("/");
         }, 3000);
       }
     }
-  }, [isLoading, isAuthenticated, isAdmin, router]);
+  }, [isLoading, isAuthenticated, canAccessDashboard, router]);
 
   // Show loading state
   if (isLoading) {
@@ -42,8 +42,8 @@ export default function Dashboard() {
     );
   }
 
-  // Show access denied message for non-admin users
-  if (!isAdmin) {
+  // Show access denied message for users without dashboard access
+  if (!canAccessDashboard) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="mx-auto max-w-md p-8 text-center">
@@ -53,7 +53,7 @@ export default function Dashboard() {
           </h1>
           <p className="mb-4 text-gray-600">
             No tienes permisos para acceder a esta sección. Solo los
-            administradores pueden ver el dashboard.
+            administradores y gestores de organización pueden ver el dashboard.
           </p>
           <p className="text-sm text-gray-500">
             Serás redirigido al inicio en unos segundos...

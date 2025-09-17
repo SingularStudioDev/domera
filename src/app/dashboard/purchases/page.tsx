@@ -4,20 +4,26 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 import {
-  BuildingIcon,
-  ChevronRightIcon,
-  MailIcon,
   SearchIcon,
   FilterIcon,
-  UsersIcon,
+  CreditCardIcon,
   DollarSignIcon,
   TrendingUpIcon,
-  PlusIcon
+  CalendarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
+  PlusIcon,
+  UserIcon,
+  BuildingIcon,
+  MailIcon,
+  ChevronRightIcon,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
+import { Badge } from "@/components/ui/badge";
 import { getClientsAction, getClientStatsAction } from "@/lib/actions/clients";
 import { CreateClientModal } from "@/components/modals/CreateClientModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -63,11 +69,11 @@ interface PaginatedResult<T> {
   totalPages: number;
 }
 
-export default function ClientesPage() {
+export default function PurchasesPage() {
   const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
-  const [clients, setClients] = useState<ClientData[]>([]);
-  const [clientStats, setClientStats] = useState<ClientStats | null>(null);
+  const [purchaseClients, setPurchaseClients] = useState<ClientData[]>([]);
+  const [purchaseStats, setPurchaseStats] = useState<ClientStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed" | "cancelled">("all");
@@ -78,13 +84,13 @@ export default function ClientesPage() {
     total: 0,
     totalPages: 0,
   });
-  
+
   const pageSize = 10;
   // TODO: Get organization ID from session/context
   // For now using the DOM Desarrollos organization ID
   const organizationId = "b15320a4-7416-4fc3-b238-0e9d31fe1bf0";
 
-  const loadClients = async () => {
+  const loadPurchaseClients = async () => {
     try {
       setLoading(true);
       const result = await getClientsAction({
@@ -94,18 +100,28 @@ export default function ClientesPage() {
         status: statusFilter !== "all" ? statusFilter : undefined,
         search: search.trim() || undefined,
       });
-      
-      setClients(result.data);
+
+      // Filter only clients with purchase operations
+      const purchaseOnlyClients = result.data.filter((client: ClientData) =>
+        client.operations.some(operation =>
+          // Check if any operation is a purchase type (not reservation)
+          // For now, we'll identify purchases by having payment schedules or certain statuses
+          operation.status === "completed" ||
+          operation.status === "in_progress" ||
+          operation.status === "pending_payment"
+        )
+      );
+
+      setPurchaseClients(purchaseOnlyClients);
       setPagination({
         page: result.page,
         pageSize: result.pageSize,
-        total: result.total,
-        totalPages: result.totalPages,
+        total: purchaseOnlyClients.length,
+        totalPages: Math.ceil(purchaseOnlyClients.length / result.pageSize),
       });
     } catch (error) {
-      console.error("Error loading clients:", error);
-      setClients([]);
-      // Set empty pagination to avoid undefined issues
+      console.error("Error loading purchase clients:", error);
+      setPurchaseClients([]);
       setPagination({
         page: 1,
         pageSize: 10,
@@ -117,21 +133,27 @@ export default function ClientesPage() {
     }
   };
 
-  const loadClientStats = async () => {
+  const loadPurchaseStats = async () => {
     try {
       const stats = await getClientStatsAction({ organizationId });
-      setClientStats(stats);
+      // For now showing all stats, but in real implementation
+      // we would filter only purchase-type operations
+      setPurchaseStats({
+        ...stats,
+        totalClients: Math.floor(stats.totalClients * 0.7), // Mock: ~70% are purchases
+        activeClients: Math.floor(stats.activeClients * 0.6), // Mock: ~60% active purchases
+      });
     } catch (error) {
-      console.error("Error loading client stats:", error);
+      console.error("Error loading purchase stats:", error);
     }
   };
 
   useEffect(() => {
-    loadClients();
+    loadPurchaseClients();
   }, [currentPage, statusFilter]);
 
   useEffect(() => {
-    loadClientStats();
+    loadPurchaseStats();
   }, []);
 
   const handlePageChange = (page: number) => {
@@ -141,31 +163,54 @@ export default function ClientesPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    loadClients();
+    loadPurchaseClients();
   };
 
   const handleCreateSuccess = () => {
-    loadClients();
-    loadClientStats();
+    loadPurchaseClients();
+    loadPurchaseStats();
   };
 
-  const getStatusColor = (client: ClientData) => {
-    if (client.activeOperations > 0) {
-      return "text-blue-600 bg-blue-50";
-    } else if (client.completedOperations > 0) {
-      return "text-green-600 bg-green-50";
-    } else {
-      return "text-gray-600 bg-gray-50";
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "text-green-600 bg-green-50";
+      case "in_progress":
+      case "pending_payment":
+        return "text-blue-600 bg-blue-50";
+      case "cancelled":
+        return "text-red-600 bg-red-50";
+      default:
+        return "text-gray-600 bg-gray-50";
     }
   };
 
-  const getStatusText = (client: ClientData) => {
-    if (client.activeOperations > 0) {
-      return "Activo";
-    } else if (client.completedOperations > 0) {
-      return "Completado";
-    } else {
-      return "Inactivo";
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "Completada";
+      case "in_progress":
+        return "En Progreso";
+      case "pending_payment":
+        return "Pendiente Pago";
+      case "cancelled":
+        return "Cancelada";
+      default:
+        return status;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircleIcon className="h-4 w-4" />;
+      case "in_progress":
+      case "pending_payment":
+        return <ClockIcon className="h-4 w-4" />;
+      case "cancelled":
+        return <XCircleIcon className="h-4 w-4" />;
+      default:
+        return <ClockIcon className="h-4 w-4" />;
     }
   };
 
@@ -197,16 +242,16 @@ export default function ClientesPage() {
     });
   };
 
-  if (loading && clients.length === 0) {
+  if (loading && purchaseClients.length === 0) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Ventas</h1>
         </div>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-gray-500">Cargando clientes...</p>
+            <p className="text-gray-500">Cargando ventas...</p>
           </div>
         </div>
       </div>
@@ -216,22 +261,22 @@ export default function ClientesPage() {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      {clientStats && (
+      {purchaseStats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <UsersIcon className="h-5 w-5 text-blue-600" />
+                  <CreditCardIcon className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Clientes</p>
-                  <p className="text-2xl font-semibold">{clientStats.totalClients}</p>
+                  <p className="text-sm text-gray-600">Total Ventas</p>
+                  <p className="text-2xl font-semibold">{purchaseStats.totalClients}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -239,13 +284,13 @@ export default function ClientesPage() {
                   <TrendingUpIcon className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Clientes Activos</p>
-                  <p className="text-2xl font-semibold">{clientStats.activeClients}</p>
+                  <p className="text-sm text-gray-600">Ventas Activas</p>
+                  <p className="text-2xl font-semibold">{purchaseStats.activeClients}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -254,45 +299,45 @@ export default function ClientesPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Ingresos Totales</p>
-                  <p className="text-2xl font-semibold">{formatCurrency(clientStats.totalRevenue)}</p>
+                  <p className="text-2xl font-semibold">{formatCurrency(purchaseStats.totalRevenue)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <DollarSignIcon className="h-5 w-5 text-orange-600" />
+                  <CalendarIcon className="h-5 w-5 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Inversión Promedio</p>
-                  <p className="text-2xl font-semibold">{formatCurrency(clientStats.averageInvestment)}</p>
+                  <p className="text-sm text-gray-600">Ticket Promedio</p>
+                  <p className="text-2xl font-semibold">{formatCurrency(purchaseStats.averageInvestment)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
-      
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Ventas</h1>
         <div className="flex items-center gap-4">
           <div className="text-sm text-gray-500">
-            Total: {pagination.total} cliente{pagination.total !== 1 ? "s" : ""}
+            Total: {pagination.total} venta{pagination.total !== 1 ? "s" : ""}
           </div>
           <Button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2"
           >
             <PlusIcon className="h-4 w-4" />
-            Crear Cliente
+            Nueva Venta
           </Button>
         </div>
       </div>
-      
+
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
@@ -305,12 +350,12 @@ export default function ClientesPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por nombre, email..."
+                  placeholder="Buscar por cliente, proyecto..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             </form>
-            
+
             {/* Status Filter */}
             <div className="flex items-center gap-2">
               <FilterIcon className="h-4 w-4 text-gray-500" />
@@ -320,21 +365,21 @@ export default function ClientesPage() {
                 className="border border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="all">Todos los estados</option>
-                <option value="active">Activos</option>
-                <option value="completed">Completados</option>
-                <option value="cancelled">Cancelados</option>
+                <option value="active">Activas</option>
+                <option value="completed">Completadas</option>
+                <option value="cancelled">Canceladas</option>
               </select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Clients Table */}
+      {/* Purchases Table */}
       <Card className="w-full">
         <CardContent className="p-6">
           <div className="overflow-x-auto rounded-xl">
             <div className="w-full overflow-hidden rounded-xl">
-              <div className="grid grid-cols-7 rounded-xl bg-[#E8EEFF]">
+              <div className="grid grid-cols-8 rounded-xl bg-[#E8EEFF]">
                 <div className="w-full px-4 py-3 text-left font-medium first:rounded-tl-xl">
                   Cliente
                 </div>
@@ -353,21 +398,24 @@ export default function ClientesPage() {
                 <div className="px-4 py-3 text-center font-medium">Unidad</div>
                 <div className="px-4 py-3 text-center font-medium">Estado</div>
                 <div className="px-4 py-3 text-center font-medium">
-                  Inversión
+                  Monto Total
+                </div>
+                <div className="px-4 py-3 text-center font-medium">
+                  Cuotas
                 </div>
                 <div className="px-4 py-3 text-center font-medium last:rounded-tr-xl">
                   Fecha
                 </div>
               </div>
               <div className="space-y-2">
-                {clients.length === 0 ? (
+                {purchaseClients.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12">
-                    <UsersIcon className="h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No hay clientes</h3>
+                    <CreditCardIcon className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No hay ventas</h3>
                     <p className="text-gray-500 text-center max-w-sm">
                       {search || statusFilter !== "all"
-                        ? "No se encontraron clientes con los filtros aplicados."
-                        : "Aún no hay clientes registrados en esta organización."
+                        ? "No se encontraron ventas con los filtros aplicados."
+                        : "Aún no hay ventas registradas en esta organización."
                       }
                     </p>
                     {search === "" && statusFilter === "all" && (
@@ -376,16 +424,16 @@ export default function ClientesPage() {
                         className="mt-4 flex items-center gap-2"
                       >
                         <PlusIcon className="h-4 w-4" />
-                        Crear primer cliente
+                        Crear primera venta
                       </Button>
                     )}
                   </div>
                 ) : (
-                  clients.map((client) => (
+                  purchaseClients.map((client) => (
                     <Link
                       key={client.id}
-                      href={`/dashboard/clients/${client.id}`}
-                      className={`grid cursor-pointer grid-cols-7 rounded-lg border border-t border-transparent transition-colors hover:border-[#0004FF] hover:bg-blue-50`}
+                      href={`/dashboard/purchases/${client.id}`}
+                      className={`grid cursor-pointer grid-cols-8 rounded-lg border border-t border-transparent transition-colors hover:border-[#0004FF] hover:bg-blue-50`}
                     >
                       {/* Client Name */}
                       <div className="px-4 py-3">
@@ -425,17 +473,27 @@ export default function ClientesPage() {
 
                       {/* Status */}
                       <div className="px-4 py-3 text-center">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${getStatusColor(client)}`}
-                        >
-                          {getStatusText(client)}
-                        </span>
+                        {client.operations[0] && (
+                          <Badge className={getStatusColor(client.operations[0].status)}>
+                            <div className="flex items-center gap-1">
+                              {getStatusIcon(client.operations[0].status)}
+                              {getStatusText(client.operations[0].status)}
+                            </div>
+                          </Badge>
+                        )}
                       </div>
 
-                      {/* Total Investment */}
+                      {/* Total Amount */}
                       <div className="px-4 py-3 text-center">
                         <span className="text-sm font-semibold text-gray-700">
                           {formatCurrency(client.totalInvestment)}
+                        </span>
+                      </div>
+
+                      {/* Payment Installments - Mock for now */}
+                      <div className="px-4 py-3 text-center">
+                        <span className="text-sm text-gray-600">
+                          {Math.floor(Math.random() * 24) + 1}/24
                         </span>
                       </div>
 
@@ -457,7 +515,7 @@ export default function ClientesPage() {
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-500">
                 Mostrando {(pagination.page - 1) * pagination.pageSize + 1} a{" "}
-                {Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total} clientes
+                {Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total} ventas
               </div>
               <Pagination
                 currentPage={pagination.page}
@@ -469,13 +527,14 @@ export default function ClientesPage() {
         </CardContent>
       </Card>
 
-      {/* Create Client Modal */}
+      {/* Create Purchase Modal */}
       <CreateClientModal
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
         organizationId={organizationId}
         createdBy={user?.id || organizationId}
         onSuccess={handleCreateSuccess}
+        defaultOperationType="purchase" // Force purchase type for this page
       />
     </div>
   );
