@@ -205,7 +205,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<EmailRes
     const operationTypeText = data.operationType === "reservation" ? "Reserva" : "Compra";
 
     const result = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "noreply@domera.com",
+      from: process.env.RESEND_FROM_EMAIL || "noreply@domera.uy",
       to: [data.to],
       subject: `${operationTypeText} creada exitosamente - ${data.organizationName}`,
       html: generateWelcomeEmailHtml(data),
