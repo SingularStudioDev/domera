@@ -17,7 +17,7 @@ import {
   type PaginatedResult,
   type Result,
 } from "./base";
-import { sendWelcomeEmail, sendSimpleWelcomeEmail, generateConfirmationUrl } from "@/lib/email/resend";
+import { sendWelcomeEmail, sendSimpleWelcomeEmail, sendLoginReminderEmail, generateConfirmationUrl } from "@/lib/email/resend";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -1079,24 +1079,30 @@ export async function resendClientWelcomeEmail(
       select: { name: true },
     });
 
-    // Generate new temporary password
-    const temporaryPassword = generateSecurePassword();
-    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
+    // Don't change password, just use a placeholder message
+    // Check if user has ever logged in by checking lastLogin
+    const hasLoggedIn = user.lastLogin !== null;
 
-    // Update user password
-    await client.user.update({
-      where: { id: userId },
-      data: { password: hashedPassword },
-    });
+    let emailResult;
 
-    // Send email
-    const emailResult = await sendSimpleWelcomeEmail({
-      to: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      organizationName: organization?.name || "Domera",
-      temporaryPassword,
-    });
+    if (hasLoggedIn) {
+      // Send reminder email - user already has access
+      emailResult = await sendLoginReminderEmail({
+        to: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        organizationName: organization?.name || "Domera",
+      });
+    } else {
+      // User never logged in, resend original welcome with same password message
+      emailResult = await sendSimpleWelcomeEmail({
+        to: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        organizationName: organization?.name || "Domera",
+        temporaryPassword: "Tu contraseña temporal anterior", // Placeholder since we don't store plain passwords
+      });
+    }
 
     return success({
       emailSent: emailResult.success,

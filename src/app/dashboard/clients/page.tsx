@@ -12,17 +12,15 @@ import {
   UsersIcon,
   DollarSignIcon,
   TrendingUpIcon,
-  PlusIcon,
-  Send
+  PlusIcon
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
-import { getClientsAction, getClientStatsAction, resendClientWelcomeEmailAction } from "@/lib/actions/clients";
+import { getClientsAction, getClientStatsAction } from "@/lib/actions/clients";
 import { CreateClientOnlyModal } from "@/components/modals/CreateClientOnlyModal";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
 
 interface ClientData {
   id: string;
@@ -74,7 +72,6 @@ export default function ClientesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed" | "cancelled">("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -150,24 +147,6 @@ export default function ClientesPage() {
   const handleCreateSuccess = () => {
     loadClients();
     loadClientStats();
-  };
-
-  const handleResendEmail = async (clientId: string, clientName: string) => {
-    try {
-      setResendingEmail(clientId);
-
-      await resendClientWelcomeEmailAction({
-        userId: clientId,
-        organizationId,
-      });
-
-      toast.success(`Email reenviado exitosamente a ${clientName}`);
-    } catch (error) {
-      console.error("Error resending email:", error);
-      toast.error(error instanceof Error ? error.message : "Error al reenviar email");
-    } finally {
-      setResendingEmail(null);
-    }
   };
 
   const getStatusColor = (client: ClientData) => {
@@ -355,7 +334,7 @@ export default function ClientesPage() {
         <CardContent className="p-6">
           <div className="overflow-x-auto rounded-xl">
             <div className="w-full overflow-hidden rounded-xl">
-              <div className="grid grid-cols-8 rounded-xl bg-[#E8EEFF]">
+              <div className="grid grid-cols-7 rounded-xl bg-[#E8EEFF]">
                 <div className="w-full px-4 py-3 text-left font-medium first:rounded-tl-xl">
                   Cliente
                 </div>
@@ -376,11 +355,8 @@ export default function ClientesPage() {
                 <div className="px-4 py-3 text-center font-medium">
                   Inversión
                 </div>
-                <div className="px-4 py-3 text-center font-medium">
-                  Fecha
-                </div>
                 <div className="px-4 py-3 text-center font-medium last:rounded-tr-xl">
-                  Acciones
+                  Fecha
                 </div>
               </div>
               <div className="space-y-2">
@@ -406,9 +382,10 @@ export default function ClientesPage() {
                   </div>
                 ) : (
                   clients.map((client) => (
-                    <div
+                    <Link
                       key={client.id}
-                      className={`grid grid-cols-8 rounded-lg border border-t border-transparent transition-colors hover:bg-gray-50`}
+                      href={`/dashboard/clients/${client.id}`}
+                      className={`grid cursor-pointer grid-cols-7 rounded-lg border border-t border-transparent transition-colors hover:border-[#0004FF] hover:bg-blue-50`}
                     >
                       {/* Client Name */}
                       <div className="px-4 py-3">
@@ -468,38 +445,7 @@ export default function ClientesPage() {
                           {formatDate(client.lastOperationDate.toISOString())}
                         </span>
                       </div>
-
-                      {/* Actions */}
-                      <div className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <Link
-                            href={`/dashboard/clients/${client.id}`}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                          >
-                            Ver
-                          </Link>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleResendEmail(client.id, `${client.firstName} ${client.lastName}`);
-                            }}
-                            disabled={resendingEmail === client.id}
-                            className="h-7 px-2"
-                          >
-                            {resendingEmail === client.id ? (
-                              "Enviando..."
-                            ) : (
-                              <>
-                                <Send className="h-3 w-3 mr-1" />
-                                Reenviar
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                    </Link>
                   ))
                 )}
               </div>

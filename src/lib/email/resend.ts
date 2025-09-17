@@ -35,6 +35,13 @@ interface SimpleWelcomeEmailData {
   temporaryPassword: string;
 }
 
+interface LoginReminderEmailData {
+  to: string;
+  firstName: string;
+  lastName: string;
+  organizationName: string;
+}
+
 interface EmailResult {
   success: boolean;
   error?: string;
@@ -135,7 +142,7 @@ function generateWelcomeEmailHtml(data: WelcomeEmailData): string {
         </div>
 
         <div style="text-align: center;">
-          <a href="${data.confirmationUrl}" class="button">Aceptar Operación</a>
+          <a href="${data.confirmationUrl}" class="button" style="color: white;">Aceptar Operación</a>
         </div>
 
         <p><strong>¿Qué sigue?</strong></p>
@@ -324,7 +331,7 @@ function generateSimpleWelcomeEmailHtml(data: SimpleWelcomeEmailData): string {
         </div>
 
         <div style="text-align: center;">
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login" class="button">Ingresar a la Plataforma</a>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login" class="button" style="color: white;">Ingresar a la Plataforma</a>
         </div>
 
         <p><strong>¿Qué puedes hacer ahora?</strong></p>
@@ -390,6 +397,152 @@ export async function sendSimpleWelcomeEmail(data: SimpleWelcomeEmailData): Prom
       subject: `Bienvenido a ${data.organizationName}`,
       html: generateSimpleWelcomeEmailHtml(data),
       text: generateSimpleWelcomeEmailText(data),
+    });
+
+    if (result.error) {
+      return {
+        success: false,
+        error: result.error.message,
+      };
+    }
+
+    return {
+      success: true,
+      messageId: result.data?.id,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    };
+  }
+}
+
+// =============================================================================
+// LOGIN REMINDER EMAIL
+// =============================================================================
+
+function generateLoginReminderEmailHtml(data: LoginReminderEmailData): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Recordatorio de acceso - ${data.organizationName}</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          background: #0066cc;
+          color: white;
+          padding: 20px;
+          text-align: center;
+          border-radius: 8px 8px 0 0;
+        }
+        .content {
+          background: #f9f9f9;
+          padding: 30px;
+          border-radius: 0 0 8px 8px;
+        }
+        .button {
+          display: inline-block;
+          background: #0066cc;
+          color: white;
+          padding: 15px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          margin: 20px 0;
+        }
+        .footer {
+          text-align: center;
+          color: #666;
+          font-size: 12px;
+          margin-top: 30px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Recordatorio de acceso</h1>
+        <p>Tu cuenta en ${data.organizationName} te espera</p>
+      </div>
+
+      <div class="content">
+        <h2>Hola ${data.firstName} ${data.lastName},</h2>
+
+        <p>Te recordamos que tienes acceso a tu cuenta en ${data.organizationName}. Puedes ingresar en cualquier momento para revisar tu información y mantenerte al día.</p>
+
+        <div style="text-align: center;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login" class="button" style="color: white;">Ingresar a tu Cuenta</a>
+        </div>
+
+        <p><strong>¿Qué puedes hacer en tu cuenta?</strong></p>
+        <ul>
+          <li>Revisar el estado de tus operaciones</li>
+          <li>Actualizar tu información personal</li>
+          <li>Contactar a nuestro equipo</li>
+          <li>Acceder a documentos importantes</li>
+        </ul>
+
+        <p>Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.</p>
+      </div>
+
+      <div class="footer">
+        <p>Este es un email automático. Por favor no responder a este mensaje.</p>
+        <p>© ${new Date().getFullYear()} ${data.organizationName}. Todos los derechos reservados.</p>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function generateLoginReminderEmailText(data: LoginReminderEmailData): string {
+  return `
+Recordatorio de acceso - ${data.organizationName}
+
+Hola ${data.firstName} ${data.lastName},
+
+Te recordamos que tienes acceso a tu cuenta en ${data.organizationName}. Puedes ingresar en cualquier momento para revisar tu información y mantenerte al día.
+
+PARA INGRESAR:
+Visita: ${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login
+
+¿QUÉ PUEDES HACER EN TU CUENTA?
+- Revisar el estado de tus operaciones
+- Actualizar tu información personal
+- Contactar a nuestro equipo
+- Acceder a documentos importantes
+
+Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.
+
+---
+Este es un email automático. Por favor no responder a este mensaje.
+© ${new Date().getFullYear()} ${data.organizationName}. Todos los derechos reservados.
+  `;
+}
+
+export async function sendLoginReminderEmail(data: LoginReminderEmailData): Promise<EmailResult> {
+  try {
+    if (!process.env.RESEND_API_KEY) {
+      return {
+        success: false,
+        error: "RESEND_API_KEY no está configurada",
+      };
+    }
+
+    const result = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "noreply@domera.uy",
+      to: [data.to],
+      subject: `Recordatorio de acceso - ${data.organizationName}`,
+      html: generateLoginReminderEmailHtml(data),
+      text: generateLoginReminderEmailText(data),
     });
 
     if (result.error) {

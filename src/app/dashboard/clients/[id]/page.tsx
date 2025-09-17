@@ -18,13 +18,15 @@ import {
   CheckCircleIcon,
   ClockIcon,
   XCircleIcon,
+  Send,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getClientDetailsAction } from "@/lib/actions/clients";
+import { getClientDetailsAction, resendClientWelcomeEmailAction } from "@/lib/actions/clients";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface ClientData {
   id: string;
@@ -58,6 +60,7 @@ export default function ClientDetailPage() {
   const [client, setClient] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resendingEmail, setResendingEmail] = useState(false);
 
   // TODO: Get organization ID from session/context
   // For now using the DOM Desarrollos organization ID
@@ -88,6 +91,26 @@ export default function ClientDetailPage() {
       loadClientDetails();
     }
   }, [params.id, organizationId]);
+
+  const handleResendEmail = async () => {
+    if (!client) return;
+
+    try {
+      setResendingEmail(true);
+
+      await resendClientWelcomeEmailAction({
+        userId: client.id,
+        organizationId,
+      });
+
+      toast.success(`Email reenviado exitosamente a ${client.firstName} ${client.lastName}`);
+    } catch (error) {
+      console.error("Error resending email:", error);
+      toast.error(error instanceof Error ? error.message : "Error al reenviar email");
+    } finally {
+      setResendingEmail(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -241,10 +264,27 @@ export default function ClientDetailPage() {
               </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-600">Inversión Total</div>
-            <div className="text-2xl font-bold text-gray-900">
-              {formatCurrency(client.totalInvestment)}
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={handleResendEmail}
+              disabled={resendingEmail}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              {resendingEmail ? (
+                "Enviando..."
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Reenviar Email
+                </>
+              )}
+            </Button>
+            <div className="text-right">
+              <div className="text-sm text-gray-600">Inversión Total</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatCurrency(client.totalInvestment)}
+              </div>
             </div>
           </div>
         </div>
