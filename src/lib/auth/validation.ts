@@ -192,9 +192,9 @@ export async function requireRole(
 
     const user = authResult.user;
 
-    // Check for admin role (global access)
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
-    if (isAdmin) {
+    // Check for global super admin role (organizationId = null)
+    const isGlobalAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
+    if (isGlobalAdmin) {
       return {
         success: true,
         user,
@@ -262,9 +262,9 @@ export async function requireOrganizationAccess(
 
     const user = authResult.user;
 
-    // Check for admin role (global access)
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
-    if (isAdmin) {
+    // Check for global super admin role (organizationId = null)
+    const isGlobalAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
+    if (isGlobalAdmin) {
       return {
         success: true,
         user,
@@ -322,11 +322,16 @@ export async function hasRole(
 }
 
 /**
- * Check if current user is admin
- * Use this for admin-only features
+ * Check if current user is global super admin
+ * Use this for global admin-only features
  */
 export async function isAdmin(): Promise<boolean> {
-  return await hasRole("admin");
+  const result = await validateSession();
+  if (!result.success || !result.user) {
+    return false;
+  }
+  // Check for global super admin role only (organizationId = null)
+  return result.user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
 }
 
 /**

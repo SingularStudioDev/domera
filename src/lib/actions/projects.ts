@@ -220,7 +220,7 @@ export async function getProjectsAction(
         user = authResult.user;
 
         // Filter by organization if user is not admin
-        const isAdmin = user.userRoles.some((role) => role.role === "admin");
+        const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
         if (!isAdmin && !filters.organizationId) {
           // Get user's organization
           const userOrg = user.userRoles.find((role) => role.organizationId);

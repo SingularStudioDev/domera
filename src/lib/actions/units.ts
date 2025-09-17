@@ -570,7 +570,7 @@ export async function updateUnitsStatusAction(
     const organizationId = organizationIds[0];
     const hasAccess = user.userRoles.some(
       (role) =>
-        role.role === "admin" ||
+        role.role === "admin" && role.organizationId === null ||
         (role.organizationId === organizationId &&
           ["organization_owner", "sales_manager"].includes(role.role)),
     );
@@ -797,7 +797,7 @@ export async function bulkCreateUnitsAction(
     // Additional validation for large batches
     if (
       units.length > 200 &&
-      !user.userRoles.some((role) => role.role === "admin")
+      !user.userRoles.some((role) => role.role === "admin" && role.organizationId === null)
     ) {
       return {
         success: false,

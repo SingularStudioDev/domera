@@ -263,7 +263,7 @@ export async function updateOrganizationAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
     const isOrgOwner = user.userRoles.some(
       (role) =>
         role.role === "organization_owner" &&
@@ -394,7 +394,7 @@ export async function uploadOrganizationLogoAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
     const isOrgOwner = user.userRoles.some(
       (role) =>
         role.role === "organization_owner" &&

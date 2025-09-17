@@ -153,28 +153,28 @@ export async function getOperationByIdAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isGlobalAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null && role.organizationId === null);
 
-    // Check if user has organization access (admin, organization owner, or specific org roles)
+    // Check if user has organization access (global admin, organization owner, or specific org roles)
     const hasOrganizationAccess = user.userRoles.some((role) =>
-      role.role === "admin" ||
+      (role.role === "admin" && role.organizationId === null && role.organizationId === null) ||
       role.role === "organization_owner" ||
       role.role === "sales_manager" ||
       role.role === "finance_manager" ||
       role.role === "site_manager"
     );
 
-    // Get operation (skip user validation if admin or has organization access)
+    // Get operation (skip user validation if global admin or has organization access)
     const result = await getOperationById(
       operationId,
-      (isAdmin || hasOrganizationAccess) ? undefined : user.id,
+      (isGlobalAdmin || hasOrganizationAccess) ? undefined : user.id,
     );
     if (!result.data) {
       return { success: false, error: result.error };
     }
 
-    // Additional organization access validation if not admin but has org access
-    if (!isAdmin && hasOrganizationAccess) {
+    // Additional organization access validation if not global admin but has org access
+    if (!isGlobalAdmin && hasOrganizationAccess) {
       const operation = result.data;
       const userOrgIds = user.userRoles.map((role) => role.organizationId).filter(Boolean);
       const operationOrgId = operation.organizationId;
@@ -217,7 +217,7 @@ export async function updateOperationAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
 
     // Check if user can access this operation
     const operationResult = await getOperationById(
@@ -293,7 +293,7 @@ export async function cancelOperationAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
 
     // Check if user can access this operation
     const operationResult = await getOperationById(
@@ -670,7 +670,7 @@ export async function updateOperationStepAction(
     const userOrgIds = user.userRoles.map((role) => role.organizationId).filter(Boolean);
     const operationOrgId = operation.operationUnits[0]?.unit.project.organizationId;
     
-    if (!user.userRoles.some(role => role.role === "admin") && !userOrgIds.includes(operationOrgId)) {
+    if (!user.userRoles.some(role => role.role === "admin" && role.organizationId === null) && !userOrgIds.includes(operationOrgId)) {
       return {
         success: false,
         error: "No tienes acceso a esta operación",
@@ -810,7 +810,7 @@ export async function addStepCommentAction(
     const userOrgIds = user.userRoles.map((role) => role.organizationId).filter(Boolean);
     const operationOrgId = step.operation.operationUnits[0]?.unit.project.organizationId;
     const isOwner = step.operation.userId === user.id;
-    const isAdmin = user.userRoles.some(role => role.role === "admin");
+    const isAdmin = user.userRoles.some(role => role.role === "admin" && role.organizationId === null);
     const hasOrgAccess = userOrgIds.includes(operationOrgId);
     
     // Allow comments if user is:
@@ -925,7 +925,7 @@ export async function getStepCommentsAction(
     const operationOrgId = step.operation.operationUnits[0]?.unit.project.organizationId;
     const isOwner = step.operation.userId === user.id;
     
-    if (!user.userRoles.some(role => role.role === "admin") && 
+    if (!user.userRoles.some(role => role.role === "admin" && role.organizationId === null) && 
         !userOrgIds.includes(operationOrgId) && 
         !isOwner) {
       return {
@@ -939,7 +939,7 @@ export async function getStepCommentsAction(
     const comments: StepComment[] = metadata.comments || [];
 
     // Filter internal comments for non-organization users
-    const isOrgUser = userOrgIds.includes(operationOrgId) || user.userRoles.some(role => role.role === "admin");
+    const isOrgUser = userOrgIds.includes(operationOrgId) || user.userRoles.some(role => role.role === "admin" && role.organizationId === null);
     const filteredComments = isOrgUser 
       ? comments 
       : comments.filter(comment => !comment.isInternal);
@@ -973,7 +973,7 @@ export async function completeOperationAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
 
     // Check if user can access this operation
     const operationResult = await getOperationById(

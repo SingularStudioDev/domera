@@ -213,7 +213,7 @@ export async function getRequiredDocumentsForStepAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
 
     // Get operation using DAL (without user restriction for organization access check)
     const operationResult = await getOperationById(operationId);
@@ -320,7 +320,7 @@ export async function getRequiredDocumentsForOperationAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
 
     // Get operation using DAL (with user access validation if not admin)
     const operationResult = await getOperationById(
@@ -596,11 +596,11 @@ export async function uploadDocumentAction(
 
     // If operationId is provided, verify user can access the operation
     if (input.operationId) {
-      const isAdmin = user.userRoles.some((role) => role.role === "admin");
+      const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
 
       // Check if user has organization access (admin, organization owner, or specific org roles)
       const hasOrganizationAccess = user.userRoles.some((role) =>
-        role.role === "admin" ||
+        role.role === "admin" && role.organizationId === null ||
         role.role === "organization_owner" ||
         role.role === "sales_manager" ||
         role.role === "finance_manager" ||
@@ -888,7 +888,7 @@ export async function getDocumentVersionsAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
 
     // Get operation using DAL (with user access validation if not admin)
     const operationResult = await getOperationById(
@@ -982,7 +982,7 @@ export async function getOperationDocumentsAction(
     }
 
     const user = authResult.user!;
-    const isAdmin = user.userRoles.some((role) => role.role === "admin");
+    const isAdmin = user.userRoles.some((role) => role.role === "admin" && role.organizationId === null);
 
     // Get operation using DAL (with user access validation if not admin)
     const operationResult = await getOperationById(
