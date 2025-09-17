@@ -236,8 +236,8 @@ export async function checkUserPermission(
       },
     });
 
-    // Check for admin role (global access)
-    if (userRoles.some((role) => role.role === "admin")) {
+    // Check for global super admin role (organizationId = null)
+    if (userRoles.some((role) => role.role === "admin" && role.organizationId === null)) {
       return true;
     }
 
