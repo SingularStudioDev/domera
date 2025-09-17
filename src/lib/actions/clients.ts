@@ -11,7 +11,10 @@ import {
   getAvailableUnitsByProject,
   validateUnitsAvailability,
   createClientWithOperation,
-  acceptOperation
+  createClientOnly,
+  acceptOperation,
+  resendClientWelcomeEmail,
+  resendOperationConfirmationEmail
 } from "@/lib/dal/clients";
 
 const GetClientsSchema = z.object({
@@ -67,6 +70,29 @@ const CreateClientSchema = z.object({
 const AcceptOperationSchema = z.object({
   token: z.string().min(1),
   password: z.string().min(1),
+});
+
+const CreateClientOnlySchema = z.object({
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  email: z.string().email(),
+  phone: z.string().optional(),
+  documentType: z.string().optional(),
+  documentNumber: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  organizationId: z.string().min(1),
+  createdBy: z.string().min(1),
+});
+
+const ResendEmailSchema = z.object({
+  userId: z.string().min(1),
+  organizationId: z.string().min(1),
+});
+
+const ResendOperationEmailSchema = z.object({
+  operationId: z.string().min(1),
+  organizationId: z.string().min(1),
 });
 
 export async function getClientsAction(input: z.infer<typeof GetClientsSchema>) {
@@ -187,6 +213,51 @@ export async function acceptOperationAction(input: z.infer<typeof AcceptOperatio
 
   if (!result.data) {
     throw new Error(result.error || "Error al aceptar operación");
+  }
+
+  return result.data;
+}
+
+export async function createClientOnlyAction(input: z.infer<typeof CreateClientOnlySchema>) {
+  const validatedInput = CreateClientOnlySchema.parse(input);
+
+  const result = await createClientOnly(validatedInput);
+
+  if (!result.data) {
+    throw new Error(result.error || "Error al crear cliente");
+  }
+
+  // Revalidate the clients list
+  revalidatePath(`/dashboard/clients`);
+
+  return result.data;
+}
+
+export async function resendClientWelcomeEmailAction(input: z.infer<typeof ResendEmailSchema>) {
+  const validatedInput = ResendEmailSchema.parse(input);
+
+  const result = await resendClientWelcomeEmail(
+    validatedInput.userId,
+    validatedInput.organizationId
+  );
+
+  if (!result.data) {
+    throw new Error(result.error || "Error al reenviar email");
+  }
+
+  return result.data;
+}
+
+export async function resendOperationConfirmationEmailAction(input: z.infer<typeof ResendOperationEmailSchema>) {
+  const validatedInput = ResendOperationEmailSchema.parse(input);
+
+  const result = await resendOperationConfirmationEmail(
+    validatedInput.operationId,
+    validatedInput.organizationId
+  );
+
+  if (!result.data) {
+    throw new Error(result.error || "Error al reenviar email de confirmación");
   }
 
   return result.data;

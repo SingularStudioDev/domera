@@ -17,7 +17,7 @@ import {
   type PaginatedResult,
   type Result,
 } from "./base";
-import { sendWelcomeEmail, generateConfirmationUrl } from "@/lib/email/resend";
+import { sendWelcomeEmail, sendSimpleWelcomeEmail, generateConfirmationUrl } from "@/lib/email/resend";
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -941,6 +941,256 @@ export async function acceptOperation(
     return success({
       operationId: operation.id,
       userId: user.id,
+    });
+
+  } catch (error) {
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
+  }
+}
+
+// =============================================================================
+// CLIENT-ONLY CREATION (NO OPERATION)
+// =============================================================================
+
+interface CreateClientOnlyInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  documentType?: string;
+  documentNumber?: string;
+  address?: string;
+  city?: string;
+  organizationId: string;
+  createdBy: string;
+}
+
+/**
+ * Create client only - No operation, just welcome email
+ */
+export async function createClientOnly(
+  input: CreateClientOnlyInput,
+  ipAddress?: string,
+  userAgent?: string,
+): Promise<Result<{
+  user: User;
+  temporaryPassword: string;
+  emailSent: boolean;
+}>> {
+  try {
+    const client = getDbClient();
+
+    const temporaryPassword = generateSecurePassword();
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
+
+    const createdUser = await client.user.create({
+      data: {
+        email: input.email,
+        password: hashedPassword,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        phone: input.phone,
+        documentType: input.documentType,
+        documentNumber: input.documentNumber,
+        address: input.address,
+        city: input.city,
+        createdBy: input.createdBy,
+      },
+    });
+
+    // Send simple welcome email (no operation details)
+    const organization = await client.organization.findUnique({
+      where: { id: input.organizationId },
+      select: { name: true },
+    });
+
+    const emailResult = await sendSimpleWelcomeEmail({
+      to: input.email,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      organizationName: organization?.name || "Domera",
+      temporaryPassword,
+    });
+
+    if (!emailResult.success) {
+      console.error("Failed to send welcome email:", emailResult.error);
+      // Note: We don't fail the operation if email fails
+    }
+
+    // Log audit
+    await logAudit(client, {
+      userId: input.createdBy,
+      organizationId: input.organizationId,
+      tableName: "users",
+      recordId: createdUser.id,
+      action: "INSERT",
+      newValues: {
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+      },
+      ipAddress,
+      userAgent,
+    });
+
+    return success({
+      user: createdUser,
+      temporaryPassword,
+      emailSent: emailResult?.success || false,
+    });
+
+  } catch (error) {
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
+  }
+}
+
+// =============================================================================
+// EMAIL RESEND FUNCTIONS
+// =============================================================================
+
+/**
+ * Resend simple welcome email to existing client
+ */
+export async function resendClientWelcomeEmail(
+  userId: string,
+  organizationId: string,
+): Promise<Result<{ emailSent: boolean }>> {
+  try {
+    const client = getDbClient();
+
+    // Get user details
+    const user = await client.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      return failure("Usuario no encontrado o no pertenece a esta organización");
+    }
+
+    // Get organization details
+    const organization = await client.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true },
+    });
+
+    // Generate new temporary password
+    const temporaryPassword = generateSecurePassword();
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
+
+    // Update user password
+    await client.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // Send email
+    const emailResult = await sendSimpleWelcomeEmail({
+      to: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      organizationName: organization?.name || "Domera",
+      temporaryPassword,
+    });
+
+    return success({
+      emailSent: emailResult.success,
+    });
+
+  } catch (error) {
+    return failure(
+      error instanceof Error ? error.message : "Error desconocido",
+    );
+  }
+}
+
+/**
+ * Resend operation confirmation email to existing client
+ */
+export async function resendOperationConfirmationEmail(
+  operationId: string,
+  organizationId: string,
+): Promise<Result<{ emailSent: boolean }>> {
+  try {
+    const client = getDbClient();
+
+    // Get operation with user and units details
+    const operation = await client.operation.findFirst({
+      where: {
+        id: operationId,
+        organizationId,
+      },
+      include: {
+        user: true,
+        operationUnits: {
+          include: {
+            unit: {
+              include: {
+                project: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!operation) {
+      return failure("Operación no encontrada");
+    }
+
+    // Generate new temporary password and confirmation token
+    const temporaryPassword = generateSecurePassword();
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
+
+    // Update user password
+    await client.user.update({
+      where: { id: operation.userId },
+      data: { password: hashedPassword },
+    });
+
+    const confirmationToken = generateConfirmationToken({
+      operationId: operation.id,
+      email: operation.user.email,
+      temporaryPassword,
+    });
+
+    // Get organization details
+    const organization = await client.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true },
+    });
+
+    // Prepare units data for email
+    const units = operation.operationUnits.map(ou => ({
+      unitNumber: ou.unit.unitNumber,
+      projectName: ou.unit.project.name,
+    }));
+
+    // Send operation confirmation email
+    const emailResult = await sendWelcomeEmail({
+      to: operation.user.email,
+      firstName: operation.user.firstName,
+      lastName: operation.user.lastName,
+      organizationName: organization?.name || "Domera",
+      operationType: operation.operationType,
+      units,
+      totalAmount: operation.totalAmount.toNumber(),
+      temporaryPassword,
+      confirmationToken,
+      confirmationUrl: generateConfirmationUrl(confirmationToken),
+    });
+
+    return success({
+      emailSent: emailResult.success,
     });
 
   } catch (error) {

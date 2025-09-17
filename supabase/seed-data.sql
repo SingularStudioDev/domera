@@ -40,7 +40,7 @@ INSERT INTO users (id, email, first_name, last_name, phone, document_type, docum
 -- Admin user
 (
   '550e8400-e29b-41d4-a716-446655440011',
-  'admin@domera.com',
+  'admin@domera.uy',
   'Admin',
   'Domera',
   '+598 99123456',

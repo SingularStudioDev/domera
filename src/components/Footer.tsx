@@ -18,19 +18,19 @@ export default function Footer() {
           <div className="flex flex-col items-start">
             <p className="mb-1 text-xl font-semibold">Contacto</p>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Mail: contacto@domera.uy
             </a>
             {/* <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Dirección: Edificio Mansa Inn
             </a>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Teléfono: 094123123
@@ -82,19 +82,19 @@ export default function Footer() {
           <div className="flex flex-col items-start">
             <p className="mb-1 text-xl font-semibold">Legales</p>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Términos y condiciones
             </a>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Política de privacidad{" "}
             </a>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Política de cookies{" "}
@@ -104,13 +104,13 @@ export default function Footer() {
           <div className="flex flex-col items-start">
             <p className="mb-1 text-xl font-semibold">Contenido</p>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Blog
             </a>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Preguntas frecuentes
@@ -120,19 +120,19 @@ export default function Footer() {
           <div className="flex flex-col items-start">
             <p className="mb-1 text-xl font-semibold">Servicios</p>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Marketing
             </a>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Desarrollo web
             </a>
             <a
-              href="mailto:inversiones@domera.com"
+              href="mailto:inversiones@domera.uy"
               className="font-light text-white"
             >
               Desarrolladoras
