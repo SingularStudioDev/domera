@@ -3,6 +3,7 @@
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 import Logo from "@/assets/Domera.svg";
 import { DoorOpenIcon, LucideProps } from "lucide-react";
@@ -31,6 +32,10 @@ interface AppSidebarProps {
 
 export function AppSidebar({ menuItems }: AppSidebarProps) {
   const pathname = usePathname();
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
 
   const isMenuItemActive = (itemUrl: string) => {
     if (pathname.startsWith("/super")) {
@@ -87,13 +92,13 @@ export function AppSidebar({ menuItems }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
-              className="text-base text-black hover:bg-blue-50 hover:text-[#0004FF]"
+              onClick={handleSignOut}
+              className="text-base text-black hover:bg-blue-50 hover:text-[#0004FF] cursor-pointer"
             >
-              <Link href="/" className="flex items-center gap-3 px-4 py-2">
+              <div className="flex items-center gap-3 px-4 py-2">
                 <DoorOpenIcon className="h-4 w-4" />
                 <span>Salir</span>
-              </Link>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

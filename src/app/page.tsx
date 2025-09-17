@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 
 import Footer from "@/components/Footer";

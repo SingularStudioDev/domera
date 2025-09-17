@@ -202,38 +202,33 @@ export default function HeaderDesktop() {
               </DropdownMenu>
             ) : (
               // Dropdown para usuario no autenticado
-              <DropdownMenu
-                open={loginDropdownOpen}
-                onOpenChange={setLoginDropdownOpen}
-              >
-                <DropdownMenuTrigger asChild className="w-full">
-                  <button className="hover:text-primaryColor flex w-full cursor-pointer items-center justify-between gap-3 text-base font-normal text-black transition-colors duration-200 outline-none hover:bg-gray-100">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex w-full cursor-pointer items-center justify-between gap-3 text-base font-normal text-black transition-colors duration-200 hover:bg-gray-100 hover:text-primaryColor focus:outline-none">
                     <span>Login</span>
-                    <ChevronDown
-                      className={`h-4.5 w-4.5 transition-transform duration-300 ${loginDropdownOpen ? "rotate-180" : "rotate-0"}`}
-                    />
+                    <ChevronDown className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="center"
-                  className="mt-7 flex w-fit flex-col items-start justify-start rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5] p-2"
+                  className="mt-2 w-fit rounded-2xl border border-[#DCDCDC] bg-[#F5F5F5] p-2"
                 >
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    <a
+                  <DropdownMenuItem asChild>
+                    <Link
                       href="/login"
-                      className="group flex items-center space-x-2 transition-colors duration-200 hover:text-[#0004FF]"
+                      className="group flex items-center space-x-2 rounded-md px-3 py-2 text-base font-normal transition-colors duration-200 hover:text-[#0004FF]"
                     >
-                      <span className="text-base font-normal group-hover:text-[#0004FF]">
+                      <span className="group-hover:text-[#0004FF]">
                         Iniciar Sesión
                       </span>
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer">
+                  <DropdownMenuItem asChild>
                     <Link
                       href="/register"
-                      className="group flex cursor-pointer items-center space-x-2 transition-colors duration-200 hover:text-[#0004FF]"
+                      className="group flex items-center space-x-2 rounded-md px-3 py-2 text-base font-normal transition-colors duration-200 hover:text-[#0004FF]"
                     >
-                      <span className="text-base font-normal group-hover:text-[#0004FF]">
+                      <span className="group-hover:text-[#0004FF]">
                         Registrarse
                       </span>
                     </Link>

@@ -1,8 +1,11 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { formatCurrency } from "@/utils/utils";
 import type { Project } from "@prisma/client";
 
 import type { ImagesData } from "@/types/project-images";
-import { getPublicProjects } from "@/lib/dal/projects";
+import { getPublicProjectsAction } from "@/lib/actions/projects";
 
 import MainButton from "../custom-ui/MainButton";
 import ProjectCardWithImages from "./ProjectCardWithImages";
@@ -85,29 +88,66 @@ const formatProjectForDisplay = (project: Project): ProjectDisplayData => {
   };
 };
 
-export default async function Projects({
+export default function Projects({
   limit = 7,
   showLoadMore = true,
 }: ProjectsProps = {}) {
-  const projectsResult = await getPublicProjects({
-    page: 1,
-    pageSize: limit,
-  });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!projectsResult.data) {
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const projectsResult = await getPublicProjectsAction({
+          page: 1,
+          pageSize: limit,
+        });
+
+        if (projectsResult.success && projectsResult.data) {
+          setProjects(projectsResult.data.data);
+        } else {
+          setProjects([]);
+          setError(projectsResult.error || 'Error al cargar proyectos');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al cargar proyectos');
+        setProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProjects();
+  }, [limit]);
+
+  if (loading) {
     return (
       <section className="px-4 pb-10 md:px-0 md:pb-16">
         <div className="container mx-auto">
           <h2 className="dashboard-title">Proyectos</h2>
-          <p className="text-center text-gray-600">
-            No hay proyectos disponibles en este momento.
-          </p>
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+          </div>
         </div>
       </section>
     );
   }
 
-  const projects = projectsResult.data.data;
+  if (error || projects.length === 0) {
+    return (
+      <section className="px-4 pb-10 md:px-0 md:pb-16">
+        <div className="container mx-auto">
+          <h2 className="dashboard-title">Proyectos</h2>
+          <p className="text-center text-gray-600">
+            {error || "No hay proyectos disponibles en este momento."}
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="px-4 pb-10 md:px-0 md:pb-16">
