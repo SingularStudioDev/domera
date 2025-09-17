@@ -45,6 +45,14 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
   );
   const router = useRouter();
 
+  const handleViewMore = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `/projects/${projectSlug}/units/${unit.id}`;
+    console.log('Navigating to:', url);
+    router.push(url);
+  };
+
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -171,13 +179,13 @@ export default function UnitCard({ unit, projectSlug }: UnitCardProps) {
           </div>
 
           {unit.available ? (
-            <Link
-              href={`/projects/${projectSlug}/units/${unit.id}`}
+            <button
+              onClick={handleViewMore}
               className="border-primaryColor text-primaryColor hover:bg-primaryColor flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition-colors hover:text-white"
             >
-              Ver mas
+              Ver más
               <ArrowLeft className="h-4 w-4 rotate-180" />
-            </Link>
+            </button>
           ) : (
             <button
               disabled
