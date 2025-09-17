@@ -155,13 +155,34 @@ export async function getOperationByIdAction(
     const user = authResult.user!;
     const isAdmin = user.userRoles.some((role) => role.role === "admin");
 
-    // Get operation (with user access validation if not admin)
+    // Check if user has organization access (admin, organization owner, or specific org roles)
+    const hasOrganizationAccess = user.userRoles.some((role) =>
+      role.role === "admin" ||
+      role.role === "organization_owner" ||
+      role.role === "sales_manager" ||
+      role.role === "finance_manager" ||
+      role.role === "site_manager"
+    );
+
+    // Get operation (skip user validation if admin or has organization access)
     const result = await getOperationById(
       operationId,
-      isAdmin ? undefined : user.id,
+      (isAdmin || hasOrganizationAccess) ? undefined : user.id,
     );
     if (!result.data) {
       return { success: false, error: result.error };
+    }
+
+    // Additional organization access validation if not admin but has org access
+    if (!isAdmin && hasOrganizationAccess) {
+      const operation = result.data;
+      const userOrgIds = user.userRoles.map((role) => role.organizationId).filter(Boolean);
+      const operationOrgId = operation.organizationId;
+
+      // Check if user belongs to the same organization as the operation
+      if (!userOrgIds.includes(operationOrgId)) {
+        return { success: false, error: "No tienes acceso a esta operación" };
+      }
     }
 
     // Serialize the operation data to handle Decimal fields

@@ -215,11 +215,8 @@ export async function getRequiredDocumentsForStepAction(
     const user = authResult.user!;
     const isAdmin = user.userRoles.some((role) => role.role === "admin");
 
-    // Get operation using DAL (with user access validation if not admin)
-    const operationResult = await getOperationById(
-      operationId,
-      isAdmin ? undefined : user.id,
-    );
+    // Get operation using DAL (without user restriction for organization access check)
+    const operationResult = await getOperationById(operationId);
     if (!operationResult.data) {
       return {
         success: false,
@@ -228,6 +225,27 @@ export async function getRequiredDocumentsForStepAction(
     }
 
     const operation = operationResult.data;
+
+    // Enhanced access control: Check if user has organization-level access
+    if (!isAdmin) {
+      const userCanAccess = (
+        // User is the operation creator
+        operation.userId === user.id ||
+        // User has organization-level access to this operation's organization
+        user.userRoles.some(role =>
+          role.organizationId === operation.organizationId &&
+          role.isActive &&
+          ['organization_owner', 'sales_manager', 'finance_manager', 'site_manager'].includes(role.role)
+        )
+      );
+
+      if (!userCanAccess) {
+        return {
+          success: false,
+          error: "No tienes acceso a esta operación",
+        };
+      }
+    }
 
     // Find the specific step
     const targetStep = operation.steps.find(step => step.id === stepId);
@@ -244,7 +262,7 @@ export async function getRequiredDocumentsForStepAction(
     // Get existing documents for this operation and step
     const client = getDbClient();
     const existingDocs = await client.document.findMany({
-      where: { 
+      where: {
         operationId,
         stepId: stepId,
       },
@@ -258,6 +276,7 @@ export async function getRequiredDocumentsForStepAction(
             userRoles: {
               select: {
                 organizationId: true,
+                role: true,
               },
             },
           },
@@ -316,6 +335,27 @@ export async function getRequiredDocumentsForOperationAction(
     }
 
     const operation = operationResult.data;
+
+    // Enhanced access control: Check if user has organization-level access
+    if (!isAdmin) {
+      const userCanAccess = (
+        // User is the operation creator
+        operation.userId === user.id ||
+        // User has organization-level access to this operation's organization
+        user.userRoles.some(role =>
+          role.organizationId === operation.organizationId &&
+          role.isActive &&
+          ['organization_owner', 'sales_manager', 'finance_manager', 'site_manager'].includes(role.role)
+        )
+      );
+
+      if (!userCanAccess) {
+        return {
+          success: false,
+          error: "No tienes acceso a esta operación",
+        };
+      }
+    }
 
     // Define required documents based on operation status and steps
     const documentRequirements = getDocumentRequirementsByStatus(
@@ -554,12 +594,22 @@ export async function uploadDocumentAction(
     const user = authResult.user!;
     const client = getDbClient();
 
-    // If operationId is provided, verify user owns the operation
+    // If operationId is provided, verify user can access the operation
     if (input.operationId) {
       const isAdmin = user.userRoles.some((role) => role.role === "admin");
+
+      // Check if user has organization access (admin, organization owner, or specific org roles)
+      const hasOrganizationAccess = user.userRoles.some((role) =>
+        role.role === "admin" ||
+        role.role === "organization_owner" ||
+        role.role === "sales_manager" ||
+        role.role === "finance_manager" ||
+        role.role === "site_manager"
+      );
+
       const operationResult = await getOperationById(
         input.operationId,
-        isAdmin ? undefined : user.id,
+        (isAdmin || hasOrganizationAccess) ? undefined : user.id,
       );
 
       if (!operationResult.data) {
@@ -567,6 +617,21 @@ export async function uploadDocumentAction(
           success: false,
           error: "Operación no encontrada o no autorizada",
         };
+      }
+
+      // Additional organization access validation if not admin but has org access
+      if (!isAdmin && hasOrganizationAccess) {
+        const operation = operationResult.data;
+        const userOrgIds = user.userRoles.map((role) => role.organizationId).filter(Boolean);
+        const operationOrgId = operation.organizationId;
+
+        // Check if user belongs to the same organization as the operation
+        if (!userOrgIds.includes(operationOrgId)) {
+          return {
+            success: false,
+            error: "No tienes acceso a esta operación"
+          };
+        }
       }
     }
 
@@ -837,6 +902,29 @@ export async function getDocumentVersionsAction(
       };
     }
 
+    const operation = operationResult.data;
+
+    // Enhanced access control: Check if user has organization-level access
+    if (!isAdmin) {
+      const userCanAccess = (
+        // User is the operation creator
+        operation.userId === user.id ||
+        // User has organization-level access to this operation's organization
+        user.userRoles.some(role =>
+          role.organizationId === operation.organizationId &&
+          role.isActive &&
+          ['organization_owner', 'sales_manager', 'finance_manager', 'site_manager'].includes(role.role)
+        )
+      );
+
+      if (!userCanAccess) {
+        return {
+          success: false,
+          error: "No tienes acceso a esta operación",
+        };
+      }
+    }
+
     const client = getDbClient();
     const documentVersions = await client.document.findMany({
       where: { 
@@ -906,6 +994,29 @@ export async function getOperationDocumentsAction(
         success: false,
         error: "Operación no encontrada o no autorizada",
       };
+    }
+
+    const operation = operationResult.data;
+
+    // Enhanced access control: Check if user has organization-level access
+    if (!isAdmin) {
+      const userCanAccess = (
+        // User is the operation creator
+        operation.userId === user.id ||
+        // User has organization-level access to this operation's organization
+        user.userRoles.some(role =>
+          role.organizationId === operation.organizationId &&
+          role.isActive &&
+          ['organization_owner', 'sales_manager', 'finance_manager', 'site_manager'].includes(role.role)
+        )
+      );
+
+      if (!userCanAccess) {
+        return {
+          success: false,
+          error: "No tienes acceso a esta operación",
+        };
+      }
     }
 
     const client = getDbClient();
