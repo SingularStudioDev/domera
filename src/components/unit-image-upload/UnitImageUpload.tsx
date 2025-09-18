@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OptimizedImageUpload } from "@/components/image-upload/OptimizedImageUpload";
-import { UnitImagesManager } from "@/lib/utils/unit-images";
-import { UnitImageType, UnitImageTypeValue } from "@/types/unit-images";
 import { Camera, Image as ImageIcon, Star } from "lucide-react";
 
 interface UnitImageUploadProps {
@@ -14,9 +12,11 @@ interface UnitImageUploadProps {
   onChange: (urls: string[]) => void;
   onFilesChange?: (files: File[]) => void;
   onPathsChange?: (paths: string[]) => void;
+  onMainImageChange?: (mainImageUrl: string | undefined) => void;
   unitId?: string;
   disabled?: boolean;
   className?: string;
+  deferUpload?: boolean;
 }
 
 export const UnitImageUpload: React.FC<UnitImageUploadProps> = ({
@@ -24,174 +24,112 @@ export const UnitImageUpload: React.FC<UnitImageUploadProps> = ({
   onChange,
   onFilesChange,
   onPathsChange,
+  onMainImageChange,
   unitId,
   disabled = false,
   className,
+  deferUpload = false,
 }) => {
-  // Inicializar el manager con las imágenes actuales usando useMemo
-  const imagesManager = useMemo(() => new UnitImagesManager(value), [value]);
-  const mainImages = useMemo(() => imagesManager.getImagesByType(UnitImageType.MAIN), [imagesManager]);
-  const galleryImages = useMemo(() => imagesManager.getImagesByType(UnitImageType.GALLERY), [imagesManager]);
-
   const handleImageChange = useCallback(
-    (urls: string[], type: UnitImageTypeValue) => {
-      try {
-        let updatedManager = imagesManager;
-
-        // Remover todas las imágenes del tipo actual
-        const currentImages = imagesManager.getImagesByType(type);
-        for (const image of currentImages) {
-          updatedManager = updatedManager.removeImage(image.url, type);
-        }
-
-        // Agregar las nuevas imágenes del tipo especificado
-        for (let i = 0; i < urls.length; i++) {
-          const url = urls[i];
-          updatedManager = updatedManager.addImage(url, type, i);
-        }
-
-        // Actualizar el array de URLs en el formato esperado
-        const updatedUrls = updatedManager.toLegacyStringArray();
-        onChange(updatedUrls);
-      } catch (error) {
-        console.error('Error updating images:', error);
-      }
-    },
-    [imagesManager, onChange]
-  );
-
-  const handleMainImageChange = useCallback(
     (urls: string[]) => {
-      handleImageChange(urls, UnitImageType.MAIN);
+      // Simple approach: just update the images array directly without complex management
+      onChange(urls);
     },
-    [handleImageChange]
+    [onChange]
   );
 
-  const handleGalleryImageChange = useCallback(
-    (urls: string[]) => {
-      handleImageChange(urls, UnitImageType.GALLERY);
-    },
-    [handleImageChange]
-  );
+  // Track which image is selected as main (by index, not by reordering)
+  const [mainImageIndex, setMainImageIndex] = useState(0);
 
   const setAsMainImage = useCallback(
     (url: string) => {
-      try {
-        const updatedManager = imagesManager.setMainImage(url);
-        const updatedUrls = updatedManager.toLegacyStringArray();
-        onChange(updatedUrls);
-      } catch (error) {
-        console.error('Error setting main image:', error);
+      const index = value.findIndex(imageUrl => imageUrl === url);
+      if (index !== -1) {
+        setMainImageIndex(index);
+        // Notify parent component about the main image change
+        if (onMainImageChange) {
+          onMainImageChange(url);
+        }
       }
     },
-    [imagesManager, onChange]
+    [value, onMainImageChange]
   );
 
   return (
     <div className={className}>
-      <div className="space-y-6">
-        {/* Imagen Principal */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Star className="h-5 w-5 text-yellow-500" />
-              Imagen Principal
-              <Badge variant="secondary" className="ml-auto">
-                {mainImages.length}/1
-              </Badge>
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Esta será la imagen principal que se mostrará en las tarjetas y vista de la unidad.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <OptimizedImageUpload
-              value={mainImages.map(img => img.url)}
-              onChange={handleMainImageChange}
-              onFilesChange={onFilesChange}
-              onPathsChange={onPathsChange}
-              entityType="unit"
-              entityId={unitId}
-              maxImages={1}
-              placeholder="Seleccionar imagen principal de la unidad"
-              aspectRatio="aspect-[4/3]"
-              disabled={disabled}
-              showUploadButton={true}
-              deferUpload={false}
-            />
+      {/* Galería de Imágenes Unificada */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <ImageIcon className="h-5 w-5 text-blue-500" />
+            Imágenes de la Unidad
+            <Badge variant="secondary" className="ml-auto">
+              {value.length}/20
+            </Badge>
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Sube todas las imágenes de la unidad. Puedes seleccionar cuál será la imagen principal usando las acciones rápidas.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <OptimizedImageUpload
+            value={value}
+            onChange={handleImageChange}
+            onFilesChange={onFilesChange}
+            onPathsChange={onPathsChange}
+            entityType="unit"
+            entityId={unitId}
+            maxImages={20}
+            placeholder="Seleccionar imágenes de la unidad"
+            aspectRatio="aspect-[4/3]"
+            disabled={disabled}
+            showUploadButton={true}
+            deferUpload={deferUpload}
+            mainImageUrl={value.length > mainImageIndex ? value[mainImageIndex] : undefined}
+          />
+
+          {/* Opciones para seleccionar imagen principal */}
+          {value.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-sm font-medium text-gray-700">
+                <Star className="h-4 w-4 inline mr-1 text-yellow-500" />
+                Seleccionar imagen principal:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {value.slice(0, 5).map((imageUrl, index) => (
+                  <Button
+                    key={imageUrl}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAsMainImage(imageUrl)}
+                    disabled={disabled}
+                    className="text-xs"
+                  >
+                    <Camera className="h-3 w-3 mr-1" />
+                    Imagen {index + 1}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Resumen */}
+      {value.length > 0 && (
+        <Card className="bg-muted/50 mt-4">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between text-sm">
+              <span>Total de imágenes: {value.length}</span>
+              <div className="flex gap-4">
+                <span>Principal: {value.length > 0 ? 1 : 0}</span>
+                <span>Galería: {value.length > 1 ? value.length - 1 : 0}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
-
-        {/* Galería de Imágenes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ImageIcon className="h-5 w-5 text-blue-500" />
-              Galería de Imágenes
-              <Badge variant="secondary" className="ml-auto">
-                {galleryImages.length}/20
-              </Badge>
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Imágenes adicionales que se mostrarán en la galería de la unidad. Estas imágenes se pueden reordenar.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <OptimizedImageUpload
-              value={galleryImages.map(img => img.url)}
-              onChange={handleGalleryImageChange}
-              onFilesChange={onFilesChange}
-              onPathsChange={onPathsChange}
-              entityType="unit"
-              entityId={unitId}
-              maxImages={20}
-              placeholder="Seleccionar imágenes para la galería"
-              aspectRatio="aspect-[4/3]"
-              disabled={disabled}
-              showUploadButton={true}
-              deferUpload={false}
-            />
-            
-            {/* Opciones adicionales para imágenes de galería */}
-            {galleryImages.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium text-gray-700">Acciones rápidas:</p>
-                <div className="flex flex-wrap gap-2">
-                  {galleryImages.slice(0, 3).map((image, index) => (
-                    <Button
-                      key={image.url}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAsMainImage(image.url)}
-                      disabled={disabled}
-                      className="text-xs"
-                    >
-                      <Camera className="h-3 w-3 mr-1" />
-                      Usar imagen {index + 1} como principal
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Resumen */}
-        {(mainImages.length > 0 || galleryImages.length > 0) && (
-          <Card className="bg-muted/50">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between text-sm">
-                <span>Total de imágenes: {mainImages.length + galleryImages.length}</span>
-                <div className="flex gap-4">
-                  <span>Principal: {mainImages.length}</span>
-                  <span>Galería: {galleryImages.length}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      )}
     </div>
   );
 };

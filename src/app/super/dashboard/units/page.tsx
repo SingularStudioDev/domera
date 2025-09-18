@@ -5,9 +5,9 @@ import Link from "next/link";
 
 import { formatCurrency } from "@/utils/utils";
 import type { UnitStatus } from "@prisma/client";
-import { Edit, Eye, Filter, Loader2, Plus, Search } from "lucide-react";
+import { Edit, Eye, Filter, Loader2, Plus, Search, Check, CheckCheck } from "lucide-react";
 
-import { getUnitsAction } from "@/lib/actions/units";
+import { getUnitsAction, updateUnitStatusAction, approveUnitsAction } from "@/lib/actions/units";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +53,7 @@ interface PaginatedResult {
 }
 
 const UNIT_STATUS_MAP = {
+  pending: { label: "Pendiente", variant: "outline" as const },
   available: { label: "Disponible", variant: "default" as const },
   reserved: { label: "Reservada", variant: "secondary" as const },
   sold: { label: "Vendida", variant: "destructive" as const },
@@ -71,6 +72,8 @@ export default function UnitsPage() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUnits, setSelectedUnits] = useState<Set<string>>(new Set());
+  const [approving, setApproving] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 20,
@@ -168,6 +171,63 @@ export default function UnitsPage() {
     });
   };
 
+  // Selection handlers
+  const toggleUnitSelection = (unitId: string) => {
+    const newSelection = new Set(selectedUnits);
+    if (newSelection.has(unitId)) {
+      newSelection.delete(unitId);
+    } else {
+      newSelection.add(unitId);
+    }
+    setSelectedUnits(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    const pendingUnits = units.filter(unit => unit.status === "pending");
+    if (selectedUnits.size === pendingUnits.length && pendingUnits.length > 0) {
+      setSelectedUnits(new Set());
+    } else {
+      setSelectedUnits(new Set(pendingUnits.map(unit => unit.id)));
+    }
+  };
+
+  // Approval handlers
+  const handleApproveSelected = async () => {
+    if (selectedUnits.size === 0) return;
+
+    setApproving(true);
+    try {
+      const result = await approveUnitsAction(Array.from(selectedUnits));
+      if (result.success) {
+        setSelectedUnits(new Set());
+        fetchUnits(pagination.page, filters);
+      } else {
+        setError(result.error || "Error aprobando unidades");
+      }
+    } catch (error) {
+      setError("Error inesperado al aprobar unidades");
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const handleApproveUnit = async (unitId: string) => {
+    try {
+      const result = await updateUnitStatusAction(unitId, "available");
+      if (result.success) {
+        fetchUnits(pagination.page, filters);
+      } else {
+        setError(result.error || "Error aprobando unidad");
+      }
+    } catch (error) {
+      setError("Error inesperado al aprobar unidad");
+    }
+  };
+
+  // Get counts for display
+  const pendingUnits = units.filter(unit => unit.status === "pending");
+  const allPendingSelected = pendingUnits.length > 0 && selectedUnits.size === pendingUnits.length;
+
   if (loading && units.length === 0) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -189,12 +249,20 @@ export default function UnitsPage() {
             Administra todas las unidades de los proyectos
           </p>
         </div>
-        <Button asChild className="sm:w-auto">
-          <Link href="/super/dashboard/units/create-unit">
-            <Plus className="mr-2 h-4 w-4" />
-            Nueva Unidad
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" className="sm:w-auto">
+            <Link href="/super/dashboard/units/create-bulk">
+              <Plus className="mr-2 h-4 w-4" />
+              Crear en Lote
+            </Link>
+          </Button>
+          <Button asChild className="sm:w-auto">
+            <Link href="/super/dashboard/units/create-unit">
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva Unidad
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -248,6 +316,7 @@ export default function UnitsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="pending">Pendiente</SelectItem>
                 <SelectItem value="available">Disponible</SelectItem>
                 <SelectItem value="reserved">Reservada</SelectItem>
                 <SelectItem value="sold">Vendida</SelectItem>
@@ -292,17 +361,77 @@ export default function UnitsPage() {
         </Card>
       )}
 
+      {/* Bulk Approval Section */}
+      {pendingUnits.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <CheckCheck className="h-5 w-5" />
+              Aprobación de Unidades Pendientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={allPendingSelected}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <span className="text-sm">
+                    Seleccionar todas las {pendingUnits.length} unidades pendientes
+                  </span>
+                </div>
+                {selectedUnits.size > 0 && (
+                  <Badge variant="secondary">
+                    {selectedUnits.size} seleccionadas
+                  </Badge>
+                )}
+              </div>
+              <Button
+                onClick={handleApproveSelected}
+                disabled={selectedUnits.size === 0 || approving}
+                className="flex items-center gap-2"
+              >
+                {approving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Aprobando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Aprobar Seleccionadas ({selectedUnits.size})
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Units Grid */}
       {units.length > 0 ? (
         <>
           <div className="grid gap-6">
             {units.map((unit) => (
-              <Card key={unit.id} className="transition-shadow hover:shadow-lg">
+              <Card key={unit.id} className={`transition-shadow hover:shadow-lg ${unit.status === "pending" ? "border-orange-200" : ""}`}>
                 <CardContent className="p-6">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     {/* Unit Info */}
                     <div className="flex-1 space-y-3">
                       <div className="flex items-start gap-3">
+                        {/* Checkbox for pending units */}
+                        {unit.status === "pending" && (
+                          <input
+                            type="checkbox"
+                            checked={selectedUnits.has(unit.id)}
+                            onChange={() => toggleUnitSelection(unit.id)}
+                            className="mt-1 h-4 w-4 rounded border-gray-300"
+                          />
+                        )}
                         <div>
                           <h3 className="text-lg font-semibold">
                             Unidad {unit.unitNumber}
@@ -357,6 +486,16 @@ export default function UnitsPage() {
 
                     {/* Actions */}
                     <div className="flex gap-2 lg:flex-col">
+                      {unit.status === "pending" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleApproveUnit(unit.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Check className="mr-1 h-4 w-4" />
+                          Aprobar
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/super/dashboard/units/${unit.id}`}>
                           <Eye className="mr-1 h-4 w-4" />

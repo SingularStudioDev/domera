@@ -57,6 +57,7 @@ export const UnitTypeSchema = z.enum([
 ] as const);
 
 export const UnitStatusSchema = z.enum([
+  "pending",
   "available",
   "reserved",
   "sold",

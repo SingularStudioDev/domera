@@ -52,6 +52,7 @@ enum UnitType {
 }
 
 enum UnitStatus {
+  pending
   available
   reserved
   sold
@@ -332,7 +333,7 @@ model Unit {
   unitNumber   String     @map("unit_number") @db.VarChar(50)
   floor        Int?
   unitType     UnitType   @map("unit_type")
-  status       UnitStatus @default(available)
+  status       UnitStatus @default(pending)
   bedrooms     Int        @default(0)
   bathrooms    Int        @default(0)
   totalArea    Decimal?   @map("total_area") @db.Decimal(8, 2)

@@ -6,6 +6,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import type { UnitStatus } from "@prisma/client";
 
@@ -26,7 +27,7 @@ import {
   validateUnitsAvailability,
   validateUnitsExist,
 } from "@/lib/dal/units";
-import { CreateUnitSchema } from "@/lib/validations/schemas";
+import { CreateUnitSchema, BulkCreateUnitsSchema } from "@/lib/validations/schemas";
 import {
   bulkCreateUnitsWithValidation,
   getBulkCreationSummary,
@@ -937,6 +938,151 @@ export async function getBulkCreationSummaryAction(
         error instanceof Error
           ? error.message
           : "Error obteniendo resumen de creación en lote",
+    };
+  }
+}
+
+/**
+ * Create units in bulk using BulkCreateUnitsSchema validation
+ * Creates units with "pending" status for approval
+ */
+export async function createUnitsInBulkAction(
+  input: z.infer<typeof BulkCreateUnitsSchema>
+): Promise<UnitActionResult> {
+  try {
+    // Validate input data with Zod schema
+    const validatedInput = BulkCreateUnitsSchema.parse(input);
+
+    // Validate project access
+    const projectAccessResult = await validateProjectAccess(validatedInput.project_id);
+    if (!projectAccessResult.success) {
+      return { success: false, error: projectAccessResult.error };
+    }
+
+    // Check if user has appropriate role for bulk operations
+    const authResult = await validateSession();
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    const user = authResult.user!;
+    const hasPermission = user.userRoles.some((role) =>
+      ["admin", "organization_owner", "sales_manager"].includes(role.role),
+    );
+
+    if (!hasPermission) {
+      return {
+        success: false,
+        error:
+          "No tienes permisos para crear unidades en lote. Se requiere rol de administrador, propietario de organización o gerente de ventas.",
+      };
+    }
+
+    // Call the existing bulk creation logic
+    const result = await bulkCreateUnitsAction(
+      validatedInput.project_id,
+      validatedInput.units
+    );
+
+    return result;
+
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error creating units in bulk:", error);
+
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: `Errores de validación: ${error.errors.map(e => e.message).join(", ")}`,
+      };
+    }
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error creando unidades en lote",
+    };
+  }
+}
+
+/**
+ * Update unit status (typically from pending to available for approval)
+ * Requires admin role
+ */
+export async function updateUnitStatusAction(
+  unitId: string,
+  newStatus: UnitStatus
+): Promise<UnitActionResult> {
+  try {
+    // Validate authentication and require admin role
+    const authResult = await requireRole(["admin"]);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    // Update unit status
+    const result = await updateUnitsStatus([unitId], newStatus);
+    if (!result.data) {
+      return { success: false, error: result.error || "Error actualizando estado de unidad" };
+    }
+
+    // Revalidate relevant paths
+    revalidatePath("/super/dashboard/units");
+
+    return {
+      success: true,
+      data: {
+        message: `Estado de unidad actualizado a ${newStatus}`,
+        unitId,
+        newStatus,
+      },
+    };
+
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error updating unit status:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error actualizando estado de unidad",
+    };
+  }
+}
+
+/**
+ * Approve multiple units (change from pending to available)
+ * Requires admin role
+ */
+export async function approveUnitsAction(unitIds: string[]): Promise<UnitActionResult> {
+  try {
+    // Validate authentication and require admin role
+    const authResult = await requireRole(["admin"]);
+    if (!authResult.success) {
+      return { success: false, error: authResult.error };
+    }
+
+    if (unitIds.length === 0) {
+      return { success: false, error: "No se seleccionaron unidades" };
+    }
+
+    // Update all units to available status
+    const result = await updateUnitsStatus(unitIds, "available");
+    if (!result.data) {
+      return { success: false, error: result.error || "Error aprobando unidades" };
+    }
+
+    // Revalidate relevant paths
+    revalidatePath("/super/dashboard/units");
+
+    return {
+      success: true,
+      data: {
+        message: `${unitIds.length} unidades aprobadas correctamente`,
+        approvedCount: unitIds.length,
+      },
+    };
+
+  } catch (error) {
+    console.error("[SERVER_ACTION] Error approving units:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error aprobando unidades",
     };
   }
 }

@@ -9,6 +9,7 @@ import {
   ImageIcon,
   Loader2,
   Plus,
+  Star,
   Upload,
   X,
 } from "lucide-react";
@@ -33,6 +34,7 @@ interface OptimizedImageUploadProps {
   aspectRatio?: string;
   showUploadButton?: boolean;
   deferUpload?: boolean; // New prop to defer uploads until form submission
+  mainImageUrl?: string; // URL of the main/featured image
 }
 
 // =============================================================================
@@ -53,6 +55,7 @@ export const OptimizedImageUpload: React.FC<OptimizedImageUploadProps> = ({
   aspectRatio = "aspect-video",
   showUploadButton = true,
   deferUpload = false,
+  mainImageUrl,
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [storedPaths, setStoredPaths] = useState<string[]>([]);
@@ -227,12 +230,20 @@ export const OptimizedImageUpload: React.FC<OptimizedImageUploadProps> = ({
             Imágenes guardadas ({value.length})
           </h4>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {value.map((url, index) => (
+            {value.map((url, index) => {
+              const isMainImage = mainImageUrl === url || (!mainImageUrl && index === 0);
+
+              return (
               <div
                 key={`uploaded-${index}`}
                 className={cn("group relative", aspectRatio)}
               >
-                <div className="absolute inset-0 overflow-hidden rounded-lg border">
+                <div className={cn(
+                  "absolute inset-0 overflow-hidden rounded-lg border-2 transition-all duration-300",
+                  isMainImage
+                    ? "border-yellow-400 shadow-lg shadow-yellow-200"
+                    : "border-gray-200"
+                )}>
                   <img
                     src={url}
                     alt={`Imagen ${index + 1}`}
@@ -251,12 +262,25 @@ export const OptimizedImageUpload: React.FC<OptimizedImageUploadProps> = ({
                   </button>
                 )}
 
-                <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded bg-green-500 px-2 py-1 text-xs text-white">
-                  <CheckCircle2 className="h-3 w-3" />
-                  {index + 1}
+                <div className={cn(
+                  "absolute bottom-2 left-2 flex items-center gap-1 rounded px-2 py-1 text-xs text-white",
+                  isMainImage ? "bg-yellow-500" : "bg-green-500"
+                )}>
+                  {isMainImage ? (
+                    <>
+                      <Star className="h-3 w-3" />
+                      Principal
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-3 w-3" />
+                      {index + 1}
+                    </>
+                  )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

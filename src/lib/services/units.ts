@@ -193,10 +193,10 @@ export async function bulkCreateUnitsWithValidation(
         unitNumber: unit.unit_number,
         floor: unit.floor,
         unitType: unit.unit_type,
-        status: "available" as const,
+        status: "pending" as const, // Units start as pending for approval
         bedrooms: unit.bedrooms,
         bathrooms: unit.bathrooms,
-        area: unit.total_area,
+        totalArea: unit.total_area,
         builtArea: unit.built_area,
         orientation: unit.orientation,
         facing: unit.facing,
@@ -207,10 +207,7 @@ export async function bulkCreateUnitsWithValidation(
         images: unit.images,
         floorPlanUrl: unit.floor_plan_url,
         dimensions: unit.dimensions,
-        balcony: false, // Default values
-        terrace: false,
         createdBy: userId,
-        organizationId: project.organizationId,
       }));
 
       // 2.2 Bulk create units (single database operation)
