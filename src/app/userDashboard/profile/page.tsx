@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUserWithRoles } from "@/lib/auth/validation";
 import { Separator } from "@/components/ui/separator";
+import { VerificationFlow } from "@/components/verification/VerificationButton";
+import { getVerificationSummaryAction } from "@/lib/actions/verification";
 
 export default async function ProfilePage() {
   const user = await getCurrentUserWithRoles();
@@ -13,10 +15,29 @@ export default async function ProfilePage() {
   const hasGoogleAuth = !!user.email;
   const hasPassword = false;
 
+  // Get verification summary for this user
+  const verificationSummary = await getVerificationSummaryAction();
+
   return (
     <div className="bg-white pt-26">
       <h1 className="dashboard-title mb-10">Perfil</h1>
       <div>
+        {/* Verificación de identidad */}
+        <section className="pb-6">
+          <h2 className="mb-6 text-xl font-bold text-gray-900">
+            Verificación de identidad
+          </h2>
+          <VerificationFlow
+            isVerified={verificationSummary.isVerified}
+            verificationCompletedAt={verificationSummary.verificationCompletedAt}
+            canStartVerification={verificationSummary.canStartVerification}
+            hasActiveSessions={verificationSummary.hasActiveSessions}
+            className="max-w-2xl"
+          />
+        </section>
+
+        <Separator className="my-6" />
+
         {/* Datos personales */}
         <section className="pb-6">
           <h2 className="mb-6 text-xl font-bold text-gray-900">
